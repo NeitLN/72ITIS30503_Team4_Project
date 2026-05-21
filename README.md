@@ -21,9 +21,9 @@ git commit -m "docs: update README"
 - Bùi Duy Anh
 - Đỗ Quốc Bảo
 
-**Class Code:** [Class Code]
-**Team ID:** [Team ID]
-**Repository:** [https://github.com/your-org/your-repo](https://github.com)
+**Class Code:** [253_72ITIS30503_01]
+**Team ID:** [Team 4]
+**Repository:** [https://github.com/NeitLN/72ITIS30503_Team4_Project]
 
 ---
 
