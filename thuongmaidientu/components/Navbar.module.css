@@ -1,0 +1,576 @@
+.header {
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background:
+    linear-gradient(120deg, rgba(6, 12, 24, 0.9), rgba(10, 24, 42, 0.86)),
+    rgba(8, 13, 25, 0.88);
+  backdrop-filter: blur(22px);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.18);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  animation: navbarReveal 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 15% 50%,
+      rgba(34, 211, 238, 0.2),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 85% 20%,
+      rgba(245, 158, 11, 0.14),
+      transparent 28%
+    );
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.navbar {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 18px 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  position: relative;
+}
+
+.logoWrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: white;
+  min-width: 245px;
+  animation: fadeInLeft 0.9s ease both;
+}
+
+.logoWrapper:hover .logoMark {
+  transform: translateY(-3px) rotate(-2deg) scale(1.04);
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.4),
+    0 18px 45px rgba(34, 211, 238, 0.32),
+    0 8px 24px rgba(245, 158, 11, 0.22);
+}
+
+.logoWrapper:hover .logoInner {
+  letter-spacing: 1px;
+}
+
+.logoMark {
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(145deg, #0f172a, #111827 45%, #020617),
+    linear-gradient(135deg, #22d3ee, #f59e0b);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 16px 36px rgba(0, 0, 0, 0.45),
+    0 0 26px rgba(34, 211, 238, 0.22);
+  overflow: hidden;
+  transition: all 0.35s ease;
+}
+
+.logoMark::before {
+  content: "";
+  position: absolute;
+  width: 95px;
+  height: 95px;
+  background: conic-gradient(
+    from 90deg,
+    transparent,
+    rgba(34, 211, 238, 0.9),
+    rgba(245, 158, 11, 0.95),
+    transparent
+  );
+  animation: logoRotate 4s linear infinite;
+}
+
+.logoMark::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 17px;
+  background:
+    radial-gradient(
+      circle at 30% 20%,
+      rgba(34, 211, 238, 0.35),
+      transparent 28%
+    ),
+    linear-gradient(145deg, #111827, #020617);
+}
+
+.logoOrbit {
+  position: absolute;
+  width: 74px;
+  height: 74px;
+  border: 1px dashed rgba(34, 211, 238, 0.32);
+  border-radius: 50%;
+  animation: orbitSpin 6s linear infinite;
+}
+
+.logoOrbit::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.95);
+}
+
+.logoInner {
+  position: relative;
+  z-index: 2;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -1px;
+  text-shadow:
+    0 0 14px rgba(34, 211, 238, 0.65),
+    0 0 22px rgba(245, 158, 11, 0.28);
+  transition: all 0.35s ease;
+}
+
+.logoContent {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+
+.brandName {
+  font-size: 30px;
+  font-weight: 950;
+  letter-spacing: -1.4px;
+  background: linear-gradient(90deg, #ffffff, #67e8f9 50%, #fbbf24);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textGradientMove 5s ease-in-out infinite;
+}
+
+.brandTagline {
+  margin-top: 6px;
+  color: rgba(226, 232, 240, 0.72);
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  animation: fadeInDown 0.9s ease both;
+}
+
+.menu li {
+  position: relative;
+}
+
+.menu > li > a {
+  position: relative;
+  color: rgba(248, 250, 252, 0.84);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 700;
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.menu > li > a::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -11px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22d3ee;
+  transform: translateX(-50%) scale(0);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.9);
+  transition: transform 0.25s ease;
+}
+
+.menu > li > a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22d3ee, #f59e0b);
+  transition: width 0.28s ease;
+}
+
+.menu > li > a:hover {
+  color: white;
+  transform: translateY(-2px);
+}
+
+.menu > li > a:hover::before {
+  transform: translateX(-50%) scale(1);
+}
+
+.menu > li > a:hover::after {
+  width: 100%;
+}
+
+.dropdownPanel {
+  position: absolute;
+  top: 42px;
+  left: 50%;
+  width: 310px;
+  padding: 14px;
+  border-radius: 22px;
+  background: linear-gradient(
+    145deg,
+    rgba(15, 23, 42, 0.97),
+    rgba(2, 6, 23, 0.97)
+  );
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.45),
+    0 0 45px rgba(34, 211, 238, 0.12);
+  transform: translateX(-50%) translateY(18px) scale(0.96);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dropdownPanel::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  background: #0f172a;
+  border-left: 1px solid rgba(34, 211, 238, 0.18);
+  border-top: 1px solid rgba(34, 211, 238, 0.18);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.dropdown:hover .dropdownPanel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.dropdownPanel a {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 15px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: white;
+  transition:
+    background 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.dropdownPanel a span {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.dropdownPanel a small {
+  color: rgba(203, 213, 225, 0.68);
+  font-size: 12px;
+}
+
+.dropdownPanel a:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 211, 238, 0.12),
+    rgba(245, 158, 11, 0.09)
+  );
+  transform: translateX(5px);
+  box-shadow: inset 3px 0 0 #22d3ee;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  animation: fadeInRight 0.9s ease both;
+}
+
+.cartButton {
+  position: relative;
+  padding: 11px 15px;
+  border-radius: 999px;
+  color: white;
+  text-decoration: none;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  transition: all 0.28s ease;
+}
+
+.cartButton:hover {
+  transform: translateY(-3px);
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.45);
+  box-shadow: 0 12px 26px rgba(34, 211, 238, 0.16);
+}
+
+.cartBadge {
+  position: absolute;
+  top: -8px;
+  right: -7px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b, #facc15);
+  color: #111827;
+  font-size: 11px;
+  font-weight: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 22px rgba(245, 158, 11, 0.75);
+  animation: badgePulse 1.8s ease-in-out infinite;
+}
+
+.loginButton {
+  color: rgba(248, 250, 252, 0.86);
+  text-decoration: none;
+  font-weight: 800;
+  transition: all 0.25s ease;
+}
+
+.loginButton:hover {
+  color: #67e8f9;
+  transform: translateY(-2px);
+}
+
+.joinButton {
+  position: relative;
+  color: #020617;
+  text-decoration: none;
+  font-weight: 950;
+  padding: 12px 21px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #22d3ee, #facc15);
+  box-shadow:
+    0 14px 32px rgba(34, 211, 238, 0.2),
+    0 8px 24px rgba(245, 158, 11, 0.18);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.joinButton::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.75),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+}
+
+.joinButton:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 20px 42px rgba(34, 211, 238, 0.32),
+    0 12px 30px rgba(245, 158, 11, 0.24);
+}
+
+.joinButton:hover::before {
+  left: 130%;
+}
+
+@keyframes navbarReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes logoRotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbitSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes textGradientMove {
+  0% {
+    background-position: 0% center;
+  }
+
+  50% {
+    background-position: 100% center;
+  }
+
+  100% {
+    background-position: 0% center;
+  }
+}
+
+@keyframes badgePulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.65);
+  }
+
+  50% {
+    transform: scale(1.13);
+    box-shadow: 0 0 28px rgba(245, 158, 11, 0.95);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.65);
+  }
+}
+
+@media (max-width: 1120px) {
+  .navbar {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .logoWrapper {
+    justify-content: center;
+  }
+
+  .menu {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 680px) {
+  .navbar {
+    padding: 16px 22px;
+  }
+
+  .logoWrapper {
+    min-width: auto;
+  }
+
+  .brandTagline {
+    display: none;
+  }
+
+  .brandName {
+    font-size: 26px;
+  }
+
+  .logoMark {
+    width: 52px;
+    height: 52px;
+  }
+
+  .menu {
+    gap: 15px;
+  }
+
+  .menu > li > a {
+    font-size: 14px;
+  }
+
+  .dropdownPanel {
+    width: 280px;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+  }
+}
