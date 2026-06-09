@@ -13,10 +13,12 @@ export type Category = CategoryRow & {
 };
 
 const sampleCategories: CategoryRow[] = [
-  { id: "sample-laptop", name: "Laptop", slug: "laptop", parent_id: null, sort_order: 1 },
-  { id: "sample-phone", name: "Phone", slug: "phone", parent_id: null, sort_order: 2 },
-  { id: "sample-accessories", name: "Accessories", slug: "accessories", parent_id: null, sort_order: 3 },
-  { id: "sample-fashion", name: "Fashion", slug: "fashion", parent_id: null, sort_order: 4 },
+  { id: "sample-t-shirts", name: "T-Shirts", slug: "t-shirts", parent_id: null, sort_order: 1 },
+  { id: "sample-hoodies", name: "Hoodies", slug: "hoodies", parent_id: null, sort_order: 2 },
+  { id: "sample-pants", name: "Pants", slug: "pants", parent_id: null, sort_order: 3 },
+  { id: "sample-shoes", name: "Shoes", slug: "shoes", parent_id: null, sort_order: 4 },
+  { id: "sample-bags", name: "Bags", slug: "bags", parent_id: null, sort_order: 5 },
+  { id: "sample-accessories", name: "Accessories", slug: "accessories", parent_id: null, sort_order: 6 },
 ];
 
 export function buildCategoryTree(rows: CategoryRow[]): Category[] {

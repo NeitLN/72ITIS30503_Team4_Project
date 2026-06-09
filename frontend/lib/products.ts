@@ -8,7 +8,11 @@ export type Product = {
   category_slug: string;
   image_url: string;
   description: string;
-  stock: number;
+  seller_name: string;
+  condition: string;
+  size: string;
+  location: string;
+  is_negotiable: boolean;
   created_at: string;
 };
 
@@ -23,7 +27,7 @@ export async function getProducts(categorySlug?: string): Promise<Product[]> {
   let query = supabase
     .from("products")
     .select(
-      "id, name, slug, price, category_slug, image_url, description, stock, created_at",
+      "id, name, slug, price, category_slug, image_url, description, seller_name, condition, size, location, is_negotiable, created_at",
     )
     .order("created_at", { ascending: false });
 

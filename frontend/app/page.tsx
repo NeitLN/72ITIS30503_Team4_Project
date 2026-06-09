@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
@@ -7,51 +8,57 @@ export default function Home() {
         <div className="hero-orb hero-orb-one" />
         <div className="hero-orb hero-orb-two" />
         <div className="hero-content">
-          <p className="eyebrow">New season, fresh perspective</p>
-          <h1>Everything you love, <span>beautifully curated.</span></h1>
+          <p className="eyebrow">Local brand & second-hand Việt Nam</p>
+          <h1>Đồ chất đang chờ <span>một chủ mới.</span></h1>
           <p className="hero-copy">
-            Explore standout technology, everyday essentials, and modern style
-            selected to make every day feel a little more considered.
+            Khám phá thời trang local brand được đăng bán trực tiếp bởi cộng đồng.
+            Tìm món đồ hợp gu, trò chuyện và thương lượng cùng người bán.
           </p>
           <div className="hero-actions">
-            <Link href="/shop" className="primary-button">Explore the shop</Link>
-            <Link href="/#about" className="secondary-button">Our story</Link>
+            <Link href="/shop" className="primary-button">Khám phá ngay</Link>
+            <Link href="/#about" className="secondary-button">Về Chợ Local</Link>
           </div>
           <div className="hero-proof">
-            <div><strong>24h</strong><span>Fast dispatch</span></div>
-            <div><strong>4.9</strong><span>Customer rating</span></div>
-            <div><strong>30d</strong><span>Easy returns</span></div>
+            <div><strong>30+</strong><span>Món đồ local</span></div>
+            <div><strong>6</strong><span>Danh mục chọn lọc</span></div>
+            <div><strong>C2C</strong><span>Kết nối trực tiếp</span></div>
           </div>
         </div>
         <div className="hero-card" aria-label="Featured collection">
-          <div className="card-tag">Editor&apos;s pick</div>
-          <div className="product-visual">
-            <div className="product-screen"><span>STYLE</span></div>
-            <div className="product-base" />
+          <div className="card-tag">Món đồ nổi bật</div>
+          <div className="product-visual marketplace-visual">
+            <Image
+              alt="DirtyCoins Oversized Tee"
+              className="featured-market-image"
+              fill
+              priority
+              sizes="(max-width: 850px) 90vw, 42vw"
+              src="/images/products/dirtycoins-oversized-tee.jpg"
+            />
           </div>
           <div className="card-copy">
-            <span>Work, reimagined</span>
-            <strong>Modern essentials</strong>
+            <span>Đăng bởi Minh Khang</span>
+            <strong>DirtyCoins Oversized Tee</strong>
           </div>
         </div>
       </section>
 
       <section className="content-section" id="news">
-        <p className="eyebrow">The journal</p>
-        <h2>Stories behind better choices.</h2>
-        <p>Fresh arrivals, buying guides, and ideas from the StyleHub community.</p>
+        <p className="eyebrow">Hàng mới đăng</p>
+        <h2>Mỗi món đồ đều có câu chuyện riêng.</h2>
+        <p>Săn những thiết kế local brand độc đáo với mức giá dễ tiếp cận hơn.</p>
       </section>
 
       <section className="content-section accent-section" id="about">
-        <p className="eyebrow">About StyleHub</p>
-        <h2>Useful things should still feel special.</h2>
-        <p>We bring technology, accessories, and fashion together in one thoughtful marketplace.</p>
+        <p className="eyebrow">Về Chợ Local</p>
+        <h2>Mặc lại đồ đẹp, kết nối cùng gu.</h2>
+        <p>Chợ Local là nơi cộng đồng mua bán thời trang Việt trực tiếp, minh bạch và gần gũi.</p>
       </section>
 
       <section className="content-section" id="contact">
-        <p className="eyebrow">Let&apos;s talk</p>
-        <h2>Questions? We&apos;re here.</h2>
-        <p>Contact our team at hello@stylehub.example for product or order support.</p>
+        <p className="eyebrow">Kết nối với chúng tôi</p>
+        <h2>Cần hỗ trợ? Chúng tôi ở đây.</h2>
+        <p>Liên hệ hello@cholocal.example để được hỗ trợ về bài đăng và giao dịch.</p>
       </section>
     </main>
   );

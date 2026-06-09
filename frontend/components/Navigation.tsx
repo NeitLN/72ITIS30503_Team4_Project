@@ -10,10 +10,10 @@ type NavigationProps = {
 };
 
 const mainLinks = [
-  { label: "Home", href: "/" },
-  { label: "News", href: "/#news" },
-  { label: "About", href: "/#about" },
-  { label: "Contact", href: "/#contact" },
+  { label: "Trang chủ", href: "/" },
+  { label: "Tin mới", href: "/#news" },
+  { label: "Giới thiệu", href: "/#about" },
+  { label: "Liên hệ", href: "/#contact" },
 ];
 
 function ChevronIcon({ className = "" }: { className?: string }) {
@@ -70,27 +70,27 @@ export default function Navigation({ categories }: NavigationProps) {
   // collapsible mobile navigation. Both menus share the same category data.
   return (
     <header className="site-header">
-      <nav className="navigation-shell" aria-label="Main navigation">
-        <Link href="/" className="brand" onClick={closeMobileMenu} aria-label="StyleHub home">
-          <span className="brand-mark">S</span>
-          <span>StyleHub</span>
+      <nav className="navigation-shell" aria-label="Điều hướng chính">
+        <Link href="/" className="brand" onClick={closeMobileMenu} aria-label="Trang chủ Chợ Local">
+          <span className="brand-mark">C</span>
+          <span>Chợ Local</span>
         </Link>
 
         <ul className="desktop-nav">
           <li>
             <Link className={pathname === "/" ? "nav-link active" : "nav-link"} href="/">
-              Home
+              Trang chủ
             </Link>
           </li>
           <li className="shop-menu">
             <Link className={pathname === "/shop" ? "nav-link active" : "nav-link"} href="/shop">
-              Shop
+              Sản phẩm
               <ChevronIcon className="chevron" />
             </Link>
             <div className="shop-dropdown">
               <div className="dropdown-heading">
-                <span>Shop by category</span>
-                <Link href="/shop">View all</Link>
+                <span>Mua theo danh mục</span>
+                <Link href="/shop">Xem tất cả</Link>
               </div>
               <ul className="category-list">
                 <CategoryItems categories={categories} />
@@ -108,12 +108,12 @@ export default function Navigation({ categories }: NavigationProps) {
 
         <div className="nav-actions">
           <Link href="/shop" className="shop-button">
-            Shop now
+            Mua ngay
           </Link>
           <button
             type="button"
             className="menu-toggle"
-            aria-label="Toggle navigation menu"
+            aria-label="Mở menu điều hướng"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((open) => !open)}
           >
@@ -125,7 +125,7 @@ export default function Navigation({ categories }: NavigationProps) {
 
         <div className={mobileOpen ? "mobile-panel open" : "mobile-panel"}>
           <Link className="mobile-link" href="/" onClick={closeMobileMenu}>
-            Home
+            Trang chủ
           </Link>
           <button
             type="button"
@@ -133,7 +133,7 @@ export default function Navigation({ categories }: NavigationProps) {
             aria-expanded={mobileShopOpen}
             onClick={() => setMobileShopOpen((open) => !open)}
           >
-            Shop
+            Sản phẩm
             <ChevronIcon className={mobileShopOpen ? "chevron rotated" : "chevron"} />
           </button>
           {mobileShopOpen && (
