@@ -1,5 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getCategories } from "@/lib/categories";
+import { getProducts } from "@/lib/products";
 
 type ShopPageProps = {
   searchParams: Promise<{ category?: string }>;
@@ -17,11 +19,13 @@ function findCategoryName(
 }
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
-  const [{ category: selectedSlug }, categories] = await Promise.all([
-    searchParams,
+  const { category: selectedSlug } = await searchParams;
+  const [categories, products] = await Promise.all([
     getCategories(),
+    getProducts(selectedSlug),
   ]);
   const selectedName = findCategoryName(categories, selectedSlug);
+  const productLabel = `${products.length} product${products.length === 1 ? "" : "s"}`;
 
   return (
     <main className="shop-page">
@@ -29,8 +33,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       <h1>{selectedName ?? "Shop all products"}</h1>
       <p>
         {selectedName
-          ? `Showing the latest products in ${selectedName}.`
-          : "Choose a live category from the navigation menu to filter this collection."}
+          ? `${productLabel} in ${selectedName}.`
+          : `${productLabel} across the complete collection.`}
       </p>
       <div className="shop-filter-row">
         <Link className={!selectedSlug ? "filter-chip selected" : "filter-chip"} href="/shop">
@@ -46,11 +50,44 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           </Link>
         ))}
       </div>
-      <div className="empty-products">
-        <span>Collection ready</span>
-        <h2>Connect your product table next.</h2>
-        <p>The dynamic category filter is active and ready to drive a product query.</p>
-      </div>
+      {products.length > 0 ? (
+        <div className="product-grid">
+          {products.map((product) => (
+            <article className="product-card" key={product.id}>
+              <div className="product-image-wrap">
+                <Image
+                  alt={product.name}
+                  className="product-image"
+                  fill
+                  sizes="(max-width: 560px) 100vw, (max-width: 850px) 50vw, 33vw"
+                  src={product.image_url}
+                />
+              </div>
+              <div className="product-card-content">
+                <p className="product-category">{product.category_slug}</p>
+                <h2>{product.name}</h2>
+                <div className="product-meta">
+                  <strong>
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(product.price)}
+                  </strong>
+                  <span className={product.stock > 0 ? "stock in-stock" : "stock out-of-stock"}>
+                    {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+                  </span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-products">
+          <span>No products found</span>
+          <h2>This collection is currently empty.</h2>
+          <p>Try another category or return to all products.</p>
+        </div>
+      )}
     </main>
   );
 }

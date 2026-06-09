@@ -5,7 +5,7 @@ export type CategoryRow = {
   name: string;
   slug: string;
   parent_id: string | null;
-  display_order: number;
+  sort_order: number;
 };
 
 export type Category = CategoryRow & {
@@ -13,10 +13,10 @@ export type Category = CategoryRow & {
 };
 
 const sampleCategories: CategoryRow[] = [
-  { id: "sample-laptop", name: "Laptop", slug: "laptop", parent_id: null, display_order: 1 },
-  { id: "sample-phone", name: "Phone", slug: "phone", parent_id: null, display_order: 2 },
-  { id: "sample-accessories", name: "Accessories", slug: "accessories", parent_id: null, display_order: 3 },
-  { id: "sample-fashion", name: "Fashion", slug: "fashion", parent_id: null, display_order: 4 },
+  { id: "sample-laptop", name: "Laptop", slug: "laptop", parent_id: null, sort_order: 1 },
+  { id: "sample-phone", name: "Phone", slug: "phone", parent_id: null, sort_order: 2 },
+  { id: "sample-accessories", name: "Accessories", slug: "accessories", parent_id: null, sort_order: 3 },
+  { id: "sample-fashion", name: "Fashion", slug: "fashion", parent_id: null, sort_order: 4 },
 ];
 
 export function buildCategoryTree(rows: CategoryRow[]): Category[] {
@@ -43,7 +43,7 @@ export function buildCategoryTree(rows: CategoryRow[]): Category[] {
 
   const sortCategories = (categories: Category[]) => {
     categories.sort(
-      (a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name),
+      (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name),
     );
     categories.forEach((category) => sortCategories(category.children));
   };
@@ -60,9 +60,9 @@ export async function getCategories(): Promise<Category[]> {
   if (supabase) {
     const { data, error } = await supabase
       .from("categories")
-      .select("id, name, slug, parent_id, display_order")
+      .select("id, name, slug, parent_id, sort_order")
       .eq("is_active", true)
-      .order("display_order")
+      .order("sort_order")
       .order("name");
 
     if (!error && data?.length) {
