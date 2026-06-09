@@ -25,7 +25,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     getProducts(selectedSlug),
   ]);
   const selectedName = findCategoryName(categories, selectedSlug);
-  const productLabel = `${products.length} sản phẩm`;
+  const productLabel = `${products.length} product${products.length === 1 ? "" : "s"}`;
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -35,16 +35,16 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <main className="shop-page">
-      <p className="eyebrow">Chợ đồ local & second-hand</p>
-      <h1>{selectedName ?? "Khám phá tất cả sản phẩm"}</h1>
+      <p className="eyebrow">Community fashion marketplace</p>
+      <h1>{selectedName ?? "Shop all products"}</h1>
       <p>
         {selectedName
-          ? `${productLabel} trong danh mục ${selectedName}.`
-          : `${productLabel} thời trang được đăng bán bởi cộng đồng.`}
+          ? `${productLabel} listed in ${selectedName}.`
+          : `${productLabel} from international, Vietnamese, and premium brands.`}
       </p>
       <div className="shop-filter-row">
         <Link className={!selectedSlug ? "filter-chip selected" : "filter-chip"} href="/shop">
-          Tất cả
+          All
         </Link>
         {categories.map((category) => (
           <Link
@@ -72,14 +72,15 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               <div className="product-card-content">
                 <div className="product-card-labels">
                   <p className="product-category">{product.condition}</p>
-                  {product.is_negotiable && <span className="negotiable-badge">Có thương lượng</span>}
+                  {product.is_negotiable && <span className="negotiable-badge">Negotiable</span>}
                 </div>
+                <p className="product-brand">{product.brand}</p>
                 <h2>{product.name}</h2>
                 <strong className="product-price">{formatPrice(product.price)}</strong>
                 <div className="marketplace-details">
-                  <span><b>Kích thước</b>{product.size}</span>
-                  <span><b>Người bán</b>{product.seller_name}</span>
-                  <span className="product-location"><b>Khu vực</b>{product.location}</span>
+                  <span><b>Size</b>{product.size}</span>
+                  <span><b>Seller</b>{product.seller_name}</span>
+                  <span className="product-location"><b>Location</b>{product.location}</span>
                 </div>
               </div>
             </article>
@@ -87,9 +88,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         </div>
       ) : (
         <div className="empty-products">
-          <span>Chưa có sản phẩm</span>
-          <h2>Danh mục này đang trống.</h2>
-          <p>Hãy thử danh mục khác hoặc quay lại xem tất cả sản phẩm.</p>
+          <span>No products found</span>
+          <h2>This collection is currently empty.</h2>
+          <p>Try another category or return to all products.</p>
         </div>
       )}
     </main>

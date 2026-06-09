@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chợ Local | Thời trang C2C Việt Nam",
-  description: "Mua bán thời trang local brand và second-hand từ cộng đồng Việt Nam.",
+  title: "StyleHub | C2C Fashion Marketplace",
+  description: "Shop pre-owned fashion from international, Vietnamese, and premium brands.",
 };
 
 export default async function RootLayout({
@@ -28,7 +28,7 @@ export default async function RootLayout({
 
   return (
     <html
-      lang="vi"
+      lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body>

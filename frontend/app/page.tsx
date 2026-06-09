@@ -8,57 +8,57 @@ export default function Home() {
         <div className="hero-orb hero-orb-one" />
         <div className="hero-orb hero-orb-two" />
         <div className="hero-content">
-          <p className="eyebrow">Local brand & second-hand Việt Nam</p>
-          <h1>Đồ chất đang chờ <span>một chủ mới.</span></h1>
+          <p className="eyebrow">Pre-owned fashion, better discovered</p>
+          <h1>Great style deserves <span>another chapter.</span></h1>
           <p className="hero-copy">
-            Khám phá thời trang local brand được đăng bán trực tiếp bởi cộng đồng.
-            Tìm món đồ hợp gu, trò chuyện và thương lượng cùng người bán.
+            Discover international icons, Vietnamese streetwear, and premium
+            accessories listed directly by the StyleHub community.
           </p>
           <div className="hero-actions">
-            <Link href="/shop" className="primary-button">Khám phá ngay</Link>
-            <Link href="/#about" className="secondary-button">Về Chợ Local</Link>
+            <Link href="/shop" className="primary-button">Explore the marketplace</Link>
+            <Link href="/#about" className="secondary-button">How it works</Link>
           </div>
           <div className="hero-proof">
-            <div><strong>30+</strong><span>Món đồ local</span></div>
-            <div><strong>6</strong><span>Danh mục chọn lọc</span></div>
-            <div><strong>C2C</strong><span>Kết nối trực tiếp</span></div>
+            <div><strong>30+</strong><span>Curated listings</span></div>
+            <div><strong>20+</strong><span>Brands to discover</span></div>
+            <div><strong>C2C</strong><span>Direct from sellers</span></div>
           </div>
         </div>
         <div className="hero-card" aria-label="Featured collection">
-          <div className="card-tag">Món đồ nổi bật</div>
+          <div className="card-tag">Featured listing</div>
           <div className="product-visual marketplace-visual">
             <Image
-              alt="DirtyCoins Oversized Tee"
+              alt="Nike Free RN Flyknit Running Shoes"
               className="featured-market-image"
               fill
               priority
               sizes="(max-width: 850px) 90vw, 42vw"
-              src="/images/products/dirtycoins-oversized-tee.jpg"
+              src="/images/products/nike-air-force-1.jpg"
             />
           </div>
           <div className="card-copy">
-            <span>Đăng bởi Minh Khang</span>
-            <strong>DirtyCoins Oversized Tee</strong>
+            <span>Listed by Quang Minh</span>
+            <strong>Nike Free RN Flyknit</strong>
           </div>
         </div>
       </section>
 
       <section className="content-section" id="news">
-        <p className="eyebrow">Hàng mới đăng</p>
-        <h2>Mỗi món đồ đều có câu chuyện riêng.</h2>
-        <p>Săn những thiết kế local brand độc đáo với mức giá dễ tiếp cận hơn.</p>
+        <p className="eyebrow">Fresh listings</p>
+        <h2>Every piece has more life to give.</h2>
+        <p>Find wardrobe favorites from global labels and independent Vietnamese brands.</p>
       </section>
 
       <section className="content-section accent-section" id="about">
-        <p className="eyebrow">Về Chợ Local</p>
-        <h2>Mặc lại đồ đẹp, kết nối cùng gu.</h2>
-        <p>Chợ Local là nơi cộng đồng mua bán thời trang Việt trực tiếp, minh bạch và gần gũi.</p>
+        <p className="eyebrow">About StyleHub</p>
+        <h2>Buy from people who share your taste.</h2>
+        <p>StyleHub connects fashion lovers through transparent, community-led resale.</p>
       </section>
 
       <section className="content-section" id="contact">
-        <p className="eyebrow">Kết nối với chúng tôi</p>
-        <h2>Cần hỗ trợ? Chúng tôi ở đây.</h2>
-        <p>Liên hệ hello@cholocal.example để được hỗ trợ về bài đăng và giao dịch.</p>
+        <p className="eyebrow">Get in touch</p>
+        <h2>Need a hand? We are here.</h2>
+        <p>Contact hello@stylehub.example for listing and marketplace support.</p>
       </section>
     </main>
   );

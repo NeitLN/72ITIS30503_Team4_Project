@@ -2,6 +2,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 
 export type Product = {
   id: string;
+  brand: string;
   name: string;
   slug: string;
   price: number;
@@ -27,7 +28,7 @@ export async function getProducts(categorySlug?: string): Promise<Product[]> {
   let query = supabase
     .from("products")
     .select(
-      "id, name, slug, price, category_slug, image_url, description, seller_name, condition, size, location, is_negotiable, created_at",
+      "id, brand, name, slug, price, category_slug, image_url, description, seller_name, condition, size, location, is_negotiable, created_at",
     )
     .order("created_at", { ascending: false });
 
