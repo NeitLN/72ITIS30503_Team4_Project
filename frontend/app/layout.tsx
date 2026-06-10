@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Navigation from "@/components/Navigation";
+import { MarketplaceProvider } from "@/components/MarketplaceProvider";
 import { getCategories } from "@/lib/categories";
 import "./globals.css";
 
@@ -32,8 +33,10 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body>
-        <Navigation categories={categories} />
-        {children}
+        <MarketplaceProvider>
+          <Navigation categories={categories} />
+          {children}
+        </MarketplaceProvider>
       </body>
     </html>
   );

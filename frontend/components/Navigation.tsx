@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Category } from "@/lib/categories";
+import { useMarketplace } from "@/components/MarketplaceProvider";
 
 type NavigationProps = {
   categories: Category[];
@@ -60,6 +61,7 @@ export default function Navigation({ categories }: NavigationProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileShopOpen, setMobileShopOpen] = useState(false);
   const pathname = usePathname();
+  const { cart_count, wishlist_product_ids } = useMarketplace();
 
   const closeMobileMenu = () => {
     setMobileOpen(false);
@@ -107,6 +109,20 @@ export default function Navigation({ categories }: NavigationProps) {
         </ul>
 
         <div className="nav-actions">
+          <div className="marketplace-counters" aria-label="Marketplace activity">
+            <span title="Wishlist items">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20.8 4.7a5.5 5.5 0 0 0-7.8 0L12 5.8l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.4 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
+              </svg>
+              {wishlist_product_ids.length}
+            </span>
+            <span title="Cart items">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L20.5 8H7M10 20h.01M17 20h.01" />
+              </svg>
+              {cart_count}
+            </span>
+          </div>
           <Link href="/shop" className="shop-button">
             Shop now
           </Link>
