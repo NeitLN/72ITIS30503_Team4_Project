@@ -14,8 +14,24 @@ app.get("/", (req, res) => {
   res.send("StyleHub Backend Running");
 });
 
+app.get("/about", (req, res) => {
+  res.send("About StyleHub");
+});
+
 app.get("/contact", (req, res) => {
   res.send("Contact Page Loaded Successfully");
+});
+
+app.get("/privacy-policy", (req, res) => {
+  res.send("Privacy Policy");
+});
+
+app.get("/delivery-terms", (req, res) => {
+  res.send("Delivery Terms");
+});
+
+app.get("/sell", (req, res) => {
+  res.send("Sell on StyleHub");
 });
 
 /* =========================
@@ -45,6 +61,22 @@ app.get("/api/products/:id", (req, res) => {
   res.json({
     productId: req.params.id,
   });
+});
+
+app.get("/api/categories", (req, res) => {
+  res.json([]);
+});
+
+app.get("/api/cart", (req, res) => {
+  res.json({ items: [] });
+});
+
+app.get("/api/orders", (req, res) => {
+  res.json([]);
+});
+
+app.get("/api/profile", (req, res) => {
+  res.json({ user: null });
 });
 
 app.get("/category/:slug", (req, res) => {

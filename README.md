@@ -35,7 +35,7 @@ git commit -m "docs: update README"
 |-------|------------|
 | Frontend | Next.js 14 (App Router) + Tailwind CSS |
 | Backend / API | Node.js + Express.js |
-| CMS / Content | Strapi (Headless CMS) |
+| CMS / Content | Strapi (Headless CMS) *(Obsolete in Phase 0 - removed)* |
 | Database | PostgreSQL (via Supabase) |
 | Authentication | Supabase Auth (JWT) |
 | Storage | Supabase Storage (product images) |
@@ -68,11 +68,6 @@ stylehub/
 │   │   ├── models/            # DB models
 │   │   └── routes/            # API endpoints
 │   └── .env.example
-│
-├── cms/                       # Strapi Headless CMS
-│   ├── src/
-│   │   └── api/               # Content types (Product, Category, Brand)
-│   └── config/
 │
 ├── .gitignore
 ├── README.md
@@ -124,13 +119,10 @@ git checkout develop
 
 ```bash
 # Frontend
-cd frontend && pnpm install
+cd frontend && npm install
 
 # Backend
-cd ../backend && pnpm install
-
-# CMS
-cd ../cms && pnpm install
+cd ../backend && npm install
 ```
 
 ### 3. Configure Environment Variables
@@ -140,7 +132,6 @@ Copy the example env files and fill in your credentials:
 ```bash
 cp frontend/.env.example frontend/.env.local
 cp backend/.env.example backend/.env
-cp cms/.env.example cms/.env
 ```
 
 Required variables:
@@ -152,30 +143,23 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 # Backend
 DATABASE_URL=your_postgres_connection_string
 JWT_SECRET=your_jwt_secret
-
-# Strapi
-STRAPI_URL=http://localhost:1337
 ```
 
 ### 4. Run the Development Servers
 
 ```bash
-# Terminal 1 — Frontend (http://localhost:3000)
-cd frontend && pnpm dev
+# Frontend (http://localhost:3000)
+npm run dev:frontend
 
-# Terminal 2 — Backend API (http://localhost:8080)
-cd backend && pnpm dev
-
-# Terminal 3 — Strapi CMS (http://localhost:1337)
-cd cms && pnpm develop
+# Backend API (http://localhost:8080)
+npm run dev:backend
 ```
 
 ### 5. Smoke Test
 
 Open your browser and verify:
 - `http://localhost:3000` → Next.js welcome / home page loads ✅
-- `http://localhost:8080/api/health` → Returns `{ status: "ok" }` ✅
-- `http://localhost:1337/admin` → Strapi admin panel loads ✅
+- `http://localhost:8080/` → Returns `StyleHub Backend Running` ✅
 
 ---
 
