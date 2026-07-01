@@ -42,6 +42,13 @@ root/
 - `npm run build` - Builds the frontend
 - `npm run lint` - Lints the frontend
 
+## Database Foundation (Phase 1)
+
+- Supabase migrations are stored in `supabase/migrations/`
+- Phase 1 creates the catalog schema (users, brands, categories, products, attributes, variants) and corresponding seed data.
+- **Do not run remote db push** without approval. Apply locally first if testing.
+- Future phases will connect backend/frontend to this schema dynamically.
+
 ## Lab Mapping Summary
 
 - **Lab 1:** Architecture + Git

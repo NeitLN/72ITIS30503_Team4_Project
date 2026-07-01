@@ -17,11 +17,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
       </p>
       <div className="mt-2 text-sm text-gray-500 flex justify-between">
-        <span>Size: {product.size}</span>
-        <span>{product.condition}</span>
+        <span>{product.size ? `Size: ${product.size}` : ''}</span>
+        <span className="capitalize">{product.condition.replace('_', ' ')}</span>
       </div>
       <div className="mt-2 text-xs text-gray-400">
-        Seller: {product.sellerName}
+        Seller: {product.sellerName || product.sellerUsername || 'Unknown'}
       </div>
     </Link>
   );
