@@ -1,6 +1,14 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' }); // Load root .env
+const { isSupabaseConfigured } = require('./lib/supabase');
+const { success, error } = require('./utils/apiResponse');
+
+const productRoutes = require('./routes/products');
+const categoryRoutes = require('./routes/categories');
+const cartRoutes = require('./routes/cart');
+const orderRoutes = require('./routes/orders');
+const profileRoutes = require('./routes/profile');
 
 const app = express();
 
@@ -10,43 +18,33 @@ app.use(express.json());
 const PORT = process.env.PORT || 8080;
 
 app.get('/', (req, res) => {
-  res.json({ success: true, data: { message: 'Backend is running' } });
+  return success(res, { message: 'StyleHub Backend is running' });
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, data: { status: 'healthy' } });
+  return success(res, {
+    service: 'StyleHub API',
+    status: 'ok',
+    databaseConfigured: isSupabaseConfigured()
+  });
 });
 
-app.get('/api/products', (req, res) => {
-  res.json({ success: true, data: [] });
-});
+// API Routes
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/profile', profileRoutes);
 
-app.get('/api/products/:slug', (req, res) => {
-  res.json({ success: true, data: { slug: req.params.slug } });
-});
-
-app.get('/api/categories', (req, res) => {
-  res.json({ success: true, data: [] });
-});
-
-app.get('/api/cart', (req, res) => {
-  res.json({ success: true, data: { items: [] } });
-});
-
-app.post('/api/cart', (req, res) => {
-  res.json({ success: true, data: { message: 'Added to cart' } });
-});
-
-app.post('/api/orders', (req, res) => {
-  res.json({ success: true, data: { message: 'Order created' } });
-});
-
-app.get('/api/profile', (req, res) => {
-  res.json({ success: true, data: { message: 'Profile details' } });
-});
-
+// 404 Handler
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: 'Route not found' });
+  return error(res, 404, 'Route not found');
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled Server Error:', err);
+  return error(res, 500, 'Internal Server Error');
 });
 
 app.listen(PORT, () => {
