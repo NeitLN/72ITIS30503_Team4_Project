@@ -5,6 +5,8 @@ build
 .env
 .env.local
 .env.*.local
+backend/.env
+frontend/.env.local
 supabase/.temp
 .DS_Store
 npm-debug.log*

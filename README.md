@@ -49,12 +49,13 @@ root/
 - **Do not run remote db push** without approval. Apply locally first if testing.
 - Future phases will connect backend/frontend to this schema dynamically.
 
-## Backend APIs (Phase 2)
+## Backend APIs (Phase 2 & Phase 3)
 
-- Ensure `SUPABASE_URL` and `SUPABASE_ANON_KEY` are configured in `.env` to connect to the database.
-- Products & Categories APIs dynamically fetch data from Supabase.
-- Cart, Orders, and Profile endpoints are placeholders for future phases.
-- Start backend using: `npm run dev:backend`
+- To connect the backend to Supabase, create a `.env` file in the `backend/` folder (or root folder) by copying `backend/.env.example`.
+- Required environment variables: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `PORT`.
+- To verify the backend API, start the server (`npm run dev:backend`) and check `http://localhost:8080/api/health`. If the database is not configured, endpoints like `/api/products` will safely return a 503 response.
+- **WARNING: Do not run `supabase db reset`.** Existing remote data must not be destroyed.
+- Migrations (`supabase/migrations/`) should only be pushed to the database (e.g. `npx supabase db push`) after explicit approval.
 
 ## Lab Mapping Summary
 
