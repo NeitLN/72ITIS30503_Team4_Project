@@ -4,6 +4,13 @@ export const ROUTES = {
   HOME: '/',
   SHOP: '/shop',
   SELL: '/sell',
+  ABOUT: '/about',
+  CONTACT: '/contact',
+  PRIVACY_POLICY: '/privacy-policy',
+  DELIVERY_TERMS: '/delivery-terms',
+  CART: '/cart',
+  CHECKOUT: '/checkout',
+  PROFILE: '/profile',
   PRODUCT: (slug: string) => `/products/${slug}`,
   CATEGORY: (slug: string) => `/category/${slug}`,
 };

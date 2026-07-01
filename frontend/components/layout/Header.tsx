@@ -13,26 +13,30 @@ export const Header = async () => {
   }
 
   return (
-    <header className="border-b">
+    <header className="border-b bg-white sticky top-0 z-50">
       <Container>
         <div className="flex h-16 items-center justify-between">
-          <Link href={ROUTES.HOME} className="text-xl font-bold">
+          <Link href={ROUTES.HOME} className="text-xl font-bold tracking-tight">
             StyleHub
           </Link>
           <nav className="flex items-center gap-6">
-            <Link href={ROUTES.SHOP} className="text-sm font-medium hover:underline">
+            <Link href={ROUTES.SHOP} className="text-sm font-medium hover:text-gray-600 transition-colors">
               Shop
             </Link>
             {categories.slice(0, 4).map((cat) => (
               <Link 
                 key={cat.id} 
                 href={ROUTES.CATEGORY(cat.slug)} 
-                className="text-sm font-medium hover:underline hidden sm:block"
+                className="text-sm font-medium hover:text-gray-600 transition-colors hidden md:block"
               >
                 {cat.name}
               </Link>
             ))}
-            <Link href={ROUTES.SELL} className="text-sm font-medium hover:underline text-blue-600">
+            <Link href={ROUTES.ABOUT} className="text-sm font-medium hover:text-gray-600 transition-colors hidden sm:block">
+              About
+            </Link>
+            <div className="h-4 w-px bg-gray-300 hidden sm:block"></div>
+            <Link href={ROUTES.SELL} className="text-sm font-semibold px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors">
               Sell
             </Link>
           </nav>
