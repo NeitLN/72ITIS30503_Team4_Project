@@ -1,0 +1,2 @@
+-- Placeholder SQL comment
+-- Full migrations will be added in later database phase according to Lab 3 and Lab 5.

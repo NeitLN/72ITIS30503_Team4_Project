@@ -1,1 +1,17 @@
-{ "name": "stylehub", "private": true, "workspaces": ["frontend", "backend"], "scripts": { "dev:frontend": "npm run dev --workspace=frontend", "dev:backend": "npm run dev --workspace=backend", "build:frontend": "npm run build --workspace=frontend" } }
+{
+  "name": "stylehub",
+  "version": "1.0.0",
+  "description": "StyleHub C2C Fashion Marketplace",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "lint": "cd frontend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "start:backend": "cd backend && npm start"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.0"
+  }
+}

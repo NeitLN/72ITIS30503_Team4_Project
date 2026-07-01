@@ -1,98 +1,54 @@
-const express = require("express");
-const cors = require("cors");
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-/* =========================
-   Static Route
-========================= */
+const PORT = process.env.PORT || 8080;
 
-app.get("/", (req, res) => {
-  res.send("StyleHub Backend Running");
+app.get('/', (req, res) => {
+  res.json({ success: true, data: { message: 'Backend is running' } });
 });
 
-app.get("/about", (req, res) => {
-  res.send("About StyleHub");
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, data: { status: 'healthy' } });
 });
 
-app.get("/contact", (req, res) => {
-  res.send("Contact Page Loaded Successfully");
+app.get('/api/products', (req, res) => {
+  res.json({ success: true, data: [] });
 });
 
-app.get("/privacy-policy", (req, res) => {
-  res.send("Privacy Policy");
+app.get('/api/products/:slug', (req, res) => {
+  res.json({ success: true, data: { slug: req.params.slug } });
 });
 
-app.get("/delivery-terms", (req, res) => {
-  res.send("Delivery Terms");
+app.get('/api/categories', (req, res) => {
+  res.json({ success: true, data: [] });
 });
 
-app.get("/sell", (req, res) => {
-  res.send("Sell on StyleHub");
+app.get('/api/cart', (req, res) => {
+  res.json({ success: true, data: { items: [] } });
 });
 
-/* =========================
-   API Route
-========================= */
-
-app.get("/api/products", (req, res) => {
-  res.json([
-    {
-      id: 1,
-      name: "T-Shirt",
-      price: 20,
-    },
-    {
-      id: 2,
-      name: "Sneakers",
-      price: 50,
-    },
-  ]);
+app.post('/api/cart', (req, res) => {
+  res.json({ success: true, data: { message: 'Added to cart' } });
 });
 
-/* =========================
-   Dynamic Routes
-========================= */
-
-app.get("/api/products/:id", (req, res) => {
-  res.json({
-    productId: req.params.id,
-  });
+app.post('/api/orders', (req, res) => {
+  res.json({ success: true, data: { message: 'Order created' } });
 });
 
-app.get("/api/categories", (req, res) => {
-  res.json([]);
+app.get('/api/profile', (req, res) => {
+  res.json({ success: true, data: { message: 'Profile details' } });
 });
 
-app.get("/api/cart", (req, res) => {
-  res.json({ items: [] });
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
 });
-
-app.get("/api/orders", (req, res) => {
-  res.json([]);
-});
-
-app.get("/api/profile", (req, res) => {
-  res.json({ user: null });
-});
-
-app.get("/category/:slug", (req, res) => {
-  res.send(`Category: ${req.params.slug}`);
-});
-
-app.get("/product/:id", (req, res) => {
-  res.send(`Product ID: ${req.params.id}`);
-});
-
-/* =========================
-   Server
-========================= */
-
-const PORT = 8080;
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
