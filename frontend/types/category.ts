@@ -5,7 +5,10 @@ export interface Category {
   slug: string;
   description?: string;
   image_url?: string;
+  image?: string;
   sort_order?: number;
+  display_order?: number;
   is_active?: boolean;
+  children?: Category[];
 }
 
