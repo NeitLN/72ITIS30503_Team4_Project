@@ -6,29 +6,116 @@ const checkDb = () => {
   }
 };
 
+const attachRelations = async (products) => {
+  if (!products || products.length === 0) return products;
+
+  const sellerIds = [...new Set(products.map(p => p.seller_id).filter(Boolean))];
+  const brandIds = [...new Set(products.map(p => p.brand_id).filter(Boolean))];
+  const categoryIds = [...new Set(products.map(p => p.category_id).filter(Boolean))];
+  const productIds = [...new Set(products.map(p => p.id))];
+
+  let users = [];
+  let brands = [];
+  let categories = [];
+  let images = [];
+
+  if (sellerIds.length > 0) {
+    try {
+      const { data } = await supabase.from('users').select('*').in('id', sellerIds);
+      if (data) users = data;
+    } catch (e) {}
+  }
+  
+  if (brandIds.length > 0) {
+    try {
+      const { data } = await supabase.from('brands').select('*').in('id', brandIds);
+      if (data) brands = data;
+    } catch (e) {}
+  }
+  
+  if (categoryIds.length > 0) {
+    try {
+      const { data } = await supabase.from('categories').select('*').in('id', categoryIds);
+      if (data) categories = data;
+    } catch (e) {}
+  }
+  
+  if (productIds.length > 0) {
+    try {
+      const { data } = await supabase.from('product_images').select('*').in('product_id', productIds);
+      if (data) images = data;
+    } catch (e) {}
+  }
+
+  return products.map(product => {
+    const seller = users.find(u => u.id === product.seller_id);
+    const brand = brands.find(b => b.id === product.brand_id);
+    const category = categories.find(c => c.id === product.category_id);
+    const productImages = images.filter(i => i.product_id === product.id);
+
+    return {
+      ...product,
+      seller: seller ? {
+        username: seller.username,
+        full_name: seller.full_name,
+        avatar_url: seller.avatar_url,
+        location: seller.location,
+        seller_rating: seller.seller_rating,
+        sold_count: seller.sold_count,
+        is_verified_seller: seller.is_verified_seller
+      } : null,
+      brand: brand ? {
+        name: brand.name,
+        slug: brand.slug,
+        is_local: brand.is_local,
+        country: brand.country
+      } : null,
+      category: category ? {
+        name: category.name,
+        slug: category.slug
+      } : null,
+      images: productImages.map(img => ({
+        image_url: img.image_url || img.image || '',
+        alt_text: img.alt_text || '',
+        sort_order: img.sort_order !== undefined ? img.sort_order : (img.display_order || 0),
+        is_primary: img.is_primary || false
+      }))
+    };
+  });
+};
+
 const getProducts = async (options = {}) => {
   checkDb();
   
-  let query = supabase
-    .from('products')
-    .select(`
-      *,
-      seller:users(username, full_name, avatar_url, location, seller_rating, sold_count, is_verified_seller),
-      brand:brands(name, slug, is_local, country),
-      category:categories(name, slug),
-      images:product_images(image_url, alt_text, sort_order, is_primary)
-    `, { count: 'exact' })
-    .eq('status', 'active');
+  let query = supabase.from('products').select('*', { count: 'exact' });
+
+  // Assume active status is required unless specified
+  query = query.eq('status', 'active');
 
   if (options.category) {
-    // If we wanted to include subcategories we would need an rpc or complex join,
-    // but for simple cases we just match the slug of the category.
-    // However, category relation is nested, we might need inner join.
-    query = query.eq('category.slug', options.category).not('category', 'is', null);
+    try {
+      const { data: catData } = await supabase.from('categories').select('id').eq('slug', options.category).single();
+      if (catData) {
+        query = query.eq('category_id', catData.id);
+      } else {
+        return { data: [], meta: { page: options.page || 1, limit: options.limit || 20, count: 0 } };
+      }
+    } catch (e) {
+      return { data: [], meta: { page: options.page || 1, limit: options.limit || 20, count: 0 } };
+    }
   }
 
   if (options.brand) {
-    query = query.eq('brand.slug', options.brand).not('brand', 'is', null);
+    try {
+      const { data: brandData } = await supabase.from('brands').select('id').eq('slug', options.brand).single();
+      if (brandData) {
+        query = query.eq('brand_id', brandData.id);
+      } else {
+        return { data: [], meta: { page: options.page || 1, limit: options.limit || 20, count: 0 } };
+      }
+    } catch (e) {
+      return { data: [], meta: { page: options.page || 1, limit: options.limit || 20, count: 0 } };
+    }
   }
 
   if (options.condition) {
@@ -47,7 +134,6 @@ const getProducts = async (options = {}) => {
     query = query.ilike('name', `%${options.search}%`);
   }
 
-  // Pagination
   const page = parseInt(options.page) || 1;
   const limit = parseInt(options.limit) || 20;
   const from = (page - 1) * limit;
@@ -59,8 +145,10 @@ const getProducts = async (options = {}) => {
 
   if (error) throw error;
 
+  const enrichedData = await attachRelations(data);
+
   return {
-    data,
+    data: enrichedData,
     meta: {
       page,
       limit,
@@ -74,13 +162,7 @@ const getProductBySlug = async (slug) => {
   
   const { data, error } = await supabase
     .from('products')
-    .select(`
-      *,
-      seller:users(username, full_name, avatar_url, location, seller_rating, sold_count, is_verified_seller),
-      brand:brands(name, slug, is_local, country),
-      category:categories(name, slug),
-      images:product_images(image_url, alt_text, sort_order, is_primary)
-    `)
+    .select('*')
     .eq('slug', slug)
     .single();
 
@@ -89,7 +171,8 @@ const getProductBySlug = async (slug) => {
     throw error;
   }
   
-  return data;
+  const enrichedData = await attachRelations([data]);
+  return enrichedData[0];
 };
 
 const getFeaturedProducts = async () => {
@@ -99,24 +182,39 @@ const getFeaturedProducts = async () => {
 const getProductVariants = async (productId) => {
   checkDb();
   
-  const { data, error } = await supabase
-    .from('product_variants')
-    .select(`
-      *,
-      variant_attribute_values(
-        attribute_value:attribute_values(
-          value,
-          slug,
-          attribute:attributes(name, slug)
+  try {
+    const { data, error } = await supabase
+      .from('product_variants')
+      .select(`
+        *,
+        variant_attribute_values(
+          attribute_value:attribute_values(
+            value,
+            slug,
+            attribute:attributes(name, slug)
+          )
         )
-      )
-    `)
-    .eq('product_id', productId)
-    .eq('is_active', true);
+      `)
+      .eq('product_id', productId)
+      .eq('is_active', true);
 
-  if (error) throw error;
-  
-  return data;
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    // Fallback if relational mapping fails
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('product_variants')
+      .select('*')
+      .eq('product_id', productId)
+      .eq('is_active', true);
+      
+    if (fallbackError || !fallbackData) return [];
+    
+    return fallbackData.map(v => ({
+      ...v,
+      variant_attribute_values: []
+    }));
+  }
 };
 
 module.exports = {

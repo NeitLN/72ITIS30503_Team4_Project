@@ -1,4 +1,5 @@
 const { supabase, isSupabaseConfigured } = require('../lib/supabase');
+const productService = require('./productService');
 
 const checkDb = () => {
   if (!isSupabaseConfigured()) {
@@ -6,18 +7,34 @@ const checkDb = () => {
   }
 };
 
+const normalizeCategory = (cat) => ({
+  id: cat.id,
+  parent_id: cat.parent_id,
+  name: cat.name,
+  slug: cat.slug,
+  description: cat.description,
+  image_url: cat.image_url || cat.image || '',
+  sort_order: cat.sort_order !== undefined ? cat.sort_order : (cat.display_order || 0),
+  is_active: cat.is_active !== undefined ? cat.is_active : true
+});
+
 const getCategories = async () => {
   checkDb();
 
   const { data, error } = await supabase
     .from('categories')
     .select('*')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
+    // Removing the strict is_active filter just in case the old schema doesn't have it.
+    // We will filter in JS if needed.
     .order('name', { ascending: true });
 
   if (error) throw error;
-  return data;
+  
+  const normalized = (data || []).map(normalizeCategory).filter(c => c.is_active);
+  // Sort by sort_order
+  normalized.sort((a, b) => a.sort_order - b.sort_order);
+  
+  return normalized;
 };
 
 const getCategoryBySlug = async (slug) => {
@@ -33,50 +50,25 @@ const getCategoryBySlug = async (slug) => {
     if (error.code === 'PGRST116') return null; // Not found
     throw error;
   }
-  return data;
+  return normalizeCategory(data);
 };
 
 const getProductsByCategorySlug = async (slug, options = {}) => {
   checkDb();
   
-  // To avoid complex joins, we can first find the category ID, then get products
   const category = await getCategoryBySlug(slug);
   if (!category) return null;
   
-  // Then pass category_id to a product query. For simplicity, we can just require productService
-  // However, circular dependency might occur, let's keep it simple here.
-  
-  let query = supabase
-    .from('products')
-    .select(`
-      *,
-      seller:users(username, full_name, avatar_url, location, seller_rating, sold_count, is_verified_seller),
-      brand:brands(name, slug, is_local, country),
-      category:categories(name, slug),
-      images:product_images(image_url, alt_text, sort_order, is_primary)
-    `, { count: 'exact' })
-    .eq('status', 'active')
-    .eq('category_id', category.id);
-    
-  // Pagination
-  const page = parseInt(options.page) || 1;
-  const limit = parseInt(options.limit) || 20;
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
-
-  query = query.range(from, to).order('created_at', { ascending: false });
-
-  const { data, error, count } = await query;
-  if (error) throw error;
+  // Reuse product service without embedded query
+  const productsResult = await productService.getProducts({
+    ...options,
+    category: slug
+  });
   
   return {
     category,
-    products: data,
-    meta: {
-      page,
-      limit,
-      count
-    }
+    products: productsResult.data,
+    meta: productsResult.meta
   };
 };
 
