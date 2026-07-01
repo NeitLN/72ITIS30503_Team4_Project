@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       title: `${productName} | ${siteConfig.name}`,
       description: `Buy ${productName} on StyleHub. Condition: ${product.condition?.replace('_', ' ') || 'Unknown'}`,
     };
-  } catch (e) {
+  } catch {
     return {};
   }
 }
@@ -33,7 +33,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   try {
     const res = await getProductBySlug(slug);
     product = res.data;
-  } catch (error) {
+  } catch {
     // We could render an error state, but let's just use 404 for simplicity if fetch fails
     notFound();
   }

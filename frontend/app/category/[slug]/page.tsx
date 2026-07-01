@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       title: `${category.name} | ${siteConfig.name}`,
       description: category.description || `Explore ${category.name} on StyleHub.`,
     };
-  } catch (e) {
+  } catch {
     return {};
   }
 }
@@ -33,7 +33,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   let categoryName = slug.replace('-', ' ');
   let categoryDesc = `Explore items in the ${categoryName} category.`;
   let products: import('../../../types/product').Product[] = [];
-  let meta: Record<string, unknown> | null = null;
+  let meta: { category?: import('../../../types/category').Category; count?: number; page?: number; limit?: number } | null = null;
 
   try {
     const res = await getProductsByCategorySlug(slug);
@@ -50,7 +50,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         categoryDesc = meta.category.description;
       }
     }
-  } catch (error) {
+  } catch {
     // If category fetch fails, we'll gracefully show error state instead of breaking the build
     return (
       <Container className="py-10">

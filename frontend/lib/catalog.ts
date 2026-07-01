@@ -29,5 +29,5 @@ export async function getCategoryBySlug(slug: string) {
 
 export async function getProductsByCategorySlug(slug: string, params?: Record<string, string>) {
   const query = params ? '?' + new URLSearchParams(params).toString() : '';
-  return apiFetch<{ success: boolean; data: Product[]; meta: Record<string, unknown> }>(`/api/categories/${slug}/products${query}`, { next: { revalidate: 60 } });
+  return apiFetch<{ success: boolean; data: Product[]; meta: { category?: Category; count?: number; page?: number; limit?: number } }>(`/api/categories/${slug}/products${query}`, { next: { revalidate: 60 } });
 }

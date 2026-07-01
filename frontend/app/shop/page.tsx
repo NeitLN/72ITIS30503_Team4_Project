@@ -13,7 +13,7 @@ export default async function ShopPage() {
     const res = await getProducts();
     products = res.data || [];
     meta = res.meta || null;
-  } catch (error) {
+  } catch {
     hasError = true;
   }
 

@@ -8,7 +8,7 @@ export const Header = async () => {
   try {
     const res = await getCategoryTree();
     categories = res.data || [];
-  } catch (error) {
+  } catch {
     // Graceful fallback if categories fail to load
   }
 
