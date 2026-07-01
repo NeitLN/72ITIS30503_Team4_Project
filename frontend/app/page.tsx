@@ -1,25 +1,25 @@
-import Link from 'next/link';
-import { Container } from '../components/ui/Container';
-import { Button } from '../components/ui/Button';
-import { ROUTES } from '../constants/routes';
+import { HeroSection } from '../components/home/HeroSection';
+import { TrustStrip } from '../components/home/TrustStrip';
+import { FeaturedProductsSection } from '../components/home/FeaturedProductsSection';
+import { CategorySpotlight } from '../components/home/CategorySpotlight';
+import { SellerCTA } from '../components/home/SellerCTA';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'StyleHub | C2C Fashion Marketplace',
+  description: 'Buy, sell, and discover local brands, pre-loved fashion, and streetwear in Vietnam.',
+};
 
 export default function Home() {
   return (
-    <Container className="py-20">
-      <div className="text-center max-w-2xl mx-auto">
-        <h1 className="text-5xl font-bold mb-6">Welcome to StyleHub</h1>
-        <p className="text-xl text-gray-600 mb-10">
-          Your favorite C2C marketplace for local brands, pre-loved items, and street style fashion. Buy and sell fashion effortlessly.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Link href={ROUTES.SHOP}>
-            <Button size="lg">Shop Now</Button>
-          </Link>
-          <Link href={ROUTES.SELL}>
-            <Button variant="outline" size="lg">Sell an Item</Button>
-          </Link>
-        </div>
-      </div>
-    </Container>
+    <>
+      <HeroSection />
+      <TrustStrip />
+      {/* Server Component Wrapper */}
+      <FeaturedProductsSection />
+      {/* Server Component Wrapper */}
+      <CategorySpotlight />
+      <SellerCTA />
+    </>
   );
 }

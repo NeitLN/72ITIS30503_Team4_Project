@@ -127,6 +127,10 @@ const getProducts = async (options = {}) => {
   }
 
   if (options.featured === 'true' || options.featured === true) {
+    // Gracefully handle if old schema missing is_featured
+    // Just sort differently as a fallback without breaking if it fails
+    // But since it crashes on execution we need to check if column exists first or just catch at query
+    // To avoid complex pg_catalog lookups, we will try the query and if it fails, catch it and fallback in route
     query = query.eq('is_featured', true);
   }
 
@@ -176,7 +180,15 @@ const getProductBySlug = async (slug) => {
 };
 
 const getFeaturedProducts = async () => {
-  return getProducts({ featured: true, limit: 10 });
+  try {
+    return await getProducts({ featured: true, limit: 10 });
+  } catch (err) {
+    // If the database complains about missing `is_featured` column on older schemas, fallback gracefully
+    if (err?.code === '42703' || err?.message?.includes('is_featured')) {
+      return await getProducts({ limit: 10 });
+    }
+    throw err;
+  }
 };
 
 const getProductVariants = async (productId) => {
