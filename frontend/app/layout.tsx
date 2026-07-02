@@ -4,6 +4,7 @@ import './globals.css';
 import { siteConfig } from '../constants/site';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
+import { CartProvider } from '../hooks/useCart';
 
 const inter = Inter({ subsets: ['latin', 'vietnamese'], variable: '--font-inter' });
 const archivo = Archivo({ subsets: ['latin', 'vietnamese'], variable: '--font-archivo' });
@@ -24,11 +25,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${archivo.variable} font-sans min-h-screen flex flex-col`}>
-        <Header />
-        <main className="flex-1">
-          {children}
-        </main>
-        <Footer />
+        <CartProvider>
+          <Header />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );

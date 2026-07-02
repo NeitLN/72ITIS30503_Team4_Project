@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { Container } from '../../../components/ui/Container';
-import { Button } from '../../../components/ui/Button';
 import { ProductImageGallery } from '../../../components/product/ProductImageGallery';
 import { SellerMiniCard } from '../../../components/marketplace/SellerMiniCard';
 import { ConditionBadge } from '../../../components/marketplace/ConditionBadge';
 import { ListingBadge } from '../../../components/marketplace/ListingBadge';
+import { ProductActions } from '../../../components/product/ProductActions';
 import { getProductBySlug } from '../../../lib/catalog';
 import { formatVND, getListingView } from '../../../lib/format';
 import { notFound } from 'next/navigation';
@@ -120,16 +120,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
             )}
           </p>
 
-          {/* UI-only actions — no cart/checkout/chat logic yet */}
-          <div className="mt-8 flex flex-col gap-3">
-            <Button size="lg" className="w-full" disabled={listing.isSoldOut}>
-              {listing.isSoldOut ? 'Sold' : 'Buy now'}
-            </Button>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button variant="secondary" className="w-full">Chat with seller</Button>
-              <Button variant="outline" className="w-full">Add to wishlist</Button>
-            </div>
-          </div>
+          {/* Client-side actions (Cart + Buyout routing) */}
+          <ProductActions product={product} />
 
           {/* Item details — hang-tag table */}
           <section aria-label="Item details" className="mt-10 border border-neutral-200">

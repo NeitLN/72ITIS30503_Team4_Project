@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Container } from '../ui/Container';
 import { ROUTES } from '../../constants/routes';
 import { getCategoryTree } from '../../lib/catalog';
+import { HeaderCartButton } from './HeaderCartButton';
 
 export const Header = async () => {
   let categories: import('../../types/category').Category[] = [];
@@ -52,6 +53,8 @@ export const Header = async () => {
               Contact
             </Link>
             <span aria-hidden="true" className="hidden h-4 w-px bg-neutral-300 sm:block" />
+            <HeaderCartButton />
+            <span aria-hidden="true" className="h-4 w-px bg-neutral-300" />
             <Link
               href={ROUTES.SELL}
               className="bg-neutral-900 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-neutral-700"
