@@ -31,3 +31,26 @@ export async function getProductsByCategorySlug(slug: string, params?: Record<st
   const query = params ? '?' + new URLSearchParams(params).toString() : '';
   return apiFetch<{ success: boolean; data: Product[]; meta: { category?: Category; count?: number; page?: number; limit?: number } }>(`/api/categories/${slug}/products${query}`, { next: { revalidate: 60 } });
 }
+
+export interface SellerProfile {
+  id: string;
+  username: string;
+  full_name: string;
+  avatar_url: string | null;
+  location: string | null;
+  seller_rating: number | null;
+  sold_count: number | null;
+  is_verified_seller: boolean;
+  created_at: string;
+  bio: string;
+  response_time: string;
+}
+
+export async function getSellerByUsername(username: string) {
+  return apiFetch<{ success: boolean; data: SellerProfile }>(`/api/sellers/${username}`, { next: { revalidate: 60 } });
+}
+
+export async function getProductsBySeller(username: string, params?: Record<string, string>) {
+  const query = params ? '?' + new URLSearchParams(params).toString() : '';
+  return apiFetch<{ success: boolean; data: Product[]; meta: Record<string, unknown> }>(`/api/sellers/${username}/products${query}`, { next: { revalidate: 60 } });
+}
