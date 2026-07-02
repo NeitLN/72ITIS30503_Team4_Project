@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '../../hooks/useCart';
 import { Container } from '../ui/Container';
@@ -8,6 +8,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { Button } from '../ui/Button';
 import { formatVND } from '../../lib/format';
 import { ListingImage } from '../marketplace/ListingImage';
+import { apiFetch } from '../../lib/api';
 
 export const CheckoutClient = () => {
   const { cart, cartSubtotal, clearCart, isHydrated } = useCart();
@@ -23,27 +24,51 @@ export const CheckoutClient = () => {
   const [city, setCity] = useState('Ho Chi Minh City');
   const [paymentMethod, setPaymentMethod] = useState('cod');
 
-  useEffect(() => {
-    // Generate a random order number
-    const rand = Math.floor(10000 + Math.random() * 90000);
-    const timer = setTimeout(() => {
-      setOrderId(`SH-${rand}`);
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
-
   const shippingCost = cartSubtotal > 500000 ? 0 : 30000;
   const grandTotal = cartSubtotal + shippingCost;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPlacing(true);
 
-    // Simulate backend communication delay
-    setTimeout(() => {
+    try {
+      const orderPayload = {
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone,
+        customer_address: address,
+        customer_city: city,
+        payment_method: paymentMethod,
+        total_amount: grandTotal,
+        items: cart.map((item) => ({
+          product_id: item.productId,
+          product_name: item.name,
+          price: item.salePrice ?? item.price,
+          quantity: item.quantity,
+          size: item.size,
+          condition: item.condition,
+        })),
+      };
+
+      const res = await apiFetch<{ success: boolean; data: { id: string } }>('/api/orders', {
+        method: 'POST',
+        body: JSON.stringify(orderPayload),
+      });
+
+      if (res.success && res.data?.id) {
+        setOrderId(res.data.id);
+        setIsOrderPlaced(true);
+        // Clear the cart on successful database insertion
+        clearCart();
+      } else {
+        alert('Failed to place order. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error placing order:', err);
+      alert('Failed to save order to database. Please make sure the Backend is running.');
+    } finally {
       setIsPlacing(false);
-      setIsOrderPlaced(true);
-    }, 1500);
+    }
   };
 
   // If order was successfully placed, show thank you screen
