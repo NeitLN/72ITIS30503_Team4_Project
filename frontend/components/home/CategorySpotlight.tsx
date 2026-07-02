@@ -11,44 +11,52 @@ export const CategorySpotlight = async () => {
     const res = await getCategories();
     categories = res.data || [];
   } catch {
-    // Failure handles gracefully
+    // Fails gracefully — section hides itself below
   }
 
-  // Fallback static categories if API empty or fails
-  const displayCategories = categories.length > 0 
-    ? categories.slice(0, 6) 
-    : [
-        { id: '1', name: 'Streetwear', slug: 'streetwear', description: 'Hoodies, Oversized Tees & More' },
-        { id: '2', name: 'Sneakers', slug: 'sneakers', description: 'Hype and classic kicks' },
-        { id: '3', name: 'Vintage', slug: 'vintage', description: 'Pre-loved and retro' },
-        { id: '4', name: 'Accessories', slug: 'accessories', description: 'Hats, bags, and jewelry' },
-      ];
+  // No hardcoded fallback categories: if the API has none, skip the section.
+  if (categories.length === 0) return null;
+
+  const displayCategories = categories.slice(0, 6);
 
   return (
-    <section className="py-20 bg-gray-50 border-t">
+    <section className="border-t border-neutral-200 bg-neutral-50 py-20 sm:py-24">
       <Container>
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight">Shop by Category</h2>
-          <p className="text-gray-500 mt-2">Find exactly what you&apos;re looking for.</p>
+        <div className="mb-10">
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+            Browse the racks
+          </p>
+          <h2 className="font-display text-3xl font-black uppercase tracking-tight sm:text-4xl">
+            Shop by category
+          </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Editorial index list — categories as a table of contents */}
+        <ul className="border-t border-neutral-200">
           {displayCategories.map((cat) => (
-            <Link 
-              key={cat.id} 
-              href={ROUTES.CATEGORY(cat.slug)}
-              className="group block bg-white border p-6 rounded-lg hover:shadow-lg transition-all"
-            >
-              <h3 className="text-xl font-bold text-gray-900 group-hover:text-black mb-2 flex items-center justify-between">
-                {cat.name}
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity">&rarr;</span>
-              </h3>
-              <p className="text-sm text-gray-500 line-clamp-2">
-                {cat.description || `Explore the latest in ${cat.name}.`}
-              </p>
-            </Link>
+            <li key={cat.id} className="border-b border-neutral-200">
+              <Link
+                href={ROUTES.CATEGORY(cat.slug)}
+                className="group flex items-baseline justify-between gap-4 py-5 transition-colors hover:bg-white sm:px-4"
+              >
+                <span className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
+                  <span className="font-display text-xl font-extrabold uppercase tracking-tight text-neutral-900 sm:text-2xl">
+                    {cat.name}
+                  </span>
+                  <span className="truncate text-sm text-neutral-500">
+                    {cat.description || `Listings in ${cat.name}`}
+                  </span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="shrink-0 font-mono text-sm text-neutral-400 transition-transform group-hover:translate-x-1 group-hover:text-neutral-900"
+                >
+                  →
+                </span>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       </Container>
     </section>
   );

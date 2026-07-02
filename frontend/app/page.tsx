@@ -3,6 +3,7 @@ import { TrustStrip } from '../components/home/TrustStrip';
 import { FeaturedProductsSection } from '../components/home/FeaturedProductsSection';
 import { CategorySpotlight } from '../components/home/CategorySpotlight';
 import { SellerCTA } from '../components/home/SellerCTA';
+import { LocalStatement } from '../components/home/LocalStatement';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -15,11 +16,10 @@ export default function Home() {
     <>
       <HeroSection />
       <TrustStrip />
-      {/* Server Component Wrapper */}
       <FeaturedProductsSection />
-      {/* Server Component Wrapper */}
       <CategorySpotlight />
       <SellerCTA />
+      <LocalStatement />
     </>
   );
 }

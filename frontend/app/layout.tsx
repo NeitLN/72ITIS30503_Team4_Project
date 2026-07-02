@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Archivo, Inter } from 'next/font/google';
 import './globals.css';
 import { siteConfig } from '../constants/site';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin', 'vietnamese'], variable: '--font-inter' });
+const archivo = Archivo({ subsets: ['latin', 'vietnamese'], variable: '--font-archivo' });
 
 export const metadata: Metadata = {
   title: {
@@ -22,7 +23,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} min-h-screen flex flex-col`}>
+      <body className={`${inter.variable} ${archivo.variable} font-sans min-h-screen flex flex-col`}>
         <Header />
         <main className="flex-1">
           {children}

@@ -1,40 +1,53 @@
+import Link from 'next/link';
 import { Container } from '../../../components/ui/Container';
 import { Button } from '../../../components/ui/Button';
+import { ProductImageGallery } from '../../../components/product/ProductImageGallery';
+import { SellerMiniCard } from '../../../components/marketplace/SellerMiniCard';
+import { ConditionBadge } from '../../../components/marketplace/ConditionBadge';
+import { ListingBadge } from '../../../components/marketplace/ListingBadge';
 import { getProductBySlug } from '../../../lib/catalog';
+import { formatVND, getListingView } from '../../../lib/format';
 import { notFound } from 'next/navigation';
 import { siteConfig } from '../../../constants/site';
+import { ROUTES } from '../../../constants/routes';
 import { Metadata } from 'next';
 
 interface ProductPageProps {
-  params: {
-    slug: string;
-  };
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   try {
-    const { data: product } = await getProductBySlug(params.slug);
+    const { slug } = await params;
+    const { data: product } = await getProductBySlug(slug);
     if (!product) return {};
-    
-    const productName = product.name || product.title || 'Product';
+
+    const listing = getListingView(product);
     return {
-      title: `${productName} | ${siteConfig.name}`,
-      description: `Buy ${productName} on StyleHub. Condition: ${product.condition?.replace('_', ' ') || 'Unknown'}`,
+      title: `${listing.name} | ${siteConfig.name}`,
+      description: `${listing.name} — ${listing.condition}, listed by ${listing.sellerHandle} on StyleHub.`,
     };
   } catch {
     return {};
   }
 }
 
+interface VariantRow {
+  id?: string;
+  sku?: string;
+  price: number;
+  sale_price?: number | null;
+  variant_attribute_values?: Array<{ attribute_value?: { value: string } }>;
+}
+
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { slug } = params;
-  
+  const { slug } = await params;
+
   let product;
   try {
     const res = await getProductBySlug(slug);
     product = res.data;
   } catch {
-    // We could render an error state, but let's just use 404 for simplicity if fetch fails
     notFound();
   }
 
@@ -42,117 +55,156 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const productName = product.name || product.title || 'Unknown Product';
-  const displayPrice = product.sale_price ?? product.price;
-  const imageUrl = product.thumbnail_url || product.image || (product.images?.[0] as Record<string, string>)?.image_url;
-  const condition = product.condition ? product.condition.replace('_', ' ') : '';
-  const seller = (product.seller as Record<string, unknown>) || {};
-  const sellerDisplay = seller.username || seller.full_name || 'Unknown Seller';
-  const location = product.location || seller.location || 'Vietnam';
-  const brand = product.brand as Record<string, unknown> | undefined;
-  const category = product.category as Record<string, unknown> | undefined;
+  const listing = getListingView(product);
+  const variants = (product.variants ?? []) as unknown as VariantRow[];
+
+  const detailRows: Array<{ label: string; value: string }> = [
+    { label: 'Condition', value: listing.condition },
+    { label: 'Size', value: listing.size },
+    { label: 'Brand', value: listing.brandName ?? 'Independent / no brand' },
+    { label: 'Category', value: listing.categoryName ?? 'Uncategorised' },
+    { label: 'Ships from', value: listing.sellerLocation },
+    ...(product.sku ? [{ label: 'SKU', value: product.sku }] : []),
+    { label: 'Status', value: listing.isSoldOut ? 'Sold' : 'Available' },
+  ];
 
   return (
-    <Container className="py-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xl overflow-hidden relative">
-          {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={productName} className="object-cover w-full h-full" />
-          ) : (
-            <span>Product Image Placeholder</span>
-          )}
-        </div>
-        
+    <Container className="py-8 sm:py-12">
+      {/* Breadcrumb back to the marketplace */}
+      <nav aria-label="Breadcrumb" className="mb-6">
+        <Link
+          href={ROUTES.SHOP}
+          className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500 transition-colors hover:text-neutral-900"
+        >
+          ← Marketplace
+        </Link>
+      </nav>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+        {/* Left: photos */}
         <div>
-          {brand && (
-            <div className="text-sm text-gray-500 mb-2 uppercase tracking-wider font-semibold">
-              {String(brand.name)}
-            </div>
-          )}
-          
-          <h1 className="text-3xl font-bold mb-2">{productName}</h1>
-          
-          <div className="flex items-end gap-4 mb-6">
-            <p className="text-2xl font-semibold">
-              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayPrice)}
-            </p>
-            {product.sale_price && (
-              <p className="text-lg text-gray-400 line-through mb-0.5">
-                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
-              </p>
-            )}
-          </div>
-          
-          <div className="space-y-4 mb-8">
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-500">Condition</span>
-              <span className="font-medium capitalize">{condition}</span>
-            </div>
-            
-            {category && (
-              <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-500">Category</span>
-                <span className="font-medium">{String(category.name)}</span>
-              </div>
-            )}
-            
-            {(product.sku || product.stock !== undefined || product.stock_quantity !== undefined) && (
-              <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-500">Status</span>
-                <span className="font-medium">
-                  {product.stock_status === 'in_stock' || (product.stock || product.stock_quantity || 0) > 0 
-                    ? 'In Stock' 
-                    : 'Out of Stock'}
-                </span>
-              </div>
-            )}
+          <ProductImageGallery
+            images={product.images ?? []}
+            fallbackUrl={listing.imageUrl}
+            alt={listing.imageAlt}
+          />
+        </div>
+
+        {/* Right: listing panel */}
+        <div>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <ConditionBadge condition={product.condition} />
+            {listing.isSoldOut && <ListingBadge variant="sold">Sold</ListingBadge>}
+            {product.brand?.is_local && <ListingBadge variant="inverse">Local brand</ListingBadge>}
+            {product.is_negotiable && !listing.isSoldOut && <ListingBadge>Negotiable</ListingBadge>}
           </div>
 
-          {product.product_type === 'variable' && product.variants && product.variants.length > 0 && (
-            <div className="mb-8 p-4 bg-gray-50 rounded-lg border">
-              <h3 className="font-medium mb-3">Available Variations</h3>
-              <div className="space-y-2">
-                {(product.variants as Array<Record<string, unknown> & { id?: string; sku?: string; sale_price?: number; price: number; variant_attribute_values?: Array<{ attribute_value?: { value: string } }> }>).map((v) => {
+          {listing.brandName && (
+            <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+              {listing.brandName}
+            </p>
+          )}
+          <h1 className="font-display text-3xl font-black uppercase tracking-tight text-neutral-900 sm:text-4xl">
+            {listing.name}
+          </h1>
+          <p className="mt-2 font-mono text-xs text-neutral-600">
+            Size {listing.size} · {listing.condition} · {listing.sellerLocation}
+          </p>
+
+          <p className="mt-6 font-mono text-3xl font-bold text-neutral-900">
+            {formatVND(listing.salePrice ?? listing.price)}
+            {listing.salePrice != null && (
+              <span className="ml-3 align-middle text-base font-normal text-red-800 line-through">
+                {formatVND(listing.price)}
+              </span>
+            )}
+          </p>
+
+          {/* UI-only actions — no cart/checkout/chat logic yet */}
+          <div className="mt-8 flex flex-col gap-3">
+            <Button size="lg" className="w-full" disabled={listing.isSoldOut}>
+              {listing.isSoldOut ? 'Sold' : 'Buy now'}
+            </Button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button variant="secondary" className="w-full">Chat with seller</Button>
+              <Button variant="outline" className="w-full">Add to wishlist</Button>
+            </div>
+          </div>
+
+          {/* Item details — hang-tag table */}
+          <section aria-label="Item details" className="mt-10 border border-neutral-200">
+            <div className="border-b border-neutral-200 px-4 py-2">
+              <h2 className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
+                Item details
+              </h2>
+            </div>
+            <dl>
+              {detailRows.map((row, i) => (
+                <div
+                  key={row.label}
+                  className={`flex items-baseline justify-between gap-4 px-4 py-2.5 ${i > 0 ? 'border-t border-neutral-100' : ''}`}
+                >
+                  <dt className="text-sm text-neutral-500">{row.label}</dt>
+                  <dd className="text-right text-sm font-medium text-neutral-900">{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          {product.product_type === 'variable' && variants.length > 0 && (
+            <section aria-label="Available variations" className="mt-6 border border-neutral-200">
+              <div className="border-b border-neutral-200 px-4 py-2">
+                <h2 className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
+                  Available variations
+                </h2>
+              </div>
+              <ul>
+                {variants.map((v, i) => {
                   const varPrice = v.sale_price ?? v.price;
-                  const attributes = v.variant_attribute_values?.map((vav) => vav.attribute_value?.value).join(' / ') || v.sku;
+                  const attributes =
+                    v.variant_attribute_values?.map((vav) => vav.attribute_value?.value).filter(Boolean).join(' / ') ||
+                    v.sku ||
+                    'Variant';
                   return (
-                    <div key={v.id || v.sku} className="flex justify-between text-sm">
-                      <span>{attributes}</span>
-                      <span className="font-medium">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(varPrice)}
+                    <li
+                      key={v.id || v.sku || i}
+                      className={`flex items-baseline justify-between gap-4 px-4 py-2.5 ${i > 0 ? 'border-t border-neutral-100' : ''}`}
+                    >
+                      <span className="text-sm text-neutral-700">{attributes}</span>
+                      <span className="font-mono text-sm font-semibold text-neutral-900">
+                        {formatVND(varPrice)}
                       </span>
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
-            </div>
+              </ul>
+            </section>
           )}
 
-          <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium mb-1 flex items-center justify-between">
-              Seller Information
-              {Boolean(seller.seller_rating) && <span className="text-sm">⭐ {String(seller.seller_rating)}</span>}
-            </h3>
-            <p className="text-sm font-medium text-black">@{String(sellerDisplay)}</p>
-            <p className="text-xs text-gray-500 mt-1">Ships from {String(location)}</p>
+          <div className="mt-6">
+            <SellerMiniCard listing={listing} />
           </div>
 
-          <div className="flex flex-col gap-3">
-            <Button size="lg" className="w-full">Buy Now</Button>
-            <div className="flex gap-3">
-              <Button variant="secondary" className="w-full">Chat with Seller</Button>
-              <Button variant="outline" className="w-full">Add to Wishlist</Button>
-            </div>
-          </div>
-          
+          {/* Safe marketplace note */}
+          <aside className="mt-6 border border-neutral-200 bg-neutral-50 px-4 py-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
+              Trade safely
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-neutral-600">
+              Check the seller&apos;s rating and the condition label before you buy. Keep all
+              communication on StyleHub, and prefer public places for local pickups.
+            </p>
+          </aside>
+
           {product.description && (
-            <div className="mt-10">
-              <h3 className="font-semibold text-lg mb-2">Description</h3>
-              <div className="prose prose-sm text-gray-600 whitespace-pre-line">
+            <section aria-label="Description" className="mt-10">
+              <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+                Seller&apos;s description
+              </h2>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-700">
                 {product.description}
-              </div>
-            </div>
+              </p>
+            </section>
           )}
         </div>
       </div>

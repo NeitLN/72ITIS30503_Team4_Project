@@ -1,57 +1,69 @@
 import { Container } from '../../components/ui/Container';
 import { ProductCard } from '../../components/product/ProductCard';
-import { getProducts } from '../../lib/catalog';
+import { ShopHero } from '../../components/shop/ShopHero';
+import { ShopToolbar } from '../../components/shop/ShopToolbar';
+import { ShopEmptyState } from '../../components/shop/ShopEmptyState';
+import { getProducts, getCategories } from '../../lib/catalog';
+import { Product } from '../../types/product';
+import { Category } from '../../types/category';
+import { Metadata } from 'next';
 
 export const revalidate = 60; // Revalidate cache every 60 seconds
 
+export const metadata: Metadata = {
+  title: 'Marketplace',
+  description:
+    'Discover local brands, pre-loved pieces, and streetwear listings from sellers across Vietnam.',
+};
+
 export default async function ShopPage() {
-  let products: import('../../types/product').Product[] = [];
-  let meta: Record<string, unknown> | null = null;
+  let products: Product[] = [];
+  let count: number | null = null;
+  let categories: Category[] = [];
   let hasError = false;
 
   try {
     const res = await getProducts();
     products = res.data || [];
-    meta = res.meta || null;
+    const metaCount = res.meta?.count;
+    count = typeof metaCount === 'number' ? metaCount : products.length;
   } catch {
     hasError = true;
   }
 
-  if (hasError) {
-    return (
-      <Container className="py-10">
-        <h1 className="text-3xl font-bold mb-8">All Products</h1>
-        <div className="text-center py-20 bg-red-50 border border-red-100 rounded-lg">
-          <h2 className="text-xl font-medium text-red-700">Oops! Something went wrong.</h2>
-          <p className="text-red-600 mt-2">We couldn&apos;t load the products at this time. Please try again later.</p>
-        </div>
-      </Container>
-    );
+  try {
+    const res = await getCategories();
+    categories = res.data || [];
+  } catch {
+    // Toolbar renders without category chips
   }
 
   return (
-    <Container className="py-10">
-      <h1 className="text-3xl font-bold mb-8">All Products</h1>
-      
-      {products && products.length > 0 ? (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-          {meta?.count && (
-            <p className="mt-8 text-sm text-gray-500 text-center">
-              Showing {products.length} of {String(meta.count)} products
-            </p>
-          )}
-        </>
-      ) : (
-        <div className="text-center py-20 bg-gray-50 rounded-lg">
-          <h2 className="text-xl font-medium text-gray-700">No products found</h2>
-          <p className="text-gray-500 mt-2">Check back later for new arrivals.</p>
-        </div>
-      )}
-    </Container>
+    <>
+      <ShopHero />
+      <Container className="py-10 sm:py-14">
+        {hasError ? (
+          <ShopEmptyState variant="error" />
+        ) : (
+          <>
+            <ShopToolbar count={count} categories={categories} />
+            {products.length > 0 ? (
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <ShopEmptyState variant="empty" />
+            )}
+            {count != null && products.length > 0 && (
+              <p className="mt-10 text-center font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-400">
+                Showing {products.length} of {count} listings
+              </p>
+            )}
+          </>
+        )}
+      </Container>
+    </>
   );
 }

@@ -7,63 +7,62 @@ import { ROUTES } from '../../constants/routes';
 
 export const FeaturedProductsSection = async () => {
   let products: Product[] = [];
-  
+
   try {
     const res = await getFeaturedProducts();
     if (res.data && res.data.length > 0) {
       products = res.data;
     } else {
-      // Fallback to normal products if no featured
+      // Fallback to latest listings if nothing is featured
       const fallback = await getProducts({ limit: '4' });
       products = fallback.data || [];
     }
   } catch {
-    // Graceful failure
+    // Graceful failure — empty state below
   }
 
-  if (!products || products.length === 0) {
-    return (
-      <section className="py-20">
-        <Container>
-          <div className="flex justify-between items-end mb-10">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">Featured Drops</h2>
-              <p className="text-gray-500 mt-2">Curated streetwear and vintage finds.</p>
-            </div>
-          </div>
-          <div className="bg-gray-50 border rounded-lg p-10 text-center">
-            <p className="text-gray-500">Products are currently unavailable. Check back soon.</p>
-          </div>
-        </Container>
-      </section>
-    );
-  }
-
-  // Ensure max 4 products for the grid to look clean
   const displayProducts = products.slice(0, 4);
 
   return (
-    <section className="py-20">
+    <section className="py-20 sm:py-24">
       <Container>
-        <div className="flex justify-between items-end mb-10">
+        <div className="mb-10 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Featured Drops</h2>
-            <p className="text-gray-500 mt-2">Curated streetwear and vintage finds.</p>
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+              From the community
+            </p>
+            <h2 className="font-display text-3xl font-black uppercase tracking-tight sm:text-4xl">
+              Featured listings
+            </h2>
           </div>
-          <Link href={ROUTES.SHOP} className="hidden sm:block text-sm font-semibold hover:underline">
-            View All &rarr;
+          <Link
+            href={ROUTES.SHOP}
+            className="hidden whitespace-nowrap border-b border-neutral-900 pb-0.5 text-sm font-semibold text-neutral-900 transition-colors hover:text-neutral-500 sm:block"
+          >
+            View all listings
           </Link>
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {displayProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-        
+
+        {displayProducts.length > 0 ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {displayProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="border border-neutral-200 bg-neutral-50 px-6 py-16 text-center">
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500">
+              No listings yet
+            </p>
+            <p className="mt-2 text-sm text-neutral-500">
+              Listings are currently unavailable. Check back soon — or be the first to sell.
+            </p>
+          </div>
+        )}
+
         <div className="mt-8 text-center sm:hidden">
-          <Link href={ROUTES.SHOP} className="text-sm font-semibold underline">
-            View All Products
+          <Link href={ROUTES.SHOP} className="border-b border-neutral-900 pb-0.5 text-sm font-semibold">
+            View all listings
           </Link>
         </div>
       </Container>

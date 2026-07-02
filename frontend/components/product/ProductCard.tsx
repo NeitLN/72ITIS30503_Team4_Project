@@ -1,51 +1,66 @@
 import Link from 'next/link';
 import { Product } from '../../types/product';
 import { ROUTES } from '../../constants/routes';
+import { formatVND, getListingView } from '../../lib/format';
+import { ListingBadge } from '../marketplace/ListingBadge';
+import { ListingImage } from '../marketplace/ListingImage';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export const ProductCard = ({ product }: ProductCardProps) => {
-  const displayPrice = product.sale_price ?? product.price;
-  const productName = product.name || product.title || 'Unknown Product';
-  const imageUrl = product.thumbnail_url || product.image || (product.images?.[0] as Record<string, string>)?.image_url;
-  const condition = product.condition ? product.condition.replace('_', ' ') : '';
-  const seller = product.seller as Record<string, unknown> | undefined;
-  const sellerDisplay = seller?.username || product.sellerName || product.sellerUsername || 'Unknown';
-  const brand = product.brand as Record<string, unknown> | undefined;
-  const category = product.category as Record<string, unknown> | undefined;
-  
+  const listing = getListingView(product);
+
   return (
-    <Link href={ROUTES.PRODUCT(product.slug)} className="group block border p-4 rounded hover:shadow-md transition-shadow">
-      <div className="aspect-square bg-gray-100 mb-4 rounded flex items-center justify-center text-gray-400 overflow-hidden relative">
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={productName} className="object-cover w-full h-full" />
-        ) : (
-          <span>No Image</span>
-        )}
+    <Link
+      href={ROUTES.PRODUCT(product.slug)}
+      className="group block border border-neutral-200 bg-white transition-colors hover:border-neutral-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+    >
+      <div className="relative aspect-square overflow-hidden border-b border-neutral-200 bg-neutral-100">
+        <ListingImage
+          src={listing.imageUrl}
+          alt={listing.imageAlt}
+          className={`h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] ${listing.isSoldOut ? 'opacity-60 grayscale' : ''}`}
+        />
+        <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
+          {listing.isSoldOut && <ListingBadge variant="sold">Sold</ListingBadge>}
+          {!listing.isSoldOut && product.is_featured && <ListingBadge variant="inverse">Featured</ListingBadge>}
+        </div>
       </div>
-      <h3 className="font-medium text-lg truncate">{productName}</h3>
-      <div className="mt-1 flex items-center gap-2">
-        <span className="font-bold">
-          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayPrice)}
-        </span>
-        {product.sale_price && (
-          <span className="text-sm text-gray-400 line-through">
-            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
-          </span>
+
+      <div className="p-4">
+        {listing.brandName && (
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
+            {listing.brandName}
+          </p>
         )}
-      </div>
-      <div className="mt-2 text-sm text-gray-500 flex justify-between">
-        <span className="truncate">{String(brand?.name || category?.name || '')}</span>
-        <span className="capitalize whitespace-nowrap ml-2">{condition}</span>
-      </div>
-      <div className="mt-2 text-xs text-gray-400 flex justify-between items-center">
-        <span className="truncate">Seller: {String(sellerDisplay)}</span>
-        {Boolean(seller?.seller_rating) && (
-          <span>⭐ {String(seller?.seller_rating)}</span>
-        )}
+        <h3 className="line-clamp-1 font-medium text-neutral-900">{listing.name}</h3>
+        <p className="mt-1 font-mono text-xs text-neutral-600">
+          Size {listing.size} · {listing.condition}
+        </p>
+
+        <p className="mt-3 font-mono text-base font-bold text-neutral-900">
+          {formatVND(listing.salePrice ?? listing.price)}
+          {listing.salePrice != null && (
+            <span className="ml-2 text-xs font-normal text-red-800 line-through">
+              {formatVND(listing.price)}
+            </span>
+          )}
+        </p>
+
+        <div className="mt-3 border-t border-neutral-100 pt-3">
+          <p className="flex items-center gap-1.5 truncate text-xs text-neutral-600">
+            <span className="truncate font-medium">{listing.sellerHandle}</span>
+            {listing.isVerifiedSeller && (
+              <span aria-label="Verified seller" title="Verified seller" className="text-neutral-900">
+                ✓
+              </span>
+            )}
+            {listing.sellerRating && <span className="whitespace-nowrap">· ★ {listing.sellerRating}</span>}
+          </p>
+          <p className="mt-0.5 text-xs text-neutral-400">{listing.sellerLocation}</p>
+        </div>
       </div>
     </Link>
   );

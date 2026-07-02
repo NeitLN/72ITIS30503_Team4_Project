@@ -13,30 +13,49 @@ export const Header = async () => {
   }
 
   return (
-    <header className="border-b bg-white sticky top-0 z-50">
+    <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white">
+      {/* Route ticker — the marketplace's signature strip */}
+      <div className="border-b border-neutral-200 bg-neutral-900 py-1.5">
+        <Container>
+          <p className="truncate text-center font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-300">
+            Hà Nội → Sài Gòn · Pre-loved · Local brands · Streetwear · Peer to peer
+          </p>
+        </Container>
+      </div>
+
       <Container>
-        <div className="flex h-16 items-center justify-between">
-          <Link href={ROUTES.HOME} className="text-xl font-bold tracking-tight">
+        <div className="flex h-16 items-center justify-between gap-4">
+          <Link
+            href={ROUTES.HOME}
+            className="font-display text-xl font-black uppercase tracking-tight text-neutral-900"
+          >
             StyleHub
           </Link>
-          <nav className="flex items-center gap-6">
-            <Link href={ROUTES.SHOP} className="text-sm font-medium hover:text-gray-600 transition-colors">
+
+          <nav aria-label="Main navigation" className="flex items-center gap-5 sm:gap-6">
+            <Link href={ROUTES.SHOP} className="text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500">
               Shop
             </Link>
             {categories.slice(0, 4).map((cat) => (
-              <Link 
-                key={cat.id} 
-                href={ROUTES.CATEGORY(cat.slug)} 
-                className="text-sm font-medium hover:text-gray-600 transition-colors hidden md:block"
+              <Link
+                key={cat.id}
+                href={ROUTES.CATEGORY(cat.slug)}
+                className="hidden text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 lg:block"
               >
                 {cat.name}
               </Link>
             ))}
-            <Link href={ROUTES.ABOUT} className="text-sm font-medium hover:text-gray-600 transition-colors hidden sm:block">
+            <Link href={ROUTES.ABOUT} className="hidden text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 sm:block">
               About
             </Link>
-            <div className="h-4 w-px bg-gray-300 hidden sm:block"></div>
-            <Link href={ROUTES.SELL} className="text-sm font-semibold px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors">
+            <Link href={ROUTES.CONTACT} className="hidden text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 md:block">
+              Contact
+            </Link>
+            <span aria-hidden="true" className="hidden h-4 w-px bg-neutral-300 sm:block" />
+            <Link
+              href={ROUTES.SELL}
+              className="bg-neutral-900 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-neutral-700"
+            >
               Sell
             </Link>
           </nav>

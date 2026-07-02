@@ -1,37 +1,47 @@
 import Link from 'next/link';
-import { Button } from '../ui/Button';
 import { Container } from '../ui/Container';
 import { ROUTES } from '../../constants/routes';
 
 export const HeroSection = () => {
   return (
-    <section className="bg-black text-white py-24 sm:py-32 relative overflow-hidden">
-      {/* Optional faint texture/pattern or gradient background can go here */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-gray-900 to-black opacity-80" />
-      
-      <Container className="relative z-10">
-        <div className="max-w-3xl">
-          <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1]">
-            Buy, Sell & Discover <br className="hidden sm:block"/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-300 to-white">Streetwear</span>
-          </h1>
-          <p className="text-xl sm:text-2xl text-gray-300 mb-10 max-w-2xl font-medium leading-relaxed">
-            A C2C fashion marketplace for local brands, pre-loved items, and street style lovers in Vietnam.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href={ROUTES.SHOP}>
-              <Button size="lg" className="w-full sm:w-auto text-lg px-8 bg-white text-black hover:bg-gray-200">
-                Shop Now &rarr;
-              </Button>
-            </Link>
-            <Link href={ROUTES.SELL}>
-              <Button size="lg" className="w-full sm:w-auto text-lg px-8 bg-transparent text-white border-2 border-white hover:bg-white hover:text-black">
-                Start Selling
-              </Button>
-            </Link>
-          </div>
+    <section className="border-b border-neutral-200 bg-neutral-950 text-white">
+      <Container className="py-20 sm:py-28">
+        <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-400">
+          C2C fashion marketplace — Vietnam
+        </p>
+        <h1 className="max-w-4xl font-display text-5xl font-black uppercase leading-[0.95] tracking-tight sm:text-7xl lg:text-8xl">
+          Buy the drop.
+          <br />
+          Sell the archive.
+        </h1>
+        <p className="mt-8 max-w-xl text-lg leading-relaxed text-neutral-300 sm:text-xl">
+          Local brands, pre-loved pieces, and streetwear finds — listed by sellers across Vietnam,
+          priced in VNĐ, passed from one closet to the next.
+        </p>
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <Link
+            href={ROUTES.SHOP}
+            className="inline-flex items-center justify-center bg-white px-8 py-4 text-sm font-semibold uppercase tracking-wide text-neutral-950 transition-colors hover:bg-neutral-200"
+          >
+            Shop marketplace
+          </Link>
+          <Link
+            href={ROUTES.SELL}
+            className="inline-flex items-center justify-center border border-white px-8 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white hover:text-neutral-950"
+          >
+            Start selling
+          </Link>
         </div>
       </Container>
+
+      {/* Static route ticker — grounding strip */}
+      <div className="border-t border-neutral-800 py-3">
+        <Container>
+          <p className="truncate font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-500">
+            Hà Nội → Sài Gòn → Đà Nẵng · Condition checked · VNĐ pricing · Seller to buyer, no middle rack
+          </p>
+        </Container>
+      </div>
     </section>
   );
 };

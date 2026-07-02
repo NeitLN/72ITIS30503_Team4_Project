@@ -5,30 +5,28 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export const Button: React.FC<ButtonProps> = ({ 
-  children, 
-  variant = 'primary', 
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = 'primary',
   size = 'md',
   className = '',
-  ...props 
+  ...props
 }) => {
-  const baseStyles = 'rounded font-medium transition-colors inline-flex justify-center items-center';
+  const baseStyles =
+    'inline-flex items-center justify-center font-semibold uppercase tracking-wide transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:cursor-not-allowed disabled:opacity-50';
   const variants = {
-    primary: 'bg-black text-white hover:bg-gray-800',
-    secondary: 'bg-gray-200 text-black hover:bg-gray-300',
-    outline: 'border border-black text-black hover:bg-gray-50',
+    primary: 'bg-neutral-900 text-white hover:bg-neutral-700',
+    secondary: 'border border-neutral-900 bg-white text-neutral-900 hover:bg-neutral-900 hover:text-white',
+    outline: 'border border-neutral-300 bg-transparent text-neutral-900 hover:border-neutral-900',
   };
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2',
-    lg: 'px-6 py-3 text-lg',
+    sm: 'px-3 py-1.5 text-xs',
+    md: 'px-5 py-2.5 text-sm',
+    lg: 'px-7 py-3.5 text-sm',
   };
 
   return (
-    <button 
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-      {...props}
-    >
+    <button className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`} {...props}>
       {children}
     </button>
   );

@@ -1,3 +1,32 @@
+export interface Seller {
+  username?: string;
+  full_name?: string;
+  avatar_url?: string;
+  location?: string;
+  seller_rating?: number | string;
+  sold_count?: number;
+  is_verified_seller?: boolean;
+}
+
+export interface Brand {
+  name?: string;
+  slug?: string;
+  is_local?: boolean;
+  country?: string;
+}
+
+export interface CategoryRef {
+  name?: string;
+  slug?: string;
+}
+
+export interface ProductImage {
+  image_url: string;
+  alt_text?: string;
+  sort_order?: number;
+  is_primary?: boolean;
+}
+
 export interface Product {
   id: string;
   seller_id?: string;
@@ -16,23 +45,27 @@ export interface Product {
   stock?: number;
   stock_status?: 'in_stock' | 'out_of_stock';
   location?: string;
+  is_negotiable?: boolean;
   thumbnail_url?: string;
+  thumbnail?: string;
+  image_url?: string;
   image?: string;
   status?: 'draft' | 'active' | 'sold' | 'archived';
   is_featured?: boolean;
   created_at?: string;
-  
-  // Relations
-  seller?: Record<string, unknown>;
-  brand?: Record<string, unknown>;
-  category?: Record<string, unknown>;
-  images?: Record<string, unknown>[];
+
+  // Relations (populated by the API via joins)
+  seller?: Seller | null;
+  brand?: Brand | null;
+  category?: CategoryRef | null;
+  images?: ProductImage[];
   variants?: Record<string, unknown>[];
-  
-  // Frontend UI mappings (optional, populated via joins)
+
+  // Flat UI mappings (some endpoints return these instead of relations)
   size?: string;
+  seller_name?: string;
   sellerName?: string;
   sellerUsername?: string;
+  category_slug?: string;
   imageUrl?: string;
 }
-

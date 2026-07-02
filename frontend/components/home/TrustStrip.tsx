@@ -1,38 +1,35 @@
 import { Container } from '../ui/Container';
 
-export const TrustStrip = () => {
-  const highlights = [
-    {
-      title: "Verified Sellers",
-      description: "Buy with confidence from trusted community members.",
-      icon: "🛡️"
-    },
-    {
-      title: "Condition Labels",
-      description: "Complete transparency on every item's condition.",
-      icon: "🏷️"
-    },
-    {
-      title: "Local Brands",
-      description: "Discover the best of Vietnamese streetwear.",
-      icon: "🇻🇳"
-    },
-    {
-      title: "VNĐ Pricing",
-      description: "No hidden conversion fees. Pay in local currency.",
-      icon: "💳"
-    }
-  ];
+const highlights = [
+  {
+    title: 'Verified sellers',
+    description: 'Ratings, sold counts, and verified badges on every profile.',
+  },
+  {
+    title: 'Condition labels',
+    description: 'Every listing states its condition — from new with tags to well worn.',
+  },
+  {
+    title: 'VNĐ pricing',
+    description: 'Local prices, written the way sellers write them: 350.000đ.',
+  },
+  {
+    title: 'Local fashion community',
+    description: 'Vietnamese brands, thrift culture, and street style in one place.',
+  },
+];
 
+export const TrustStrip = () => {
   return (
-    <section className="border-b bg-gray-50 py-10">
+    <section aria-label="Marketplace trust signals" className="border-b border-neutral-200 bg-white">
       <Container>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
-          {highlights.map((item, i) => (
-            <div key={i} className={`flex flex-col items-center text-center ${i !== 0 ? 'pt-8 sm:pt-0 sm:pl-8' : ''}`}>
-              <div className="text-3xl mb-3">{item.icon}</div>
-              <h3 className="font-bold text-gray-900 mb-1">{item.title}</h3>
-              <p className="text-sm text-gray-500">{item.description}</p>
+        <div className="grid grid-cols-1 divide-y divide-neutral-200 sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
+          {highlights.map((item) => (
+            <div key={item.title} className="px-0 py-8 sm:px-6 lg:first:pl-0 lg:last:pr-0">
+              <h3 className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-900">
+                {item.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-500">{item.description}</p>
             </div>
           ))}
         </div>
