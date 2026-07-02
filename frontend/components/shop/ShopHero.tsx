@@ -4,29 +4,45 @@ const trustBadges = ['Verified sellers', 'Condition checked', 'VNĐ pricing', 'L
 
 export const ShopHero = () => {
   return (
-    <section className="border-b border-neutral-200 bg-neutral-950 text-white">
-      <Container className="py-14 sm:py-20">
-        <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-400">
-          Every listing has a seller
-        </p>
-        <h1 className="font-display text-5xl font-black uppercase tracking-tight sm:text-6xl">
-          Marketplace
-        </h1>
-        <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-300 sm:text-lg">
-          Discover local brands, pre-loved pieces, and streetwear listings from sellers across
-          Vietnam.
-        </p>
-        <ul className="mt-8 flex flex-wrap gap-2">
-          {trustBadges.map((badge) => (
-            <li
-              key={badge}
-              className="border border-neutral-700 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-300"
-            >
-              {badge}
-            </li>
-          ))}
-        </ul>
-      </Container>
+    <section className="relative border-b border-neutral-200 bg-neutral-950 text-white overflow-hidden">
+      {/* 1. HTML5 Video Background looping endlessly */}
+      <video
+        src="/naruto-vs-pain.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 h-full w-full object-cover z-0"
+      />
+
+      {/* 2. Dark contrast overlay for premium readability */}
+      <div className="absolute inset-0 bg-neutral-950/75 z-10" />
+
+      {/* 3. Text content wrapper positioned above video/overlay */}
+      <div className="relative z-20">
+        <Container className="py-14 sm:py-20">
+          <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-400">
+            Every listing has a seller
+          </p>
+          <h1 className="font-display text-5xl font-black uppercase tracking-tight sm:text-6xl text-white">
+            Marketplace
+          </h1>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-200 sm:text-lg">
+            Discover local brands, pre-loved pieces, and streetwear listings from sellers across
+            Vietnam.
+          </p>
+          <ul className="mt-8 flex flex-wrap gap-2">
+            {trustBadges.map((badge) => (
+              <li
+                key={badge}
+                className="border border-white/20 bg-neutral-900/40 backdrop-blur-xs px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-white/90"
+              >
+                {badge}
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </div>
     </section>
   );
 };

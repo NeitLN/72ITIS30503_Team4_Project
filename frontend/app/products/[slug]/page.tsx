@@ -32,14 +32,6 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   }
 }
 
-interface VariantRow {
-  id?: string;
-  sku?: string;
-  price: number;
-  sale_price?: number | null;
-  variant_attribute_values?: Array<{ attribute_value?: { value: string } }>;
-}
-
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
 
@@ -56,7 +48,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   const listing = getListingView(product);
-  const variants = (product.variants ?? []) as unknown as VariantRow[];
 
   const detailRows: Array<{ label: string; value: string }> = [
     { label: 'Condition', value: listing.condition },
@@ -142,36 +133,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
               ))}
             </dl>
           </section>
-
-          {product.product_type === 'variable' && variants.length > 0 && (
-            <section aria-label="Available variations" className="mt-6 border border-neutral-200">
-              <div className="border-b border-neutral-200 px-4 py-2">
-                <h2 className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
-                  Available variations
-                </h2>
-              </div>
-              <ul>
-                {variants.map((v, i) => {
-                  const varPrice = v.sale_price ?? v.price;
-                  const attributes =
-                    v.variant_attribute_values?.map((vav) => vav.attribute_value?.value).filter(Boolean).join(' / ') ||
-                    v.sku ||
-                    'Variant';
-                  return (
-                    <li
-                      key={v.id || v.sku || i}
-                      className={`flex items-baseline justify-between gap-4 px-4 py-2.5 ${i > 0 ? 'border-t border-neutral-100' : ''}`}
-                    >
-                      <span className="text-sm text-neutral-700">{attributes}</span>
-                      <span className="font-mono text-sm font-semibold text-neutral-900">
-                        {formatVND(varPrice)}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
 
           <div className="mt-6">
             <SellerMiniCard listing={listing} />

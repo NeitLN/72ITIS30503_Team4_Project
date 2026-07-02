@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Container } from '../../../components/ui/Container';
-import { Button } from '../../../components/ui/Button';
 import { apiFetch } from '../../../lib/api';
 import { formatVND } from '../../../lib/format';
 
@@ -41,8 +39,10 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Load all orders
-  const loadOrders = async () => {
-    setIsLoading(true);
+  const loadOrders = async (showLoading = false) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
     try {
       const res = await apiFetch<{ success: boolean; data: Order[] }>('/api/orders');
       if (res.success) {
@@ -58,7 +58,30 @@ export default function AdminOrdersPage() {
   };
 
   useEffect(() => {
-    loadOrders();
+    let active = true;
+    
+    apiFetch<{ success: boolean; data: Order[] }>('/api/orders')
+      .then((res) => {
+        if (active && res.success) {
+          setOrders(res.data || []);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          console.error('Error loading orders:', err);
+          setError('Failed to fetch orders from database. Make sure the backend is running and Supabase tables are created.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Fetch specific order details (relational parent-child data)
@@ -165,7 +188,7 @@ export default function AdminOrdersPage() {
                 Incoming Orders ({orders.length})
               </h2>
               <button
-                onClick={loadOrders}
+                onClick={() => loadOrders(true)}
                 className="font-mono text-[10px] uppercase text-neutral-500 hover:text-neutral-900 underline"
               >
                 Refresh
