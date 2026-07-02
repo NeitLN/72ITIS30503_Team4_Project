@@ -3,6 +3,7 @@ import { Container } from '../ui/Container';
 import { ROUTES } from '../../constants/routes';
 import { getCategoryTree } from '../../lib/catalog';
 import { HeaderCartButton } from './HeaderCartButton';
+import { HeaderWishlistButton } from './HeaderWishlistButton';
 
 export const Header = async () => {
   let categories: import('../../types/category').Category[] = [];
@@ -49,10 +50,28 @@ export const Header = async () => {
             <Link href={ROUTES.ABOUT} className="hidden text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 sm:block">
               About
             </Link>
-            <Link href={ROUTES.CONTACT} className="hidden text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 md:block">
-              Contact
+            <Link
+              href={ROUTES.CONTACT}
+              className="hidden text-neutral-900 transition-colors hover:text-neutral-500 md:block"
+              title="Contact Us"
+              aria-label="Contact Us"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5 transition-transform hover:scale-110"
+              >
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+              </svg>
             </Link>
             <span aria-hidden="true" className="hidden h-4 w-px bg-neutral-300 sm:block" />
+            <HeaderWishlistButton />
+            <span aria-hidden="true" className="h-4 w-px bg-neutral-300" />
             <HeaderCartButton />
             <span aria-hidden="true" className="h-4 w-px bg-neutral-300" />
             <Link
