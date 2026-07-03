@@ -12,3 +12,6 @@ supabase/.temp
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+
+node_modules/
+**/node_modules/
