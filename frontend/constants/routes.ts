@@ -12,6 +12,8 @@ export const ROUTES = {
   WISHLIST: '/wishlist',
   CHECKOUT: '/checkout',
   PROFILE: '/profile',
+  LOGIN: '/login',
+  REGISTER: '/register',
   PRODUCT: (slug: string) => `/products/${slug}`,
   CATEGORY: (slug: string) => `/category/${slug}`,
 };

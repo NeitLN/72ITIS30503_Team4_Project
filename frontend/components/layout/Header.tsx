@@ -4,6 +4,7 @@ import { ROUTES } from '../../constants/routes';
 import { getCategoryTree } from '../../lib/catalog';
 import { HeaderCartButton } from './HeaderCartButton';
 import { HeaderWishlistButton } from './HeaderWishlistButton';
+import { HeaderAuthMenu } from './HeaderAuthMenu';
 
 export const Header = async () => {
   let categories: import('../../types/category').Category[] = [];
@@ -82,7 +83,7 @@ export const Header = async () => {
               </svg>
             </Link>
             <span aria-hidden="true" className="h-4 w-px bg-neutral-300" />
-            <HeaderWishlistButton />
+            <HeaderAuthMenu />`n            <span aria-hidden="true" className="h-4 w-px bg-neutral-300" />`n            <HeaderWishlistButton />
             <span aria-hidden="true" className="h-4 w-px bg-neutral-300" />
             <HeaderCartButton />
             <span aria-hidden="true" className="h-4 w-px bg-neutral-300" />

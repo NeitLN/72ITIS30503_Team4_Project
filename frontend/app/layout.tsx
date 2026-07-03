@@ -4,6 +4,7 @@ import './globals.css';
 import { siteConfig } from '../constants/site';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
+import { AuthProvider } from '../hooks/useAuth';
 import { CartProvider } from '../hooks/useCart';
 import { WishlistProvider } from '../hooks/useWishlist';
 
@@ -61,7 +62,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} ${archivo.variable} font-sans min-h-screen flex flex-col`}>
-        <CartProvider>
+        <AuthProvider><CartProvider>
           <WishlistProvider>
             <Header />
             <main className="flex-1">
@@ -69,10 +70,11 @@ export default function RootLayout({
             </main>
             <Footer />
           </WishlistProvider>
-        </CartProvider>
+        </CartProvider></AuthProvider>
       </body>
     </html>
   );
 }
+
 
 
