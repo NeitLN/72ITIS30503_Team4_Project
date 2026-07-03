@@ -1,112 +1,88 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
+import { ROUTES } from '../../constants/routes';
 import { Container } from '../ui/Container';
 import { PageHeader } from '../ui/PageHeader';
 import { Button } from '../ui/Button';
 import { formatVND } from '../../lib/format';
 import { ListingImage } from '../marketplace/ListingImage';
+import { createOrder } from '../../lib/orders';
 
 export const CheckoutClient = () => {
-  const { cart, cartSubtotal, clearCart, isHydrated } = useCart();
+  const router = useRouter();
+  const { user, isAuthenticated, isHydrated: isAuthHydrated } = useAuth();
+  const { cart, cartSubtotal, clearCart, isHydrated: isCartHydrated } = useCart();
+  
   const [isPlacing, setIsPlacing] = useState(false);
-  const [isOrderPlaced, setIsOrderPlaced] = useState(false);
-  const [orderId, setOrderId] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Form states
-  const [name, setName] = useState('Tien Nguyen');
-  const [email, setEmail] = useState('tien@stylehub.vn');
-  const [phone, setPhone] = useState('0901234567');
-  const [address, setAddress] = useState('123 Nguyen Hue, District 1');
-  const [city, setCity] = useState('Ho Chi Minh City');
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod');
 
-  const shippingCost = cartSubtotal > 500000 ? 0 : 30000;
+  const shippingCost = cartSubtotal > 0 ? 30000 : 0;
   const grandTotal = cartSubtotal + shippingCost;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     setIsPlacing(true);
 
-    // Simulate network request for placeholder checkout
-    setTimeout(() => {
-      setOrderId(`DEMO-${Math.floor(Math.random() * 1000000)}`);
-      setIsOrderPlaced(true);
-      clearCart();
+    if (!isAuthenticated) {
+      setErrorMsg('You must be logged in to place an order.');
       setIsPlacing(false);
-    }, 1500);
+      return;
+    }
+
+    try {
+      const payload = {
+        customer: {
+          name,
+          email,
+          phone,
+          address,
+          city,
+        },
+        paymentMethod,
+        items: cart.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          productName: item.name,
+          productSlug: item.slug,
+          imageUrl: item.imageUrl,
+          sku: item.slug, // fallback to slug if sku is absent, map properly
+          size: item.size,
+          condition: item.condition,
+          unitPrice: item.salePrice ?? item.price,
+          quantity: item.quantity,
+        })),
+      };
+
+      const res = await createOrder(payload);
+
+      if (res.success && res.data?.order_code) {
+        clearCart();
+        router.push(`${ROUTES.CHECKOUT_SUCCESS}?orderCode=${res.data.order_code}`);
+      } else {
+        setErrorMsg(res.error?.message || 'Could not create order. Please try again.');
+      }
+    } catch {
+      setErrorMsg('An unexpected network error occurred.');
+    } finally {
+      setIsPlacing(false);
+    }
   };
 
-  // If order was successfully placed, show thank you screen
-  if (isOrderPlaced) {
-    return (
-      <Container className="py-16 max-w-2xl text-center">
-        <div className="border border-neutral-900 p-8 sm:p-12 bg-white text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          <span className="text-5xl">🎉</span>
-          <h1 className="mt-6 font-display text-2xl font-black uppercase tracking-tight text-neutral-900">
-            Order Confirmed!
-          </h1>
-          <p className="mt-1 font-mono text-xs uppercase tracking-widest text-neutral-500">
-            Order Number: <span className="font-bold text-neutral-900">{orderId}</span>
-          </p>
-
-          <div className="my-8 border-t border-b border-neutral-100 py-6 text-left">
-            <h3 className="font-mono text-xs uppercase tracking-wider text-neutral-800 font-bold mb-4">
-              Shipping & Delivery info
-            </h3>
-            <dl className="grid grid-cols-1 gap-y-3 sm:grid-cols-2 sm:gap-x-4 text-xs">
-              <div>
-                <dt className="text-neutral-500">Recipient</dt>
-                <dd className="font-medium text-neutral-900">{name}</dd>
-              </div>
-              <div>
-                <dt className="text-neutral-500">Phone</dt>
-                <dd className="font-medium text-neutral-900">{phone}</dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="text-neutral-500">Delivery Address</dt>
-                <dd className="font-medium text-neutral-900">
-                  {address}, {city}, Vietnam
-                </dd>
-              </div>
-              <div>
-                <dt className="text-neutral-500">Payment Method</dt>
-                <dd className="font-mono font-medium text-neutral-900 uppercase">
-                  {paymentMethod === 'cod' ? 'Cash on Delivery (COD)' : 'Bank Transfer'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-neutral-500">Estimated Delivery</dt>
-                <dd className="font-medium text-green-800">2 - 4 business days</dd>
-              </div>
-            </dl>
-          </div>
-
-          <div className="bg-neutral-50 p-4 border border-neutral-200 mb-8 text-left">
-            <div className="flex justify-between text-sm font-semibold text-neutral-900">
-              <span>Total Paid</span>
-              <span className="font-mono">{formatVND(grandTotal)}</span>
-            </div>
-          </div>
-
-          <p className="text-xs text-neutral-500 leading-relaxed mb-8">
-            Thank you for shopping on StyleHub. Since this is a **Lab Class demo environment**, no
-            actual products will be shipped and no real payment was processed. Your mock order was logged successfully!
-          </p>
-
-          <Link href="/shop" onClick={() => clearCart()}>
-            <Button size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
-              Clear Bag & Return to Shop
-            </Button>
-          </Link>
-        </div>
-      </Container>
-    );
-  }
-
-  if (!isHydrated) {
+  if (!isCartHydrated || !isAuthHydrated) {
     return (
       <Container className="py-16 text-center">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 animate-pulse">
@@ -116,7 +92,36 @@ export const CheckoutClient = () => {
     );
   }
 
-  // If cart is empty and order is not placed, show redirect link
+  // If user is a guest, prompt them to login
+  if (!isAuthenticated) {
+    return (
+      <Container className="py-16 sm:py-24 max-w-md">
+        <div className="border border-neutral-200 bg-white p-6 sm:p-10 text-center">
+          <span className="text-4xl mb-4 block" aria-hidden="true">🔒</span>
+          <h1 className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900 mb-2">
+            Log in to place your order
+          </h1>
+          <p className="text-sm text-neutral-500 mb-8">
+            You can browse StyleHub as a guest, but checkout requires an account.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link href={`${ROUTES.LOGIN}?redirect=${ROUTES.CHECKOUT}`}>
+              <Button size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
+                Log in
+              </Button>
+            </Link>
+            <Link href={`${ROUTES.REGISTER}?redirect=${ROUTES.CHECKOUT}`}>
+              <Button variant="outline" size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
+                Create Account
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
+  // If cart is empty, show redirect link
   if (cart.length === 0) {
     return (
       <Container className="py-16 text-center max-w-md">
@@ -127,7 +132,7 @@ export const CheckoutClient = () => {
           Your shopping bag is currently empty. Add products before checking out.
         </p>
         <div className="mt-8">
-          <Link href="/shop">
+          <Link href={ROUTES.SHOP}>
             <Button className="font-mono text-xs uppercase tracking-wider">Return to Shop</Button>
           </Link>
         </div>
@@ -142,6 +147,12 @@ export const CheckoutClient = () => {
         title="Secure Checkout"
         lede="Provide your delivery details to complete your order."
       />
+
+      {errorMsg && (
+        <div className="mt-6 border border-red-200 bg-red-50 p-4 text-sm text-red-800 font-medium">
+          {errorMsg}
+        </div>
+      )}
 
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12">
         {/* Left: Shipping Form */}
@@ -250,9 +261,9 @@ export const CheckoutClient = () => {
                   <input
                     type="radio"
                     name="payment"
-                    value="bank"
-                    checked={paymentMethod === 'bank'}
-                    onChange={() => setPaymentMethod('bank')}
+                    value="bank_transfer"
+                    checked={paymentMethod === 'bank_transfer'}
+                    onChange={() => setPaymentMethod('bank_transfer')}
                     className="h-4 w-4 text-neutral-950 focus:ring-neutral-950"
                   />
                   <div>
@@ -260,6 +271,15 @@ export const CheckoutClient = () => {
                     <p className="text-xs text-neutral-500 mt-0.5">Simulate payment via local mobile banking transfer.</p>
                   </div>
                 </label>
+
+                {paymentMethod === 'bank_transfer' && (
+                  <div className="mt-3 ml-7 bg-neutral-100 p-3 border border-neutral-200 text-xs">
+                    <p className="font-mono font-bold text-neutral-800 mb-1 uppercase tracking-wider">StyleHub Demo Bank</p>
+                    <p>Account Name: STYLEHUB DEMO</p>
+                    <p>Account Number: 0000 1234 5678</p>
+                    <p className="mt-1 text-neutral-500 italic">Transfer Content: Order code will be shown on the success page.</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -269,7 +289,7 @@ export const CheckoutClient = () => {
               className="w-full py-4 text-sm font-mono uppercase tracking-wider font-bold"
               disabled={isPlacing}
             >
-              {isPlacing ? 'Processing Order...' : 'Place Demo Order'}
+              {isPlacing ? 'Processing Order...' : 'Place Order'}
             </Button>
           </form>
         </div>

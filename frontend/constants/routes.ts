@@ -11,6 +11,7 @@ export const ROUTES = {
   CART: '/cart',
   WISHLIST: '/wishlist',
   CHECKOUT: '/checkout',
+  CHECKOUT_SUCCESS: '/checkout/success',
   PROFILE: '/profile',
   LOGIN: '/login',
   REGISTER: '/register',
