@@ -5,20 +5,10 @@ const trustBadges = ['Verified sellers', 'Condition checked', 'VNĐ pricing', 'L
 export const ShopHero = () => {
   return (
     <section className="relative border-b border-neutral-200 bg-neutral-950 text-white overflow-hidden">
-      {/* 1. HTML5 Video Background looping endlessly */}
-      <video
-        src="/naruto-vs-pain.mp4"
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 h-full w-full object-cover z-0"
-      />
+      {/* 1. Dark contrast overlay for premium readability */}
+      <div className="absolute inset-0 bg-neutral-950 z-10" />
 
-      {/* 2. Dark contrast overlay for premium readability */}
-      <div className="absolute inset-0 bg-neutral-950/75 z-10" />
-
-      {/* 3. Text content wrapper positioned above video/overlay */}
+      {/* 2. Text content wrapper */}
       <div className="relative z-20">
         <Container className="py-14 sm:py-20">
           <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-400">

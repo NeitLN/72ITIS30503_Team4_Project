@@ -8,7 +8,6 @@ import { PageHeader } from '../ui/PageHeader';
 import { Button } from '../ui/Button';
 import { formatVND } from '../../lib/format';
 import { ListingImage } from '../marketplace/ListingImage';
-import { apiFetch } from '../../lib/api';
 
 export const CheckoutClient = () => {
   const { cart, cartSubtotal, clearCart, isHydrated } = useCart();
@@ -31,44 +30,13 @@ export const CheckoutClient = () => {
     e.preventDefault();
     setIsPlacing(true);
 
-    try {
-      const orderPayload = {
-        customer_name: name,
-        customer_email: email,
-        customer_phone: phone,
-        customer_address: address,
-        customer_city: city,
-        payment_method: paymentMethod,
-        total_amount: grandTotal,
-        items: cart.map((item) => ({
-          product_id: item.productId,
-          product_name: item.name,
-          price: item.salePrice ?? item.price,
-          quantity: item.quantity,
-          size: item.size,
-          condition: item.condition,
-        })),
-      };
-
-      const res = await apiFetch<{ success: boolean; data: { id: string } }>('/api/orders', {
-        method: 'POST',
-        body: JSON.stringify(orderPayload),
-      });
-
-      if (res.success && res.data?.id) {
-        setOrderId(res.data.id);
-        setIsOrderPlaced(true);
-        // Clear the cart on successful database insertion
-        clearCart();
-      } else {
-        alert('Failed to place order. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error placing order:', err);
-      alert('Failed to save order to database. Please make sure the Backend is running.');
-    } finally {
+    // Simulate network request for placeholder checkout
+    setTimeout(() => {
+      setOrderId(`DEMO-${Math.floor(Math.random() * 1000000)}`);
+      setIsOrderPlaced(true);
+      clearCart();
       setIsPlacing(false);
-    }
+    }, 1500);
   };
 
   // If order was successfully placed, show thank you screen
