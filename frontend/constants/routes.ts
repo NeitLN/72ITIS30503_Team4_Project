@@ -9,6 +9,7 @@ export const ROUTES = {
   PRIVACY_POLICY: '/privacy-policy',
   DELIVERY_TERMS: '/delivery-terms',
   CART: '/cart',
+  WISHLIST: '/wishlist',
   CHECKOUT: '/checkout',
   PROFILE: '/profile',
   PRODUCT: (slug: string) => `/products/${slug}`,

@@ -70,6 +70,18 @@ export const Header = async () => {
               </svg>
             </Link>
             <span aria-hidden="true" className="hidden h-4 w-px bg-neutral-300 sm:block" />
+            <Link
+              href={ROUTES.PROFILE}
+              className="text-neutral-900 transition-colors hover:text-neutral-500"
+              title="My Profile"
+              aria-label="My Profile"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 transition-transform hover:scale-110">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </Link>
+            <span aria-hidden="true" className="h-4 w-px bg-neutral-300" />
             <HeaderWishlistButton />
             <span aria-hidden="true" className="h-4 w-px bg-neutral-300" />
             <HeaderCartButton />
@@ -86,3 +98,4 @@ export const Header = async () => {
     </header>
   );
 };
+
