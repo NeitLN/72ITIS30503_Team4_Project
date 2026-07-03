@@ -1,0 +1,44 @@
+const authService = require('../services/authService');
+const { error } = require('../utils/apiResponse');
+
+const authenticateUser = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const decoded = authService.verifyAuthToken(token);
+      
+      if (decoded) {
+        req.user = decoded;
+      }
+    }
+  } catch (err) {
+    // Ignore errors here, just leave req.user undefined
+  }
+  next();
+};
+
+const requireAuth = (req, res, next) => {
+  if (!req.user) {
+    return error(res, 401, 'Authentication required');
+  }
+  next();
+};
+
+const requireAdmin = (req, res, next) => {
+  if (!req.user) {
+    return error(res, 401, 'Authentication required');
+  }
+  
+  if (req.user.role !== 'admin') {
+    return error(res, 403, 'Admin privileges required');
+  }
+  
+  next();
+};
+
+module.exports = {
+  authenticateUser,
+  requireAuth,
+  requireAdmin
+};
