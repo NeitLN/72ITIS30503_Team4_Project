@@ -6,7 +6,7 @@ import { getProductsByCategorySlug, getCategoryBySlug } from '../../../lib/catal
 import { Product } from '../../../types/product';
 import { Category } from '../../../types/category';
 import { notFound } from 'next/navigation';
-import { siteConfig } from '../../../constants/site';
+
 import { ROUTES } from '../../../constants/routes';
 import { Metadata } from 'next';
 
@@ -16,18 +16,39 @@ interface CategoryPageProps {
   params: Promise<{ slug: string }>;
 }
 
+import { buildTitle, SITE_URL } from '../../../lib/seo';
+
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   try {
     const { slug } = await params;
     const { data: category } = await getCategoryBySlug(slug);
-    if (!category) return {};
+    const fallbackName = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    
+    if (!category) {
+      return {
+        title: buildTitle(`${fallbackName} Listings`),
+        description: `Browse C2C marketplace listings for ${fallbackName.toLowerCase()} and local fashion pieces on StyleHub.`,
+      };
+    }
+
+    const title = buildTitle(`${category.name} Listings`);
+    const description = category.description || `Browse C2C marketplace listings for ${category.name.toLowerCase()} and local fashion pieces on StyleHub.`;
 
     return {
-      title: `${category.name} | ${siteConfig.name}`,
-      description: category.description || `Explore ${category.name} listings on StyleHub.`,
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: 'website',
+        url: `${SITE_URL}/category/${slug}`,
+      }
     };
   } catch {
-    return {};
+    return {
+      title: buildTitle('Category Listings'),
+      description: 'Browse C2C marketplace listings for local fashion pieces on StyleHub.',
+    };
   }
 }
 
@@ -112,3 +133,5 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     </>
   );
 }
+
+

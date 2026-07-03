@@ -1,4 +1,4 @@
 export const siteConfig = {
   name: "StyleHub",
-  description: "A C2C fashion marketplace for local brands, pre-loved items, and street style lovers.",
+  description: "Buy and sell local streetwear, sneakers, archive pieces, accessories, and pre-loved fashion through a premium Vietnamese C2C marketplace demo.",
 };

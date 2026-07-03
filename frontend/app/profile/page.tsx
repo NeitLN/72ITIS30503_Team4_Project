@@ -1,10 +1,10 @@
 import { Metadata } from 'next';
 import { ProfileClient } from '../../components/profile/ProfileClient';
-import { siteConfig } from '../../constants/site';
+
 
 export const metadata: Metadata = {
-  title: `My Profile | ${siteConfig.name}`,
-  description: 'Manage your StyleHub marketplace activity, active listings, and account overview.',
+  title: 'Profile Dashboard Demo',
+  description: 'View a UI-only buyer and seller profile dashboard for the StyleHub C2C marketplace demo.',
 };
 
 export default function ProfilePage() {
@@ -14,3 +14,4 @@ export default function ProfilePage() {
     </main>
   );
 }
+

@@ -3,12 +3,11 @@ import { TrustStrip } from '../components/home/TrustStrip';
 import { FeaturedProductsSection } from '../components/home/FeaturedProductsSection';
 import { CategorySpotlight } from '../components/home/CategorySpotlight';
 import { SellerCTA } from '../components/home/SellerCTA';
-import { LocalStatement } from '../components/home/LocalStatement';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'StyleHub | C2C Fashion Marketplace',
-  description: 'Buy, sell, and discover local brands, pre-loved fashion, and streetwear in Vietnam.',
+  title: 'StyleHub — Buy the Drop, Sell the Archive',
+  description: 'Discover local streetwear, sneakers, archive fashion, and pre-loved listings from independent sellers in Vietnam.',
 };
 
 export default function Home() {
@@ -16,10 +15,11 @@ export default function Home() {
     <>
       <HeroSection />
       <TrustStrip />
+      {/* Server Component Wrapper */}
       <FeaturedProductsSection />
+      {/* Server Component Wrapper */}
       <CategorySpotlight />
       <SellerCTA />
-      <LocalStatement />
     </>
   );
 }

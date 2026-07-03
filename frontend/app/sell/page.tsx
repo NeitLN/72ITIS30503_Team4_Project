@@ -3,8 +3,8 @@ import { SellListingClient } from '../../components/sell/SellListingClient';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Sell on StyleHub | Demo',
-  description: 'List your archive. Find its next owner. Create a StyleHub listing preview.',
+  title: 'Sell Your Fashion Archive',
+  description: 'Create a demo listing preview for streetwear, sneakers, accessories, and pre-loved fashion. No real product publishing occurs in this lab demo.',
 };
 
 export default function SellPage() {
@@ -19,3 +19,4 @@ export default function SellPage() {
     </main>
   );
 }
+

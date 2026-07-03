@@ -12,12 +12,32 @@ interface SellerPageProps {
   }>;
 }
 
+import { buildTitle, SITE_URL } from '../../../lib/seo';
+
 export async function generateMetadata({ params }: SellerPageProps): Promise<Metadata> {
   const { username } = await params;
-  return {
-    title: `@${username} | Public Seller Profile`,
-    description: `Discover rare streetwear listings, local brands, and curated pre-loved fashion items from @${username} on StyleHub.`,
-  };
+  try {
+    const { data: seller } = await getSellerByUsername(username);
+    const displayName = seller?.full_name || `@${username}`;
+    const title = buildTitle(`${displayName} Seller Profile`);
+    const description = `Explore ${displayName}'s C2C fashion listings, rating, location, and marketplace profile on StyleHub.`;
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: 'profile',
+        url: `${SITE_URL}/seller/${username}`,
+      }
+    };
+  } catch {
+    return {
+      title: buildTitle(`@${username} Seller Profile`),
+      description: `Explore @${username}'s C2C fashion listings, rating, location, and marketplace profile on StyleHub.`,
+    };
+  }
 }
 
 export default async function SellerPage({ params }: SellerPageProps) {
@@ -153,3 +173,4 @@ export default async function SellerPage({ params }: SellerPageProps) {
     </div>
   );
 }
+

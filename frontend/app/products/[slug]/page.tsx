@@ -8,7 +8,7 @@ import { ProductActions } from '../../../components/product/ProductActions';
 import { getProductBySlug } from '../../../lib/catalog';
 import { formatVND, getListingView } from '../../../lib/format';
 import { notFound } from 'next/navigation';
-import { siteConfig } from '../../../constants/site';
+
 import { ROUTES } from '../../../constants/routes';
 import { Metadata } from 'next';
 
@@ -16,19 +16,40 @@ interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
+import { buildTitle, SITE_URL } from '../../../lib/seo';
+
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   try {
     const { slug } = await params;
     const { data: product } = await getProductBySlug(slug);
-    if (!product) return {};
+    
+    if (!product) {
+      return {
+        title: buildTitle('Fashion Listing'),
+        description: 'View a C2C fashion marketplace listing on StyleHub.',
+      };
+    }
 
     const listing = getListingView(product);
+    const title = buildTitle(listing.name);
+    const description = `View this C2C fashion listing on StyleHub. ${listing.condition}, size ${listing.size}. Listed by ${listing.sellerHandle} in ${listing.sellerLocation}.`;
+
     return {
-      title: `${listing.name} | ${siteConfig.name}`,
-      description: `${listing.name} — ${listing.condition}, listed by ${listing.sellerHandle} on StyleHub.`,
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: 'website',
+        url: `${SITE_URL}/products/${slug}`,
+        images: listing.imageUrl ? [{ url: listing.imageUrl, alt: listing.imageAlt }] : undefined,
+      }
     };
   } catch {
-    return {};
+    return {
+      title: buildTitle('Fashion Listing'),
+      description: 'View a C2C fashion marketplace listing on StyleHub.',
+    };
   }
 }
 
@@ -164,3 +185,5 @@ export default async function ProductPage({ params }: ProductPageProps) {
     </Container>
   );
 }
+
+

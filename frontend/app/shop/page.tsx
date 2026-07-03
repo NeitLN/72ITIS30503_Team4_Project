@@ -11,9 +11,8 @@ import { Metadata } from 'next';
 export const revalidate = 60; // Revalidate cache every 60 seconds
 
 export const metadata: Metadata = {
-  title: 'Marketplace',
-  description:
-    'Discover local brands, pre-loved pieces, and streetwear listings from sellers across Vietnam.',
+  title: 'Shop Local Fashion Listings',
+  description: 'Browse C2C fashion listings by category, brand, condition, and keyword. Shop independent local sellers on StyleHub.',
 };
 
 interface ShopPageProps {
@@ -89,3 +88,4 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     </>
   );
 }
+
