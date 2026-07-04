@@ -22,6 +22,26 @@ export async function createOrder(payload: Record<string, unknown>) {
   }
 }
 
+export async function listAllOrdersForAdmin() {
+  const token = getStoredToken();
+  const url = `${getApiBaseUrl()}/api/orders`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+    });
+    
+    const data = await res.json();
+    return data;
+  } catch {
+    return { success: false, error: { message: 'Network error or backend is offline' } };
+  }
+}
+
 export async function listMyOrders() {
   const token = getStoredToken();
   const url = `${getApiBaseUrl()}/api/orders/my`;

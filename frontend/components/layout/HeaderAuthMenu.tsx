@@ -25,6 +25,12 @@ export const HeaderAuthMenu = () => {
           </span>
         )}
 
+        {user.role === 'admin' && (
+          <Link href={ROUTES.ADMIN_ORDERS} className="text-neutral-500 transition-colors hover:text-neutral-900 hidden sm:inline-block">
+            Admin Orders
+          </Link>
+        )}
+
         <Link href={ROUTES.ORDERS} className="text-neutral-500 transition-colors hover:text-neutral-900 hidden sm:inline-block">
           Orders
         </Link>
