@@ -98,7 +98,6 @@ const registerUser = async (payload) => {
     .insert([
       {
         full_name: name.trim(),
-        username: email.trim().toLowerCase().split('@')[0] + Math.floor(Math.random() * 10000), // simplistic unique username for demo
         email: email.trim().toLowerCase(),
         password_hash,
         role: assignedRole
@@ -111,7 +110,7 @@ const registerUser = async (payload) => {
     if (error.code === '23505') { // unique violation
       throw { status: 409, message: 'Email already exists' };
     }
-    console.error('Error inserting user:', error);
+    console.error('Error inserting user payload details:', JSON.stringify(error, null, 2));
     throw new Error('Database error during registration');
   }
 
@@ -168,3 +167,4 @@ module.exports = {
   loginUser,
   getUserById
 };
+
