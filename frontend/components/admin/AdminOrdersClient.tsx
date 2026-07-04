@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
-import { listAllOrdersForAdmin } from '../../lib/orders';
+import { listAllOrdersForAdmin, updateOrderStatus } from '../../lib/orders';
 import { formatVND } from '../../lib/format';
 import { ROUTES } from '../../constants/routes';
 import { Container } from '../ui/Container';
@@ -30,6 +30,7 @@ export const AdminOrdersClient = () => {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -81,6 +82,89 @@ export const AdminOrdersClient = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    setUpdatingId(orderId);
+    setErrorMsg(null);
+    try {
+      const res = await updateOrderStatus(orderId, newStatus);
+      if (res.success) {
+        setOrders(prev => prev.map(order => 
+          order.id === orderId ? { ...order, status: newStatus as AdminOrder['status'] } : order
+        ));
+      } else {
+        setErrorMsg(res.error?.message || 'Failed to update order status.');
+      }
+    } catch {
+      setErrorMsg('An unexpected network error occurred while updating status.');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const renderStatusActions = (order: AdminOrder) => {
+    const isUpdating = updatingId === order.id;
+
+    if (isUpdating) {
+      return <span className="font-mono text-[10px] text-neutral-400 italic">Updating...</span>;
+    }
+
+    if (order.status === 'pending') {
+      return (
+        <div className="flex gap-2">
+          <button 
+            onClick={() => handleStatusChange(order.id, 'processing')}
+            disabled={!!updatingId}
+            className="text-[10px] font-mono uppercase bg-neutral-900 text-white px-2 py-1 hover:bg-neutral-700 disabled:opacity-50"
+          >
+            Mark Processing
+          </button>
+          <button 
+            onClick={() => {
+              if(window.confirm('Cancel this order?')) handleStatusChange(order.id, 'cancelled');
+            }}
+            disabled={!!updatingId}
+            className="text-[10px] font-mono uppercase border border-red-200 text-red-600 bg-red-50 px-2 py-1 hover:bg-red-100 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      );
+    }
+
+    if (order.status === 'processing') {
+      return (
+        <div className="flex gap-2">
+          <button 
+            onClick={() => handleStatusChange(order.id, 'completed')}
+            disabled={!!updatingId}
+            className="text-[10px] font-mono uppercase bg-green-700 text-white px-2 py-1 hover:bg-green-600 disabled:opacity-50"
+          >
+            Mark Completed
+          </button>
+          <button 
+            onClick={() => {
+              if(window.confirm('Cancel this order?')) handleStatusChange(order.id, 'cancelled');
+            }}
+            disabled={!!updatingId}
+            className="text-[10px] font-mono uppercase border border-red-200 text-red-600 bg-red-50 px-2 py-1 hover:bg-red-100 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      );
+    }
+
+    if (order.status === 'completed') {
+      return <span className="font-mono text-[10px] text-neutral-500 italic">Finalized</span>;
+    }
+
+    if (order.status === 'cancelled') {
+      return <span className="font-mono text-[10px] text-red-500 italic">Cancelled</span>;
+    }
+
+    return null;
   };
 
   const getStatusBadge = (status: AdminOrder['status']) => {
@@ -236,6 +320,7 @@ export const AdminOrdersClient = () => {
                   <th className="px-5 py-4 font-semibold">Total</th>
                   <th className="px-5 py-4 font-semibold">Payment</th>
                   <th className="px-5 py-4 font-semibold">Status</th>
+                  <th className="px-5 py-4 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 text-sm">
@@ -268,16 +353,13 @@ export const AdminOrdersClient = () => {
                     <td className="px-5 py-5">
                       {getStatusBadge(order.status)}
                     </td>
+                    <td className="px-5 py-5">
+                      {renderStatusActions(order)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-          
-          <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-3 text-center">
-            <p className="font-mono text-[10px] uppercase text-neutral-500 italic">
-              Status transitions will be handled in the next phase.
-            </p>
           </div>
         </div>
       )}
