@@ -196,7 +196,12 @@ export const ProfileClient = () => {
                 <li><Link href={ROUTES.SHOP} className="text-neutral-600 hover:text-neutral-900">→ Browse Marketplace</Link></li>
               </ul>
               <div className="bg-neutral-50 p-3 text-xs text-neutral-500 leading-relaxed border border-neutral-100">
-                Order history is not connected in this demo. Checkout uses a UI-only confirmation flow and does not create real orders.
+                <p className="mb-2">View your real checkout history and order status in My Orders.</p>
+                <Link href={ROUTES.ORDERS}>
+                  <Button variant="outline" size="sm" className="font-mono text-[10px] uppercase tracking-wider">
+                    My Orders
+                  </Button>
+                </Link>
               </div>
             </section>
 
