@@ -24,6 +24,10 @@ export const HeaderAuthMenu = () => {
             Admin
           </span>
         )}
+
+        <Link href={ROUTES.ORDERS} className="text-neutral-500 transition-colors hover:text-neutral-900 hidden sm:inline-block">
+          Orders
+        </Link>
         
         <button
           onClick={() => logout()}

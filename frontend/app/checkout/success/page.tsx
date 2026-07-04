@@ -44,9 +44,9 @@ function SuccessContent({ searchParams }: { searchParams: { orderCode?: string }
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href={ROUTES.PROFILE} className="w-full sm:w-auto">
+          <Link href={ROUTES.ORDERS} className="w-full sm:w-auto">
             <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">
-              View Profile
+              View My Orders
             </Button>
           </Link>
           <Link href={ROUTES.SHOP} className="w-full sm:w-auto">
