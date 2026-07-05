@@ -11,7 +11,7 @@ const attachRelations = async (products) => {
 
   const sellerIds = [...new Set(products.map(p => p.seller_id).filter(Boolean))];
   const brandIds = [...new Set(products.map(p => p.brand_id).filter(Boolean))];
-  const categoryIds = [...new Set(products.map(p => p.category_id).filter(Boolean))];
+  const categorySlugs = [...new Set(products.map(p => p.category_slug).filter(Boolean))];
   const productIds = [...new Set(products.map(p => p.id))];
 
   let users = [];
@@ -33,9 +33,9 @@ const attachRelations = async (products) => {
     } catch (e) {}
   }
   
-  if (categoryIds.length > 0) {
+  if (categorySlugs.length > 0) {
     try {
-      const { data } = await supabase.from('categories').select('*').in('id', categoryIds);
+      const { data } = await supabase.from('categories').select('*').in('slug', categorySlugs);
       if (data) categories = data;
     } catch (e) {}
   }
@@ -50,7 +50,7 @@ const attachRelations = async (products) => {
   return products.map(product => {
     const seller = users.find(u => u.id === product.seller_id);
     const brand = brands.find(b => b.id === product.brand_id);
-    const category = categories.find(c => c.id === product.category_id);
+    const category = categories.find(c => c.slug === product.category_slug);
     const productImages = images.filter(i => i.product_id === product.id);
 
     return {
@@ -75,7 +75,7 @@ const attachRelations = async (products) => {
         slug: category.slug
       } : null,
       images: productImages.map(img => ({
-        image_url: img.image_url || img.image || '',
+        image_url: img.url || img.image_url || img.image || '',
         alt_text: img.alt_text || '',
         sort_order: img.sort_order !== undefined ? img.sort_order : (img.display_order || 0),
         is_primary: img.is_primary || false
@@ -96,7 +96,7 @@ const getProducts = async (options = {}) => {
     try {
       const { data: catData } = await supabase.from('categories').select('id').eq('slug', options.category).single();
       if (catData) {
-        query = query.eq('category_id', catData.id);
+        query = query.eq('category_slug', options.category); // fallback to slug mapping if id throws
       } else {
         return { data: [], meta: { page: options.page || 1, limit: options.limit || 20, count: 0 } };
       }
@@ -250,3 +250,7 @@ module.exports = {
   getFeaturedProducts,
   getProductVariants
 };
+
+
+
+

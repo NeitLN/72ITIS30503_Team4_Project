@@ -82,6 +82,7 @@ export function getListingView(product: Product): ListingView {
       product.image ||
       product.imageUrl ||
       primaryImage?.image_url ||
+            ((primaryImage as unknown as Record<string, unknown>)?.url as string) ||
       null,
     imageAlt: primaryImage?.alt_text || product.name || product.title || 'Listing photo',
     condition: formatCondition(product.condition),
@@ -97,3 +98,7 @@ export function getListingView(product: Product): ListingView {
     isSoldOut,
   };
 }
+
+
+
+

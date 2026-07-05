@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS brands (
 CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     seller_id UUID NOT NULL REFERENCES users(id),
-    category_id UUID NOT NULL REFERENCES categories(id),
+    category_slug VARCHAR(255),
     brand_id UUID REFERENCES brands(id),
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL UNIQUE,
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS variant_attribute_values (
 CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON categories(parent_id);
 CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
 CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
-CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_products_category_slug ON products(category_slug);
 CREATE INDEX IF NOT EXISTS idx_products_brand_id ON products(brand_id);
 CREATE INDEX IF NOT EXISTS idx_products_seller_id ON products(seller_id);
 CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
@@ -203,4 +203,6 @@ CREATE POLICY "Public read active product images" ON product_images FOR SELECT U
 CREATE POLICY "Public read attributes" ON attributes FOR SELECT USING (true);
 CREATE POLICY "Public read attribute values" ON attribute_values FOR SELECT USING (true);
 CREATE POLICY "Public read active product variants" ON product_variants FOR SELECT USING (is_active = true);
+
+
 

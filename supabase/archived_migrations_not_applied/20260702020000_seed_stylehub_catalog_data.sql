@@ -46,21 +46,21 @@ ON CONFLICT (slug) DO NOTHING;
 INSERT INTO categories (id, parent_id, name, slug) VALUES
 -- Men's
 ('44444444-1111-0000-0000-000000000001', '44444444-0000-0000-0000-000000000001', 'T-Shirts', 'men-t-shirts'),
-('44444444-1111-0000-0000-000000000002', '44444444-0000-0000-0000-000000000001', 'Jackets', 'men-jackets'),
-('44444444-1111-0000-0000-000000000003', '44444444-0000-0000-0000-000000000001', 'Pants', 'men-pants'),
+('men-jackets', '44444444-0000-0000-0000-000000000001', 'Jackets', 'men-jackets'),
+('men-pants', '44444444-0000-0000-0000-000000000001', 'Pants', 'men-pants'),
 -- Women's
 ('44444444-1111-0000-0000-000000000004', '44444444-0000-0000-0000-000000000002', 'Dresses', 'women-dresses'),
 ('44444444-1111-0000-0000-000000000005', '44444444-0000-0000-0000-000000000002', 'Tops', 'women-tops'),
 ('44444444-1111-0000-0000-000000000006', '44444444-0000-0000-0000-000000000002', 'Skirts', 'women-skirts'),
 -- Streetwear
-('44444444-1111-0000-0000-000000000007', '44444444-0000-0000-0000-000000000003', 'Hoodies', 'streetwear-hoodies'),
-('44444444-1111-0000-0000-000000000008', '44444444-0000-0000-0000-000000000003', 'Oversized Tees', 'streetwear-oversized-tees'),
+('streetwear-hoodies', '44444444-0000-0000-0000-000000000003', 'Hoodies', 'streetwear-hoodies'),
+('streetwear-oversized-tees', '44444444-0000-0000-0000-000000000003', 'Oversized Tees', 'streetwear-oversized-tees'),
 ('44444444-1111-0000-0000-000000000009', '44444444-0000-0000-0000-000000000003', 'Varsity Jackets', 'streetwear-varsity-jackets'),
 -- Shoes
-('44444444-1111-0000-0000-000000000010', '44444444-0000-0000-0000-000000000004', 'Sneakers', 'shoes-sneakers'),
+('shoes-sneakers', '44444444-0000-0000-0000-000000000004', 'Sneakers', 'shoes-sneakers'),
 ('44444444-1111-0000-0000-000000000011', '44444444-0000-0000-0000-000000000004', 'Boots', 'shoes-boots'),
 -- Bags
-('44444444-1111-0000-0000-000000000012', '44444444-0000-0000-0000-000000000005', 'Tote Bags', 'bags-tote'),
+('bags-tote', '44444444-0000-0000-0000-000000000005', 'Tote Bags', 'bags-tote'),
 ('44444444-1111-0000-0000-000000000013', '44444444-0000-0000-0000-000000000005', 'Crossbody Bags', 'bags-crossbody'),
 -- Accessories
 ('44444444-1111-0000-0000-000000000014', '44444444-0000-0000-0000-000000000006', 'Hats', 'accessories-hats'),
@@ -87,24 +87,24 @@ INSERT INTO attribute_values (id, attribute_id, value, slug, sort_order) VALUES
 ON CONFLICT (slug) DO NOTHING;
 
 -- 7. Simple Products
-INSERT INTO products (id, seller_id, category_id, brand_id, name, slug, product_type, condition, price, sale_price, sku, stock_quantity, stock_status, status) VALUES
+INSERT INTO products (id, seller_id, category_slug, brand_id, name, slug, product_type, condition, price, sale_price, sku, stock_quantity, stock_status, status) VALUES
 -- 1. Vintage Levi's 501 Denim Jacket (Lab 5)
-('66666666-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000004', '44444444-1111-0000-0000-000000000002', '33333333-0000-0000-0000-000000000005', 'Vintage Levi’s 501 Denim Jacket — Size M', 'vintage-levis-501-denim-jacket-m', 'simple', 'like_new', 850000, 720000, 'STH-DJ-LEVIS-M-001', 1, 'in_stock', 'active'),
+('66666666-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000004', 'men-jackets', '33333333-0000-0000-0000-000000000005', 'Vintage Levi’s 501 Denim Jacket — Size M', 'vintage-levis-501-denim-jacket-m', 'simple', 'like_new', 850000, 720000, 'STH-DJ-LEVIS-M-001', 1, 'in_stock', 'active'),
 -- 2. Nike Air Force 1 Low (Lab 5)
-('66666666-0000-0000-0000-000000000002', '22222222-0000-0000-0000-000000000001', '44444444-1111-0000-0000-000000000010', '33333333-0000-0000-0000-000000000001', 'Nike Air Force 1 Low — White/White', 'nike-air-force-1-low-white', 'simple', 'used', 1200000, null, 'STH-AF1-WHT-42-001', 1, 'in_stock', 'active'),
+('66666666-0000-0000-0000-000000000002', '22222222-0000-0000-0000-000000000001', 'shoes-sneakers', '33333333-0000-0000-0000-000000000001', 'Nike Air Force 1 Low — White/White', 'nike-air-force-1-low-white', 'simple', 'used', 1200000, null, 'STH-AF1-WHT-42-001', 1, 'in_stock', 'active'),
 -- 3. DirtyCoins Hoodie
-('66666666-0000-0000-0000-000000000003', '22222222-0000-0000-0000-000000000002', '44444444-1111-0000-0000-000000000007', '33333333-0000-0000-0000-000000000006', 'DirtyCoins Hoodie Black', 'dirtycoins-hoodie-black', 'simple', 'new', 650000, null, 'STH-DC-HD-BLK-001', 5, 'in_stock', 'active'),
+('66666666-0000-0000-0000-000000000003', '22222222-0000-0000-0000-000000000002', 'streetwear-hoodies', '33333333-0000-0000-0000-000000000006', 'DirtyCoins Hoodie Black', 'dirtycoins-hoodie-black', 'simple', 'new', 650000, null, 'STH-DC-HD-BLK-001', 5, 'in_stock', 'active'),
 -- 4. Ananas Canvas Tote
-('66666666-0000-0000-0000-000000000004', '22222222-0000-0000-0000-000000000003', '44444444-1111-0000-0000-000000000012', '33333333-0000-0000-0000-000000000011', 'Ananas Canvas Tote Cream', 'ananas-canvas-tote-cream', 'simple', 'new', 200000, null, 'STH-ANA-TOTE-CRM-001', 10, 'in_stock', 'active'),
+('66666666-0000-0000-0000-000000000004', '22222222-0000-0000-0000-000000000003', 'bags-tote', '33333333-0000-0000-0000-000000000011', 'Ananas Canvas Tote Cream', 'ananas-canvas-tote-cream', 'simple', 'new', 200000, null, 'STH-ANA-TOTE-CRM-001', 10, 'in_stock', 'active'),
 -- 5. Levents Oversized Tee
-('66666666-0000-0000-0000-000000000005', '22222222-0000-0000-0000-000000000002', '44444444-1111-0000-0000-000000000008', '33333333-0000-0000-0000-000000000007', 'Levents Oversized Tee', 'levents-oversized-tee', 'simple', 'used', 350000, 250000, 'STH-LEV-TEE-001', 1, 'in_stock', 'active'),
+('66666666-0000-0000-0000-000000000005', '22222222-0000-0000-0000-000000000002', 'streetwear-oversized-tees', '33333333-0000-0000-0000-000000000007', 'Levents Oversized Tee', 'levents-oversized-tee', 'simple', 'used', 350000, 250000, 'STH-LEV-TEE-001', 1, 'in_stock', 'active'),
 -- 6. Coolmate Jogger
-('66666666-0000-0000-0000-000000000006', '22222222-0000-0000-0000-000000000001', '44444444-1111-0000-0000-000000000003', '33333333-0000-0000-0000-000000000009', 'Coolmate Jogger Black', 'coolmate-jogger-black', 'simple', 'like_new', 300000, null, 'STH-COOL-JOG-BLK-001', 2, 'in_stock', 'active')
+('66666666-0000-0000-0000-000000000006', '22222222-0000-0000-0000-000000000001', 'men-pants', '33333333-0000-0000-0000-000000000009', 'Coolmate Jogger Black', 'coolmate-jogger-black', 'simple', 'like_new', 300000, null, 'STH-COOL-JOG-BLK-001', 2, 'in_stock', 'active')
 ON CONFLICT (slug) DO NOTHING;
 
 -- 8. Variable Product (Uniqlo Basic Oversize Tee)
-INSERT INTO products (id, seller_id, category_id, brand_id, name, slug, product_type, condition, price, sale_price, stock_quantity, status) VALUES
-('66666666-0000-0000-0000-000000000007', '22222222-0000-0000-0000-000000000001', '44444444-1111-0000-0000-000000000008', '33333333-0000-0000-0000-000000000003', 'Uniqlo Basic Oversize Tee', 'uniqlo-basic-oversize-tee', 'variable', 'new', 320000, null, 0, 'active')
+INSERT INTO products (id, seller_id, category_slug, brand_id, name, slug, product_type, condition, price, sale_price, stock_quantity, status) VALUES
+('66666666-0000-0000-0000-000000000007', '22222222-0000-0000-0000-000000000001', 'streetwear-oversized-tees', '33333333-0000-0000-0000-000000000003', 'Uniqlo Basic Oversize Tee', 'uniqlo-basic-oversize-tee', 'variable', 'new', 320000, null, 0, 'active')
 ON CONFLICT (slug) DO NOTHING;
 
 -- 9. Map Attributes for the Variable Product
@@ -150,4 +150,5 @@ INSERT INTO variant_attribute_values (variant_id, attribute_value_id) VALUES
 ('77777777-0000-0000-0000-000000000006', '55555555-1111-0000-0000-000000000003'), -- Size L
 ('77777777-0000-0000-0000-000000000006', '55555555-1111-0000-0000-000000000007')  -- Color Navy
 ON CONFLICT DO NOTHING;
+
 

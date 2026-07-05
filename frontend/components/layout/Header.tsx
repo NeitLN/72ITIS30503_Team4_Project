@@ -1,19 +1,12 @@
 import Link from 'next/link';
 import { Container } from '../ui/Container';
 import { ROUTES } from '../../constants/routes';
-import { getCategoryTree } from '../../lib/catalog';
 import { HeaderCartButton } from './HeaderCartButton';
 import { HeaderWishlistButton } from './HeaderWishlistButton';
 import { HeaderAuthMenu } from './HeaderAuthMenu';
+import { ShopMegaMenu } from './ShopMegaMenu';
 
 export const Header = async () => {
-  let categories: import('../../types/category').Category[] = [];
-  try {
-    const res = await getCategoryTree();
-    categories = res.data || [];
-  } catch {
-    // Graceful fallback if categories fail to load
-  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white">
@@ -36,18 +29,7 @@ export const Header = async () => {
           </Link>
 
           <nav aria-label="Main navigation" className="flex items-center gap-4 sm:gap-5">
-            <Link href={ROUTES.SHOP} className="text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 whitespace-nowrap">
-              Shop
-            </Link>
-            {categories.slice(0, 4).map((cat) => (
-              <Link
-                key={cat.id}
-                href={ROUTES.CATEGORY(cat.slug)}
-                className="hidden text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 lg:block whitespace-nowrap"
-              >
-                {cat.name.replace('-', '‑')}
-              </Link>
-            ))}
+            <ShopMegaMenu />
             <Link href={ROUTES.ABOUT} className="hidden text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 md:block whitespace-nowrap">
               About
             </Link>
@@ -90,6 +72,8 @@ export const Header = async () => {
     </header>
   );
 };
+
+
 
 
 

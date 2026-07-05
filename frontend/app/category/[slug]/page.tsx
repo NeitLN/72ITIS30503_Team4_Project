@@ -127,11 +127,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             )}
           </>
         ) : (
-          <ShopEmptyState variant="empty" />
+          <ShopEmptyState variant="empty" title={`No listings in ${categoryName} yet.`} body="Be the first to list an item in this category." actionText="Browse all listings" actionHref={ROUTES.SHOP} />
         )}
       </Container>
     </>
   );
 }
+
+
+
+
+
 
 
