@@ -11,7 +11,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { Button } from '../ui/Button';
 import { formatVND } from '../../lib/format';
 import { ListingImage } from '../marketplace/ListingImage';
-import { createOrder } from '../../lib/orders';
+import { createOrder, validateCoupon } from '../../lib/orders';
 import { vi } from '../../lib/i18n';
 
 export const CheckoutClient = () => {
@@ -31,10 +31,62 @@ export const CheckoutClient = () => {
   const [province, setProvince] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod');
 
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_value: number; discount_type: string } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [verifiedTotal, setVerifiedTotal] = useState<number | null>(null);
+  const [verifiedShipping, setVerifiedShipping] = useState<number | null>(null);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const shippingCost = cartSubtotal > 0 ? 30000 : 0;
-  const grandTotal = cartSubtotal + shippingCost;
+  const defaultShippingCost = cartSubtotal > 0 ? 30000 : 0;
+  const displayShipping = verifiedShipping !== null ? verifiedShipping : defaultShippingCost;
+  const grandTotal = verifiedTotal !== null ? verifiedTotal : cartSubtotal + displayShipping;
+
+  const handleApplyCoupon = async () => {
+    if (!couponCodeInput.trim()) return;
+    setIsApplyingCoupon(true);
+    setCouponError(null);
+    try {
+      const payload = {
+        code: couponCodeInput.trim(),
+        items: cart.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          unitPrice: item.salePrice ?? item.price,
+          quantity: item.quantity,
+        })),
+      };
+      const res = await validateCoupon(payload);
+      if (res.success && res.data) {
+        setAppliedCoupon(res.data.coupon);
+        setDiscountAmount(res.data.totals.discount_amount);
+        setVerifiedTotal(res.data.totals.total_amount);
+        setVerifiedShipping(res.data.totals.shipping_fee);
+      } else {
+        setCouponError(res.error?.message || vi.coupon.invalid);
+        setAppliedCoupon(null);
+        setDiscountAmount(0);
+        setVerifiedTotal(null);
+        setVerifiedShipping(null);
+      }
+    } catch {
+      setCouponError(vi.common.error);
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCodeInput('');
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setVerifiedTotal(null);
+    setVerifiedShipping(null);
+    setCouponError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +127,7 @@ export const CheckoutClient = () => {
           city: province.trim(),
         },
         paymentMethod,
+        couponCode: appliedCoupon?.code,
         items: cart.map((item) => ({
           productId: item.productId,
           variantId: item.variantId,
@@ -373,9 +426,60 @@ export const CheckoutClient = () => {
               <div className="flex justify-between">
                 <span className="text-neutral-500">{vi.cart.shippingFee}</span>
                 <span className="font-mono text-neutral-900">
-                  {shippingCost === 0 ? 'Miễn phí' : formatVND(shippingCost)}
+                  {displayShipping === 0 ? 'Miễn phí' : formatVND(displayShipping)}
                 </span>
               </div>
+
+              {/* Coupon Section */}
+              <div className="border-t border-neutral-200 pt-4 pb-2">
+                <p className="font-semibold text-neutral-900 mb-3">{vi.coupon.title}</p>
+                {!appliedCoupon ? (
+                  <div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCodeInput}
+                        onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                        placeholder={vi.coupon.placeholder}
+                        className="flex-1 border border-neutral-300 px-3 py-2 text-xs uppercase font-mono focus:outline-none focus:border-neutral-900"
+                        disabled={isApplyingCoupon}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleApplyCoupon}
+                        disabled={isApplyingCoupon || !couponCodeInput.trim()}
+                        className="text-[10px] px-3 py-2"
+                      >
+                        {isApplyingCoupon ? vi.common.loading : vi.coupon.apply}
+                      </Button>
+                    </div>
+                    {couponError && <p className="mt-2 text-xs text-red-600">{couponError}</p>}
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center bg-green-50 border border-green-200 p-3">
+                    <div>
+                      <p className="font-mono font-bold text-green-800 text-xs">{appliedCoupon.code}</p>
+                      <p className="text-[10px] text-green-700">{vi.coupon.applied}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-[10px] text-red-600 hover:underline focus:outline-none"
+                    >
+                      {vi.coupon.remove}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {appliedCoupon && discountAmount > 0 && (
+                <div className="flex justify-between text-green-700 font-medium">
+                  <span>{vi.coupon.discount}</span>
+                  <span className="font-mono">- {formatVND(discountAmount)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between border-t border-neutral-200 pt-4 text-sm font-bold text-neutral-900">
                 <span>{vi.cart.total}</span>
                 <span className="font-mono text-base">{formatVND(grandTotal)}</span>

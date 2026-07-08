@@ -55,12 +55,29 @@ const validateOrderPayload = (payload) => {
   });
 };
 
-const calculateTotals = (items) => {
+const calculateTotals = (items, appliedCoupon = null) => {
   const subtotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
   const shipping_fee = subtotal > 0 ? 30000 : 0;
-  const total_amount = subtotal + shipping_fee;
   
-  return { subtotal, shipping_fee, total_amount };
+  let discount_amount = 0;
+
+  if (appliedCoupon) {
+    if (appliedCoupon.discount_type === 'percentage') {
+      discount_amount = subtotal * (appliedCoupon.discount_value / 100);
+      if (appliedCoupon.maximum_discount_amount) {
+        discount_amount = Math.min(discount_amount, appliedCoupon.maximum_discount_amount);
+      }
+    } else if (appliedCoupon.discount_type === 'fixed') {
+      discount_amount = Math.min(appliedCoupon.discount_value, subtotal + shipping_fee);
+    } else if (appliedCoupon.discount_type === 'free_shipping') {
+      discount_amount = shipping_fee;
+    }
+  }
+
+  // Ensure total is never negative
+  const total_amount = Math.max(0, subtotal + shipping_fee - discount_amount);
+  
+  return { subtotal, shipping_fee, discount_amount, total_amount };
 };
 
 const isAllowedStatusTransition = (currentStatus, nextStatus) => {
@@ -74,13 +91,59 @@ const isAllowedStatusTransition = (currentStatus, nextStatus) => {
   return allowedTransitions[currentStatus]?.includes(nextStatus) || false;
 };
 
+const validateCouponCode = async (code, subtotal) => {
+  if (!code || !code.trim()) {
+    throw { status: 400, message: 'Coupon code is missing.' };
+  }
+
+  const normalizedCode = code.trim().toUpperCase();
+
+  const { data: coupon, error } = await supabase
+    .from('coupons')
+    .select('*')
+    .eq('code', normalizedCode)
+    .single();
+
+  if (error || !coupon) {
+    throw { status: 404, message: 'Invalid coupon code.' };
+  }
+
+  if (!coupon.is_active) {
+    throw { status: 400, message: 'This coupon is no longer active.' };
+  }
+
+  const now = new Date();
+  if (coupon.starts_at && new Date(coupon.starts_at) > now) {
+    throw { status: 400, message: 'This coupon is not yet valid.' };
+  }
+
+  if (coupon.expires_at && new Date(coupon.expires_at) < now) {
+    throw { status: 400, message: 'This coupon has expired.' };
+  }
+
+  if (coupon.minimum_order_amount && subtotal < coupon.minimum_order_amount) {
+    throw { status: 400, message: `Minimum order amount of ${coupon.minimum_order_amount} required.` };
+  }
+
+  return coupon;
+};
+
 const createOrder = async (user, payload) => {
   if (!isSupabaseConfigured()) throw new Error('Database is not configured');
   
   validateOrderPayload(payload);
   
-  const { customer, paymentMethod, notes, items } = payload;
-  const totals = calculateTotals(items);
+  const { customer, paymentMethod, notes, items, couponCode } = payload;
+  
+  // Calculate raw subtotal first to validate coupon
+  const rawSubtotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+  
+  let appliedCoupon = null;
+  if (couponCode) {
+    appliedCoupon = await validateCouponCode(couponCode, rawSubtotal);
+  }
+
+  const totals = calculateTotals(items, appliedCoupon);
   const orderCode = await generateOrderCode();
   
   // 1. Insert into orders table
@@ -97,6 +160,7 @@ const createOrder = async (user, payload) => {
       payment_method: paymentMethod,
       subtotal: totals.subtotal,
       shipping_fee: totals.shipping_fee,
+      discount_amount: totals.discount_amount,
       total_amount: totals.total_amount,
       notes: notes?.trim() || null,
       status: 'pending' // Enforced default
@@ -107,6 +171,23 @@ const createOrder = async (user, payload) => {
   if (orderError) {
     console.error('Error inserting parent order:', orderError);
     throw new Error('Database error while saving the order record.');
+  }
+
+  // 1b. Insert into order_coupons if applicable
+  if (appliedCoupon) {
+    const { error: couponError } = await supabase
+      .from('order_coupons')
+      .insert([{
+        order_id: order.id,
+        coupon_id: appliedCoupon.id,
+        discount_amount: totals.discount_amount,
+        code: appliedCoupon.code // Optional redundancy depending on schema, safe to omit if not required by DB, but report said add if available
+      }]);
+      
+    if (couponError) {
+      console.error('Warning: Failed to insert order_coupons record:', couponError);
+      // Not failing the entire order, just logging
+    }
   }
   
   // 2. Prepare child items
@@ -249,5 +330,7 @@ module.exports = {
   listMyOrders,
   listAllOrders,
   getOrderById,
-  updateOrderStatus
+  updateOrderStatus,
+  validateCouponCode,
+  calculateTotals
 };

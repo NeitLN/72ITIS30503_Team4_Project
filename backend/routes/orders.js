@@ -77,4 +77,43 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
   }
 });
 
+// POST /api/orders/validate-coupon
+router.post('/validate-coupon', requireAuth, async (req, res) => {
+  try {
+    const { code, items } = req.body;
+    
+    if (!code || !code.trim()) {
+      return error(res, 400, 'Coupon code is required');
+    }
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return error(res, 400, 'Cart items are required to validate coupon');
+    }
+
+    const rawSubtotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+    const coupon = await orderService.validateCouponCode(code, rawSubtotal);
+    const totals = orderService.calculateTotals(items, coupon);
+
+    return success(res, {
+      coupon: {
+        code: coupon.code,
+        discount_type: coupon.discount_type,
+        discount_value: coupon.discount_value
+      },
+      totals: {
+        subtotal: totals.subtotal,
+        shipping_fee: totals.shipping_fee,
+        discount_amount: totals.discount_amount,
+        total_amount: totals.total_amount
+      },
+      message: 'Coupon applied successfully.'
+    });
+  } catch (err) {
+    if (err.status) {
+      return error(res, err.status, err.message);
+    }
+    console.error('Coupon validation error:', err);
+    return error(res, 500, 'Failed to validate coupon');
+  }
+});
+
 module.exports = router;

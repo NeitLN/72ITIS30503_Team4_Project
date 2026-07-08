@@ -82,3 +82,24 @@ export async function listMyOrders() {
     return { success: false, error: { message: 'Network error or backend is offline' } };
   }
 }
+
+export async function validateCoupon(payload: { code: string; items: Record<string, unknown>[] }) {
+  const token = getStoredToken();
+  const url = `${getApiBaseUrl()}/api/orders/validate-coupon`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    const data = await res.json();
+    return data;
+  } catch {
+    return { success: false, error: { message: 'Network error or backend is offline' } };
+  }
+}
