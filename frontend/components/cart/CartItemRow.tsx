@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { CartItem } from '../../lib/cart';
 import { formatVND } from '../../lib/format';
 import { ListingImage } from '../marketplace/ListingImage';
+import { vi } from '../../lib/i18n';
 
 interface CartItemRowProps {
   item: CartItem;
@@ -35,7 +36,7 @@ export const CartItemRow = ({ item, onUpdateQuantity, onRemove }: CartItemRowPro
             Size {item.size} · {item.condition}
           </p>
           <p className="mt-1 text-xs text-neutral-400">
-            Seller: <span className="font-medium text-neutral-600">{item.sellerHandle}</span>
+            Người bán: <span className="font-medium text-neutral-600">{item.sellerHandle}</span>
           </p>
         </div>
       </div>
@@ -70,14 +71,14 @@ export const CartItemRow = ({ item, onUpdateQuantity, onRemove }: CartItemRowPro
           </p>
           {item.quantity > 1 && (
             <p className="font-mono text-[10px] text-neutral-400">
-              ({formatVND(itemPrice)} each)
+              ({formatVND(itemPrice)} mỗi sản phẩm)
             </p>
           )}
           <button
             onClick={() => onRemove(item.id)}
             className="mt-1 text-xs font-mono text-red-800 underline hover:text-red-500 focus:outline-none"
           >
-            Remove
+            {vi.cart.remove}
           </button>
         </div>
       </div>

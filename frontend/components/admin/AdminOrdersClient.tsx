@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
 import { listAllOrdersForAdmin, updateOrderStatus } from '../../lib/orders';
-import { formatVND } from '../../lib/format';
+import { formatVND, formatVietnamDateTime } from '../../lib/format';
 import { ROUTES } from '../../constants/routes';
 import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
+import { vi, tStatus, tPaymentMethod } from '../../lib/i18n';
 
 type AdminOrder = {
   id: string;
@@ -107,7 +108,7 @@ export const AdminOrdersClient = () => {
     const isUpdating = updatingId === order.id;
 
     if (isUpdating) {
-      return <span className="font-mono text-[10px] text-neutral-400 italic">Updating...</span>;
+      return <span className="font-mono text-[10px] text-neutral-400 italic">{vi.common.loading}</span>;
     }
 
     if (order.status === 'pending') {
@@ -161,7 +162,7 @@ export const AdminOrdersClient = () => {
     }
 
     if (order.status === 'cancelled') {
-      return <span className="font-mono text-[10px] text-red-500 italic">Cancelled</span>;
+      return <span className="font-mono text-[10px] text-red-500 italic">{tStatus('cancelled')}</span>;
     }
 
     return null;
@@ -170,29 +171,27 @@ export const AdminOrdersClient = () => {
   const getStatusBadge = (status: AdminOrder['status']) => {
     switch (status) {
       case 'pending':
-        return <span className="inline-flex items-center border border-yellow-600 bg-yellow-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-yellow-800">Pending</span>;
+        return <span className="inline-flex items-center border border-yellow-600 bg-yellow-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-yellow-800">{tStatus('pending')}</span>;
       case 'processing':
-        return <span className="inline-flex items-center border border-blue-600 bg-blue-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-blue-800">Processing</span>;
+        return <span className="inline-flex items-center border border-blue-600 bg-blue-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-blue-800">{tStatus('processing')}</span>;
       case 'completed':
-        return <span className="inline-flex items-center border border-green-600 bg-green-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-green-800">Completed</span>;
+        return <span className="inline-flex items-center border border-green-600 bg-green-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-green-800">{tStatus('completed')}</span>;
       case 'cancelled':
-        return <span className="inline-flex items-center border border-red-600 bg-red-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-red-800">Cancelled</span>;
+        return <span className="inline-flex items-center border border-red-600 bg-red-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-red-800">{tStatus('cancelled')}</span>;
       default:
-        return <span className="inline-flex items-center border border-neutral-600 bg-neutral-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-neutral-800">{status}</span>;
+        return <span className="inline-flex items-center border border-neutral-600 bg-neutral-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-neutral-800">{tStatus(status)}</span>;
     }
   };
 
   const formatPaymentMethod = (method: string) => {
-    if (method === 'cod') return 'COD';
-    if (method === 'bank_transfer') return 'Bank Transfer';
-    return method;
+    return tPaymentMethod(method);
   };
 
   if (!isHydrated || isLoading) {
     return (
       <Container className="py-16 text-center">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 animate-pulse">
-          Loading control room...
+          {vi.common.loading}
         </p>
       </Container>
     );
@@ -205,15 +204,15 @@ export const AdminOrdersClient = () => {
         <div className="border border-neutral-200 bg-white p-6 sm:p-10 text-center">
           <span className="text-4xl mb-4 block" aria-hidden="true">🔒</span>
           <h1 className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900 mb-2">
-            Log in as admin
+            Đăng nhập với quyền quản trị
           </h1>
           <p className="text-sm text-neutral-500 mb-8">
-            Admin order management requires a StyleHub admin account.
+            Khu vực này dành riêng cho quản trị viên StyleHub.
           </p>
           <div className="flex flex-col gap-3">
             <Link href={`${ROUTES.LOGIN}?redirect=${ROUTES.ADMIN_ORDERS}`}>
               <Button size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
-                Log in
+                {vi.checkout.goToLogin}
               </Button>
             </Link>
           </div>
@@ -229,20 +228,20 @@ export const AdminOrdersClient = () => {
         <div className="border border-red-200 bg-red-50 p-6 sm:p-10 text-center">
           <span className="text-4xl mb-4 block" aria-hidden="true">⛔</span>
           <h1 className="font-display text-2xl font-black uppercase tracking-tight text-red-900 mb-2">
-            Access Denied
+            Truy cập bị từ chối
           </h1>
           <p className="text-sm text-red-800 mb-8 font-medium">
-            This area is reserved for StyleHub administrators. Your current role is: <span className="font-mono uppercase">{user?.role || 'customer'}</span>.
+            Khu vực này dành riêng cho quản trị viên StyleHub. Vai trò hiện tại của bạn: <span className="font-mono uppercase">{user?.role || 'customer'}</span>.
           </p>
           <div className="flex flex-col gap-3">
             <Link href={ROUTES.SHOP}>
               <Button size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
-                Back to Shop
+                {vi.common.back}
               </Button>
             </Link>
             <Link href={ROUTES.ORDERS}>
               <Button variant="outline" size="lg" className="w-full font-mono text-xs uppercase tracking-wider border-red-800 text-red-800 hover:bg-red-100">
-                My Orders
+                {vi.checkout.viewMyOrders}
               </Button>
             </Link>
           </div>
@@ -264,32 +263,32 @@ export const AdminOrdersClient = () => {
             Control Room
           </span>
           <h1 className="font-display text-3xl font-black uppercase tracking-tight text-neutral-900 mt-1.5">
-            Admin Orders
+            {vi.adminOrders.title}
           </h1>
           <p className="mt-2 text-sm text-neutral-500">
-            Review incoming StyleHub transactions.
+            Quản lý và xem xét các giao dịch StyleHub.
           </p>
         </div>
         <Button variant="outline" onClick={retryLoadOrders} className="font-mono text-xs uppercase tracking-wider">
-          Refresh List
+          Làm mới
         </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="border border-neutral-200 bg-neutral-50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">Total</p>
+          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">Tổng cộng</p>
           <p className="font-mono text-2xl font-bold text-neutral-900">{orders.length}</p>
         </div>
         <div className="border border-neutral-200 bg-white p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">Pending</p>
+          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">{tStatus('pending')}</p>
           <p className="font-mono text-2xl font-bold text-yellow-600">{pendingCount}</p>
         </div>
         <div className="border border-neutral-200 bg-white p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">Processing</p>
+          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">{tStatus('processing')}</p>
           <p className="font-mono text-2xl font-bold text-blue-600">{processingCount}</p>
         </div>
         <div className="border border-neutral-200 bg-white p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">Completed</p>
+          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">{tStatus('completed')}</p>
           <p className="font-mono text-2xl font-bold text-green-600">{completedCount}</p>
         </div>
       </div>
@@ -314,13 +313,13 @@ export const AdminOrdersClient = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-neutral-200 font-mono text-[10px] uppercase tracking-wider text-neutral-500 bg-neutral-50">
-                  <th className="px-5 py-4 font-semibold">Order</th>
-                  <th className="px-5 py-4 font-semibold">Customer</th>
-                  <th className="px-5 py-4 font-semibold">Date</th>
-                  <th className="px-5 py-4 font-semibold">Total</th>
-                  <th className="px-5 py-4 font-semibold">Payment</th>
-                  <th className="px-5 py-4 font-semibold">Status</th>
-                  <th className="px-5 py-4 font-semibold">Actions</th>
+                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.orderCode}</th>
+                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.customer}</th>
+                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.createdAt}</th>
+                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.total}</th>
+                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.paymentMethod}</th>
+                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.status}</th>
+                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 text-sm">
@@ -335,13 +334,7 @@ export const AdminOrdersClient = () => {
                       <p className="text-[10px] text-neutral-500 font-mono mt-0.5">{order.customer_email}</p>
                     </td>
                     <td className="px-5 py-5 text-neutral-600 text-xs">
-                      {new Intl.DateTimeFormat('vi-VN', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }).format(new Date(order.created_at))}
+                      {formatVietnamDateTime(order.created_at)}
                     </td>
                     <td className="px-5 py-5 font-mono font-bold text-neutral-900">
                       {formatVND(Number(order.total_amount))}

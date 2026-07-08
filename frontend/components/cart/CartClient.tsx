@@ -7,6 +7,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { CartItemRow } from './CartItemRow';
 import { CartSummary } from './CartSummary';
 import { Button } from '../ui/Button';
+import { vi } from '../../lib/i18n';
 
 export const CartClient = () => {
   const { cart, cartSubtotal, updateQuantity, removeFromCart, isHydrated } = useCart();
@@ -15,7 +16,7 @@ export const CartClient = () => {
     return (
       <Container className="py-16 text-center">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 animate-pulse">
-          Loading your bag...
+          {vi.common.loading}
         </p>
       </Container>
     );
@@ -25,23 +26,23 @@ export const CartClient = () => {
     <Container className="py-10 sm:py-16">
       <PageHeader
         eyebrow="Marketplace"
-        title="Shopping Bag"
-        lede="Review your selected items before proceeding to checkout."
+        title={vi.cart.title}
+        lede=""
       />
 
       {cart.length === 0 ? (
         <div className="mt-12 text-center border border-dashed border-neutral-300 py-16 px-4">
           <span className="text-3xl">🛍️</span>
           <h2 className="mt-4 font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
-            Your bag is empty
+            {vi.cart.empty}
           </h2>
           <p className="mt-2 text-sm text-neutral-500 max-w-sm mx-auto">
-            Discover pre-loved street fashion and support Vietnamese local designers.
+            Khám phá thời trang đường phố và ủng hộ các nhà thiết kế địa phương.
           </p>
           <div className="mt-8">
             <Link href="/shop">
               <Button size="lg" className="font-mono text-xs uppercase tracking-wider">
-                Explore Marketplace
+                {vi.common.continueShopping}
               </Button>
             </Link>
           </div>
@@ -65,7 +66,7 @@ export const CartClient = () => {
                 href="/shop"
                 className="font-mono text-xs uppercase tracking-wider text-neutral-600 hover:text-neutral-900 underline"
               >
-                ← Continue Shopping
+                ← {vi.common.continueShopping}
               </Link>
             </div>
           </div>

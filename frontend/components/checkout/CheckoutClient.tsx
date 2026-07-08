@@ -12,6 +12,7 @@ import { Button } from '../ui/Button';
 import { formatVND } from '../../lib/format';
 import { ListingImage } from '../marketplace/ListingImage';
 import { createOrder } from '../../lib/orders';
+import { vi } from '../../lib/i18n';
 
 export const CheckoutClient = () => {
   const router = useRouter();
@@ -42,13 +43,13 @@ export const CheckoutClient = () => {
     
     // Client-side validation
     const newErrors: Record<string, string> = {};
-    if (!name || name.trim().length < 2) newErrors.name = 'Please enter your full name.';
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) newErrors.email = 'Please enter a valid email address.';
-    if (!phone || !/^0[0-9]{9}$/.test(phone.trim())) newErrors.phone = 'Invalid Vietnamese phone number.';
-    if (!province || !province.trim()) newErrors.province = 'Please enter your province or city.';
-    if (!district || !district.trim()) newErrors.district = 'Please enter your district.';
-    if (!streetAddress || !streetAddress.trim()) newErrors.streetAddress = 'Please enter your street address.';
-    if (!paymentMethod) newErrors.paymentMethod = 'Please select a payment method.';
+    if (!name || name.trim().length < 2) newErrors.name = vi.validation.fullNameMin;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) newErrors.email = vi.validation.emailInvalid;
+    if (!phone || !/^0[0-9]{9}$/.test(phone.trim())) newErrors.phone = vi.validation.phoneInvalid;
+    if (!province || !province.trim()) newErrors.province = vi.validation.provinceRequired;
+    if (!district || !district.trim()) newErrors.district = vi.validation.districtRequired;
+    if (!streetAddress || !streetAddress.trim()) newErrors.streetAddress = vi.validation.streetRequired;
+    if (!paymentMethod) newErrors.paymentMethod = vi.validation.paymentMethodRequired;
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -58,7 +59,7 @@ export const CheckoutClient = () => {
     setIsPlacing(true);
 
     if (!isAuthenticated) {
-      setErrorMsg('You must be logged in to place an order.');
+      setErrorMsg(vi.checkout.loginRequiredBody);
       setIsPlacing(false);
       return;
     }
@@ -94,10 +95,10 @@ export const CheckoutClient = () => {
         clearCart();
         router.push(`${ROUTES.CHECKOUT_SUCCESS}?orderCode=${res.data.order_code}`);
       } else {
-        setErrorMsg(res.error?.message || 'Could not create order. Please try again.');
+        setErrorMsg(res.error?.message || vi.common.error);
       }
     } catch {
-      setErrorMsg('An unexpected network error occurred.');
+      setErrorMsg(vi.common.error);
     } finally {
       setIsPlacing(false);
     }
@@ -107,7 +108,7 @@ export const CheckoutClient = () => {
     return (
       <Container className="py-16 text-center">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 animate-pulse">
-          Loading checkout...
+          {vi.common.loading}
         </p>
       </Container>
     );
@@ -120,20 +121,20 @@ export const CheckoutClient = () => {
         <div className="border border-neutral-200 bg-white p-6 sm:p-10 text-center">
           <span className="text-4xl mb-4 block" aria-hidden="true">🔒</span>
           <h1 className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900 mb-2">
-            Log in to place your order
+            {vi.checkout.loginRequiredTitle}
           </h1>
           <p className="text-sm text-neutral-500 mb-8">
-            You can browse StyleHub as a guest, but checkout requires an account.
+            {vi.checkout.loginRequiredBody}
           </p>
           <div className="flex flex-col gap-3">
             <Link href={`${ROUTES.LOGIN}?redirect=${ROUTES.CHECKOUT}`}>
               <Button size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
-                Log in
+                {vi.checkout.goToLogin}
               </Button>
             </Link>
             <Link href={`${ROUTES.REGISTER}?redirect=${ROUTES.CHECKOUT}`}>
               <Button variant="outline" size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
-                Create Account
+                {vi.checkout.createAccount}
               </Button>
             </Link>
           </div>
@@ -147,14 +148,14 @@ export const CheckoutClient = () => {
     return (
       <Container className="py-16 text-center max-w-md">
         <h2 className="font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
-          No items to checkout
+          {vi.cart.empty}
         </h2>
         <p className="mt-2 text-sm text-neutral-500">
-          Your shopping bag is currently empty. Add products before checking out.
+          Vui lòng thêm sản phẩm trước khi thanh toán.
         </p>
         <div className="mt-8">
           <Link href={ROUTES.SHOP}>
-            <Button className="font-mono text-xs uppercase tracking-wider">Return to Shop</Button>
+            <Button className="font-mono text-xs uppercase tracking-wider">{vi.common.continueShopping}</Button>
           </Link>
         </div>
       </Container>
@@ -164,9 +165,9 @@ export const CheckoutClient = () => {
   return (
     <Container className="py-10 sm:py-16">
       <PageHeader
-        eyebrow="Checkout"
-        title="Secure Checkout"
-        lede="Provide your delivery details to complete your order."
+        eyebrow={vi.checkout.title}
+        title={vi.checkout.title}
+        lede=""
       />
 
       {errorMsg && (
@@ -181,13 +182,13 @@ export const CheckoutClient = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="border border-neutral-200 p-6 sm:p-8 bg-white">
               <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-6">
-                1. Shipping Information
+                1. {vi.checkout.formTitle}
               </h2>
 
               <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                 <div className="sm:col-span-3">
                   <label htmlFor="name" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
-                    Full Name
+                    {vi.checkout.fullName}
                   </label>
                   <input
                     type="text"
@@ -201,7 +202,7 @@ export const CheckoutClient = () => {
 
                 <div className="sm:col-span-3">
                   <label htmlFor="phone" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
-                    Phone Number
+                    {vi.checkout.phone}
                   </label>
                   <input
                     type="tel"
@@ -211,12 +212,12 @@ export const CheckoutClient = () => {
                     className={`mt-1.5 block w-full border px-3.5 py-2 text-sm text-neutral-900 focus:outline-none ${errors.phone ? 'border-red-500 focus:border-red-500' : 'border-neutral-300 focus:border-neutral-900'}`}
                   />
                   {errors.phone && <p className="mt-1.5 text-xs text-red-600">{errors.phone}</p>}
-                  {!errors.phone && <p className="mt-1.5 text-xs text-neutral-400">Used only for delivery confirmation.</p>}
+                  {!errors.phone && <p className="mt-1.5 text-xs text-neutral-400">{vi.checkout.phoneHint}</p>}
                 </div>
 
                 <div className="sm:col-span-6">
                   <label htmlFor="email" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
-                    Email Address
+                    {vi.checkout.email}
                   </label>
                   <input
                     type="email"
@@ -230,7 +231,7 @@ export const CheckoutClient = () => {
 
                 <div className="sm:col-span-2">
                   <label htmlFor="province" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
-                    Province / City
+                    {vi.checkout.province}
                   </label>
                   <input
                     type="text"
@@ -244,7 +245,7 @@ export const CheckoutClient = () => {
 
                 <div className="sm:col-span-2">
                   <label htmlFor="district" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
-                    District
+                    {vi.checkout.district}
                   </label>
                   <input
                     type="text"
@@ -258,7 +259,7 @@ export const CheckoutClient = () => {
 
                 <div className="sm:col-span-2">
                   <label htmlFor="streetAddress" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
-                    Street Address
+                    {vi.checkout.street}
                   </label>
                   <input
                     type="text"
@@ -274,7 +275,7 @@ export const CheckoutClient = () => {
 
             <div className="border border-neutral-200 p-6 sm:p-8 bg-white">
               <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-6">
-                2. Payment Method (Demo only)
+                2. {vi.checkout.paymentMethod}
               </h2>
 
               <div className="space-y-4">
@@ -288,8 +289,8 @@ export const CheckoutClient = () => {
                     className="h-4 w-4 text-neutral-950 focus:ring-neutral-950"
                   />
                   <div>
-                    <p className="text-sm font-semibold text-neutral-900">Cash on Delivery (COD)</p>
-                    <p className="text-xs text-neutral-500 mt-0.5">Pay with cash when items arrive at your door.</p>
+                    <p className="text-sm font-semibold text-neutral-900">{vi.checkout.cod}</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">Thanh toán bằng tiền mặt khi nhận hàng.</p>
                   </div>
                 </label>
 
@@ -303,8 +304,8 @@ export const CheckoutClient = () => {
                     className="h-4 w-4 text-neutral-950 focus:ring-neutral-950"
                   />
                   <div>
-                    <p className="text-sm font-semibold text-neutral-900">Bank Transfer (Mockup)</p>
-                    <p className="text-xs text-neutral-500 mt-0.5">Simulate payment via local mobile banking transfer.</p>
+                    <p className="text-sm font-semibold text-neutral-900">{vi.checkout.bankTransfer}</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">Mô phỏng thanh toán chuyển khoản.</p>
                   </div>
                 </label>
                 
@@ -313,9 +314,9 @@ export const CheckoutClient = () => {
                 {paymentMethod === 'bank_transfer' && (
                   <div className="mt-3 ml-7 bg-neutral-100 p-3 border border-neutral-200 text-xs">
                     <p className="font-mono font-bold text-neutral-800 mb-1 uppercase tracking-wider">StyleHub Demo Bank</p>
-                    <p>Account Name: STYLEHUB DEMO</p>
-                    <p>Account Number: 0000 1234 5678</p>
-                    <p className="mt-1 text-neutral-500 italic">Transfer Content: Order code will be shown on the success page.</p>
+                    <p>Tên tài khoản: STYLEHUB DEMO</p>
+                    <p>Số tài khoản: 0000 1234 5678</p>
+                    <p className="mt-1 text-neutral-500 italic">Nội dung chuyển khoản: Mã đơn hàng (sẽ hiển thị sau khi đặt).</p>
                   </div>
                 )}
               </div>
@@ -327,7 +328,7 @@ export const CheckoutClient = () => {
               className="w-full py-4 text-sm font-mono uppercase tracking-wider font-bold"
               disabled={isPlacing}
             >
-              {isPlacing ? 'Processing Order...' : 'Place Order'}
+              {isPlacing ? vi.checkout.processingOrder : vi.checkout.placeOrder}
             </Button>
           </form>
         </div>
@@ -336,7 +337,7 @@ export const CheckoutClient = () => {
         <div className="lg:col-span-5">
           <div className="border border-neutral-200 bg-neutral-50 p-6 sm:p-8">
             <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-200 pb-3 mb-6">
-              Review Items ({cart.length})
+              {vi.checkout.orderSummary} ({cart.length})
             </h2>
 
             <div className="divide-y divide-neutral-200 max-h-96 overflow-y-auto pr-2">
@@ -352,7 +353,7 @@ export const CheckoutClient = () => {
                       <p className="font-mono text-[10px] text-neutral-500 mt-0.5">
                         Qty {item.quantity} · Size {item.size}
                       </p>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">Seller: {item.sellerHandle}</p>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">Người bán: {item.sellerHandle}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="font-mono text-xs font-bold text-neutral-900">
@@ -366,17 +367,17 @@ export const CheckoutClient = () => {
 
             <dl className="mt-6 border-t border-neutral-200 pt-6 space-y-4 text-xs">
               <div className="flex justify-between">
-                <span className="text-neutral-500">Subtotal</span>
+                <span className="text-neutral-500">{vi.cart.subtotal}</span>
                 <span className="font-mono text-neutral-900">{formatVND(cartSubtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-neutral-500">Shipping</span>
+                <span className="text-neutral-500">{vi.cart.shippingFee}</span>
                 <span className="font-mono text-neutral-900">
-                  {shippingCost === 0 ? 'FREE' : formatVND(shippingCost)}
+                  {shippingCost === 0 ? 'Miễn phí' : formatVND(shippingCost)}
                 </span>
               </div>
               <div className="flex justify-between border-t border-neutral-200 pt-4 text-sm font-bold text-neutral-900">
-                <span>Grand Total</span>
+                <span>{vi.cart.total}</span>
                 <span className="font-mono text-base">{formatVND(grandTotal)}</span>
               </div>
             </dl>
