@@ -15,9 +15,9 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   return (
     <Link
       href={ROUTES.PRODUCT(product.slug)}
-      className="group block border border-neutral-200 bg-white transition-colors hover:border-neutral-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+      className="group block border border-[var(--border)] bg-[var(--background)] rounded-[var(--radius-card)] overflow-hidden transition-colors hover:border-[var(--brand-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-accent)]"
     >
-      <div className="relative aspect-square overflow-hidden border-b border-neutral-200 bg-neutral-100">
+      <div className="relative aspect-square overflow-hidden border-b border-[var(--border)] bg-[var(--muted)]">
         <ListingImage
           src={listing.imageUrl}
           alt={listing.imageAlt}
