@@ -36,8 +36,8 @@ const validateOrderPayload = (payload) => {
   const { customer, paymentMethod, items } = payload;
   
   if (!customer || !customer.name || !customer.name.trim()) throw new Error('Customer name is required.');
-  if (!customer.email || !customer.email.includes('@')) throw new Error('Valid customer email is required.');
-  if (!customer.phone || !customer.phone.trim()) throw new Error('Customer phone is required.');
+  if (!customer.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email.trim())) throw new Error('Valid customer email is required.');
+  if (!customer.phone || !/^0[0-9]{9}$/.test(customer.phone.trim())) throw new Error('Invalid Vietnamese phone number.');
   if (!customer.address || !customer.address.trim()) throw new Error('Customer address is required.');
   
   if (!paymentMethod || !['cod', 'bank_transfer'].includes(paymentMethod)) {

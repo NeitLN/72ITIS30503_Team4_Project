@@ -25,9 +25,12 @@ export const CheckoutClient = () => {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [district, setDistrict] = useState('');
+  const [province, setProvince] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod');
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const shippingCost = cartSubtotal > 0 ? 30000 : 0;
   const grandTotal = cartSubtotal + shippingCost;
@@ -35,6 +38,23 @@ export const CheckoutClient = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setErrors({});
+    
+    // Client-side validation
+    const newErrors: Record<string, string> = {};
+    if (!name || name.trim().length < 2) newErrors.name = 'Please enter your full name.';
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) newErrors.email = 'Please enter a valid email address.';
+    if (!phone || !/^0[0-9]{9}$/.test(phone.trim())) newErrors.phone = 'Invalid Vietnamese phone number.';
+    if (!province || !province.trim()) newErrors.province = 'Please enter your province or city.';
+    if (!district || !district.trim()) newErrors.district = 'Please enter your district.';
+    if (!streetAddress || !streetAddress.trim()) newErrors.streetAddress = 'Please enter your street address.';
+    if (!paymentMethod) newErrors.paymentMethod = 'Please select a payment method.';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setIsPlacing(true);
 
     if (!isAuthenticated) {
@@ -44,13 +64,14 @@ export const CheckoutClient = () => {
     }
 
     try {
+      const fullShippingAddress = `${streetAddress.trim()}, ${district.trim()}, ${province.trim()}`;
       const payload = {
         customer: {
-          name,
-          email,
-          phone,
-          address,
-          city,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          address: fullShippingAddress,
+          city: province.trim(),
         },
         paymentMethod,
         items: cart.map((item) => ({
@@ -171,11 +192,11 @@ export const CheckoutClient = () => {
                   <input
                     type="text"
                     id="name"
-                    required
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="mt-1.5 block w-full border border-neutral-300 px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none"
+                    onChange={(e) => { setName(e.target.value); setErrors(prev => ({ ...prev, name: '' })); }}
+                    className={`mt-1.5 block w-full border px-3.5 py-2 text-sm text-neutral-900 focus:outline-none ${errors.name ? 'border-red-500 focus:border-red-500' : 'border-neutral-300 focus:border-neutral-900'}`}
                   />
+                  {errors.name && <p className="mt-1.5 text-xs text-red-600">{errors.name}</p>}
                 </div>
 
                 <div className="sm:col-span-3">
@@ -185,11 +206,12 @@ export const CheckoutClient = () => {
                   <input
                     type="tel"
                     id="phone"
-                    required
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="mt-1.5 block w-full border border-neutral-300 px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none"
+                    onChange={(e) => { setPhone(e.target.value); setErrors(prev => ({ ...prev, phone: '' })); }}
+                    className={`mt-1.5 block w-full border px-3.5 py-2 text-sm text-neutral-900 focus:outline-none ${errors.phone ? 'border-red-500 focus:border-red-500' : 'border-neutral-300 focus:border-neutral-900'}`}
                   />
+                  {errors.phone && <p className="mt-1.5 text-xs text-red-600">{errors.phone}</p>}
+                  {!errors.phone && <p className="mt-1.5 text-xs text-neutral-400">Used only for delivery confirmation.</p>}
                 </div>
 
                 <div className="sm:col-span-6">
@@ -199,39 +221,53 @@ export const CheckoutClient = () => {
                   <input
                     type="email"
                     id="email"
-                    required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1.5 block w-full border border-neutral-300 px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none"
+                    onChange={(e) => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: '' })); }}
+                    className={`mt-1.5 block w-full border px-3.5 py-2 text-sm text-neutral-900 focus:outline-none ${errors.email ? 'border-red-500 focus:border-red-500' : 'border-neutral-300 focus:border-neutral-900'}`}
                   />
+                  {errors.email && <p className="mt-1.5 text-xs text-red-600">{errors.email}</p>}
                 </div>
 
-                <div className="sm:col-span-4">
-                  <label htmlFor="address" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
+                <div className="sm:col-span-2">
+                  <label htmlFor="province" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
+                    Province / City
+                  </label>
+                  <input
+                    type="text"
+                    id="province"
+                    value={province}
+                    onChange={(e) => { setProvince(e.target.value); setErrors(prev => ({ ...prev, province: '' })); }}
+                    className={`mt-1.5 block w-full border px-3.5 py-2 text-sm text-neutral-900 focus:outline-none ${errors.province ? 'border-red-500 focus:border-red-500' : 'border-neutral-300 focus:border-neutral-900'}`}
+                  />
+                  {errors.province && <p className="mt-1.5 text-xs text-red-600">{errors.province}</p>}
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label htmlFor="district" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
+                    District
+                  </label>
+                  <input
+                    type="text"
+                    id="district"
+                    value={district}
+                    onChange={(e) => { setDistrict(e.target.value); setErrors(prev => ({ ...prev, district: '' })); }}
+                    className={`mt-1.5 block w-full border px-3.5 py-2 text-sm text-neutral-900 focus:outline-none ${errors.district ? 'border-red-500 focus:border-red-500' : 'border-neutral-300 focus:border-neutral-900'}`}
+                  />
+                  {errors.district && <p className="mt-1.5 text-xs text-red-600">{errors.district}</p>}
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label htmlFor="streetAddress" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
                     Street Address
                   </label>
                   <input
                     type="text"
-                    id="address"
-                    required
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="mt-1.5 block w-full border border-neutral-300 px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none"
+                    id="streetAddress"
+                    value={streetAddress}
+                    onChange={(e) => { setStreetAddress(e.target.value); setErrors(prev => ({ ...prev, streetAddress: '' })); }}
+                    className={`mt-1.5 block w-full border px-3.5 py-2 text-sm text-neutral-900 focus:outline-none ${errors.streetAddress ? 'border-red-500 focus:border-red-500' : 'border-neutral-300 focus:border-neutral-900'}`}
                   />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label htmlFor="city" className="block text-xs font-mono uppercase tracking-wider text-neutral-500">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    id="city"
-                    required
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="mt-1.5 block w-full border border-neutral-300 px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none"
-                  />
+                  {errors.streetAddress && <p className="mt-1.5 text-xs text-red-600">{errors.streetAddress}</p>}
                 </div>
               </div>
             </div>
@@ -248,7 +284,7 @@ export const CheckoutClient = () => {
                     name="payment"
                     value="cod"
                     checked={paymentMethod === 'cod'}
-                    onChange={() => setPaymentMethod('cod')}
+                    onChange={() => { setPaymentMethod('cod'); setErrors(prev => ({ ...prev, paymentMethod: '' })); }}
                     className="h-4 w-4 text-neutral-950 focus:ring-neutral-950"
                   />
                   <div>
@@ -263,7 +299,7 @@ export const CheckoutClient = () => {
                     name="payment"
                     value="bank_transfer"
                     checked={paymentMethod === 'bank_transfer'}
-                    onChange={() => setPaymentMethod('bank_transfer')}
+                    onChange={() => { setPaymentMethod('bank_transfer'); setErrors(prev => ({ ...prev, paymentMethod: '' })); }}
                     className="h-4 w-4 text-neutral-950 focus:ring-neutral-950"
                   />
                   <div>
@@ -271,6 +307,8 @@ export const CheckoutClient = () => {
                     <p className="text-xs text-neutral-500 mt-0.5">Simulate payment via local mobile banking transfer.</p>
                   </div>
                 </label>
+                
+                {errors.paymentMethod && <p className="mt-2 text-xs text-red-600">{errors.paymentMethod}</p>}
 
                 {paymentMethod === 'bank_transfer' && (
                   <div className="mt-3 ml-7 bg-neutral-100 p-3 border border-neutral-200 text-xs">
