@@ -1,6 +1,6 @@
 import { Container } from '../../components/ui/Container';
 import { PageHeader } from '../../components/ui/PageHeader';
-import { Button } from '../../components/ui/Button';
+import { ContactForm } from '../../components/contact/ContactForm';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -48,62 +48,7 @@ export default function ContactPage() {
           </div>
 
           <div className="border border-neutral-200 bg-white p-6">
-            <form className="space-y-4">
-              <div>
-                <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-neutral-700">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  className="w-full border border-neutral-300 px-4 py-2.5 text-sm focus:border-neutral-900 focus:outline-none"
-                  placeholder="Your name"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-neutral-700">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full border border-neutral-300 px-4 py-2.5 text-sm focus:border-neutral-900 focus:outline-none"
-                  placeholder="your@email.com"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="topic" className="mb-1.5 block text-sm font-medium text-neutral-700">
-                  Topic
-                </label>
-                <select
-                  id="topic"
-                  className="w-full border border-neutral-300 bg-white px-4 py-2.5 text-sm focus:border-neutral-900 focus:outline-none"
-                >
-                  <option>General inquiry</option>
-                  <option>Report a seller</option>
-                  <option>Order issue</option>
-                  <option>Technical support</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="message" className="mb-1.5 block text-sm font-medium text-neutral-700">
-                  Message
-                </label>
-                <textarea
-                  id="message"
-                  rows={5}
-                  className="w-full border border-neutral-300 px-4 py-2.5 text-sm focus:border-neutral-900 focus:outline-none"
-                  placeholder="How can we help?"
-                ></textarea>
-              </div>
-
-              <Button type="button" className="mt-2 w-full" size="lg">
-                Send message
-              </Button>
-            </form>
+            <ContactForm />
           </div>
         </div>
       </Container>
