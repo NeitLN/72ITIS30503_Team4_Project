@@ -76,7 +76,7 @@ export default function RootLayout({
           <Script
             id="tawkto-widget"
             strategy="lazyOnload"
-            src={`https://embed.tawk.to/${process.env.NEXT_PUBLIC_TAWKTO_ID}/default`}
+            src={`https://embed.tawk.to/${process.env.NEXT_PUBLIC_TAWKTO_ID}`}
           />
         ) : null}
       </body>
