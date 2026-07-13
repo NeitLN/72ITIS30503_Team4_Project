@@ -153,12 +153,26 @@ const getProducts = async (options = {}) => {
     query = query.ilike('name', `%${options.search}%`);
   }
 
+  if (options.on_sale === 'true' || options.on_sale === true) {
+    query = query.not('sale_price', 'is', null);
+  }
+
   const page = parseInt(options.page) || 1;
-  const limit = parseInt(options.limit) || 20;
+  let limit = parseInt(options.limit) || 20;
+  if (isNaN(limit) || limit < 1) limit = 20;
+  if (limit > 100) limit = 100;
+  
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  query = query.range(from, to).order('created_at', { ascending: false });
+  query = query.range(from, to);
+
+  if (options.sort === 'latest') {
+    query = query.order('created_at', { ascending: false });
+  } else {
+    // Default sorting
+    query = query.order('created_at', { ascending: false });
+  }
 
   const { data, error, count } = await query;
 
