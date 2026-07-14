@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config({ path: '../.env' }); // Load root .env
+require('dotenv').config(); // Load root .env
 const { isSupabaseConfigured } = require('./lib/supabase');
 const { success, error } = require('./utils/apiResponse');
 
