@@ -19,14 +19,15 @@ export async function generateMetadata({ params }: SellerPageProps): Promise<Met
   try {
     const { data: seller } = await getSellerByUsername(username);
     const displayName = seller?.full_name || `@${username}`;
-    const title = buildTitle(`${displayName} Seller Profile`);
+    // Raw name here: the root layout's title template already appends " — StyleHub".
+    const title = `${displayName} Seller Profile`;
     const description = `Explore ${displayName}'s C2C fashion listings, rating, location, and marketplace profile on StyleHub.`;
 
     return {
       title,
       description,
       openGraph: {
-        title,
+        title: buildTitle(title),
         description,
         type: 'profile',
         url: `${SITE_URL}/seller/${username}`,
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: SellerPageProps): Promise<Met
     };
   } catch {
     return {
-      title: buildTitle(`@${username} Seller Profile`),
+      title: `@${username} Seller Profile`,
       description: `Explore @${username}'s C2C fashion listings, rating, location, and marketplace profile on StyleHub.`,
     };
   }

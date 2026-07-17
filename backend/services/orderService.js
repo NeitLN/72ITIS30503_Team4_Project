@@ -57,7 +57,8 @@ const validateOrderPayload = (payload) => {
 
 const calculateTotals = (items, appliedCoupon = null) => {
   const subtotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
-  const shipping_fee = subtotal > 0 ? 30000 : 0;
+  // Free shipping over 500,000 VND, matching the threshold promised in the cart UI.
+  const shipping_fee = subtotal > 500000 || subtotal === 0 ? 0 : 30000;
   
   let discount_amount = 0;
 

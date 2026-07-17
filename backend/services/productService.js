@@ -176,7 +176,14 @@ const getProducts = async (options = {}) => {
 
   const { data, error, count } = await query;
 
-  if (error) throw error;
+  if (error) {
+    // Gracefully handle schemas missing the is_featured column instead of a 500
+    if ((options.featured === 'true' || options.featured === true) &&
+        (error.code === '42703' || error.message?.includes('is_featured'))) {
+      return await getProducts({ ...options, featured: undefined });
+    }
+    throw error;
+  }
 
   // Filter out any products where sale_price is not strictly less than price
   let validData = data;

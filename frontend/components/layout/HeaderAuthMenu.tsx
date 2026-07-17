@@ -48,7 +48,7 @@ export const HeaderAuthMenu = () => {
   }
 
   return (
-    <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium">
+    <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium whitespace-nowrap">
       <Link href={ROUTES.LOGIN} className="text-neutral-600 transition-colors hover:text-neutral-900">
         Log in
       </Link>

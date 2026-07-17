@@ -41,7 +41,8 @@ export const CheckoutClient = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const defaultShippingCost = cartSubtotal > 0 ? 30000 : 0;
+  // Free shipping over 500,000 VND, matching the threshold shown in the cart UI.
+  const defaultShippingCost = cartSubtotal > 500000 || cartSubtotal === 0 ? 0 : 30000;
   const displayShipping = verifiedShipping !== null ? verifiedShipping : defaultShippingCost;
   const grandTotal = verifiedTotal !== null ? verifiedTotal : cartSubtotal + displayShipping;
 
