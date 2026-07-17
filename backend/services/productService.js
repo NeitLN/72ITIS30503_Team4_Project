@@ -153,8 +153,8 @@ const getProducts = async (options = {}) => {
     query = query.ilike('name', `%${options.search}%`);
   }
 
-  if (options.on_sale === 'true' || options.on_sale === true) {
-    query = query.not('sale_price', 'is', null);
+  if (options.on_sale === 'true' || options.on_sale === true || options.filter === 'on_sale') {
+    query = query.not('sale_price', 'is', null).gt('sale_price', 0);
   }
 
   const page = parseInt(options.page) || 1;
@@ -167,7 +167,7 @@ const getProducts = async (options = {}) => {
 
   query = query.range(from, to);
 
-  if (options.sort === 'latest') {
+  if (options.sort === 'latest' || options.filter === 'latest') {
     query = query.order('created_at', { ascending: false });
   } else {
     // Default sorting
@@ -178,7 +178,13 @@ const getProducts = async (options = {}) => {
 
   if (error) throw error;
 
-  const enrichedData = await attachRelations(data);
+  // Filter out any products where sale_price is not strictly less than price
+  let validData = data;
+  if (options.on_sale === 'true' || options.on_sale === true || options.filter === 'on_sale') {
+    validData = data.filter(p => p.sale_price < p.price);
+  }
+
+  const enrichedData = await attachRelations(validData);
 
   return {
     data: enrichedData,
