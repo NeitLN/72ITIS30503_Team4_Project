@@ -16,9 +16,15 @@ export async function createOrder(payload: Record<string, unknown>) {
     });
     
     const data = await res.json();
+
+    if (!res.ok || data.success === false) {
+      const errMsg = data.error?.message || data.error || data.message || `HTTP ${res.status}`;
+      throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+    }
+
     return data;
-  } catch {
-    return { success: false, error: { message: 'Network error or backend is offline' } };
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -36,9 +42,15 @@ export async function listAllOrdersForAdmin() {
     });
     
     const data = await res.json();
+
+    if (!res.ok || data.success === false) {
+      const errMsg = data.error?.message || data.error || data.message || `HTTP ${res.status}`;
+      throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+    }
+
     return data;
-  } catch {
-    return { success: false, error: { message: 'Network error or backend is offline' } };
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -57,9 +69,15 @@ export async function updateOrderStatus(orderId: string, status: string) {
     });
     
     const data = await res.json();
+
+    if (!res.ok || data.success === false) {
+      const errMsg = data.error?.message || data.error || data.message || `HTTP ${res.status}`;
+      throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+    }
+
     return data;
-  } catch {
-    return { success: false, error: { message: 'Network error or backend is offline' } };
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -77,9 +95,15 @@ export async function listMyOrders() {
     });
     
     const data = await res.json();
+
+    if (!res.ok || data.success === false) {
+      const errMsg = data.error?.message || data.error || data.message || `HTTP ${res.status}`;
+      throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+    }
+
     return data;
-  } catch {
-    return { success: false, error: { message: 'Network error or backend is offline' } };
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -98,8 +122,14 @@ export async function validateCoupon(payload: { code: string; items: Record<stri
     });
     
     const data = await res.json();
+
+    if (!res.ok || data.success === false) {
+      const errMsg = data.error?.message || data.error || data.message || `HTTP ${res.status}`;
+      throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+    }
+
     return data;
-  } catch {
-    return { success: false, error: { message: 'Network error or backend is offline' } };
+  } catch (error) {
+    throw error;
   }
 }

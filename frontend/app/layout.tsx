@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Archivo, Inter } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 import { siteConfig } from '../constants/site';
 import { Header } from '../components/layout/Header';
@@ -71,6 +72,13 @@ export default function RootLayout({
             <Footer />
           </WishlistProvider>
         </CartProvider></AuthProvider>
+        {process.env.NEXT_PUBLIC_TAWKTO_ID ? (
+          <Script
+            id="tawkto-widget"
+            strategy="lazyOnload"
+            src={`https://embed.tawk.to/${process.env.NEXT_PUBLIC_TAWKTO_ID}`}
+          />
+        ) : null}
       </body>
     </html>
   );

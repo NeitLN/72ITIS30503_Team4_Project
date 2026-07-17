@@ -25,20 +25,21 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     
     if (!product) {
       return {
-        title: buildTitle('Fashion Listing'),
+        title: 'Fashion Listing',
         description: 'View a C2C fashion marketplace listing on StyleHub.',
       };
     }
 
     const listing = getListingView(product);
-    const title = buildTitle(listing.name);
+    // Raw name here: the root layout's title template already appends " — StyleHub".
+    const title = listing.name;
     const description = `View this C2C fashion listing on StyleHub. ${listing.condition}, size ${listing.size}. Listed by ${listing.sellerHandle} in ${listing.sellerLocation}.`;
 
     return {
       title,
       description,
       openGraph: {
-        title,
+        title: buildTitle(listing.name),
         description,
         type: 'website',
         url: `${SITE_URL}/products/${slug}`,
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     };
   } catch {
     return {
-      title: buildTitle('Fashion Listing'),
+      title: 'Fashion Listing',
       description: 'View a C2C fashion marketplace listing on StyleHub.',
     };
   }

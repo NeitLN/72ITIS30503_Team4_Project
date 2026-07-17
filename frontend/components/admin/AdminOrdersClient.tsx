@@ -13,16 +13,19 @@ import { vi, tStatus, tPaymentMethod } from '../../lib/i18n';
 type AdminOrder = {
   id: string;
   order_code: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
+  user_id: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
   payment_method: string;
   status: 'pending' | 'processing' | 'completed' | 'cancelled';
   subtotal: number;
   shipping_fee: number;
+  discount_amount?: number;
   total_amount: number;
   created_at: string;
   updated_at?: string;
+  // Customer details usually joined, but fallback to raw structure for now since orders drops native names
 };
 
 export const AdminOrdersClient = () => {
@@ -49,8 +52,11 @@ export const AdminOrdersClient = () => {
             }
           }
         })
-        .catch(() => {
-          if (active) setErrorMsg('An unexpected network error occurred.');
+        .catch((err) => {
+          if (active) {
+            const e = err as Error;
+            setErrorMsg(e?.message || 'An unexpected network error occurred.');
+          }
         })
         .finally(() => {
           if (active) setIsLoading(false);
@@ -78,8 +84,9 @@ export const AdminOrdersClient = () => {
       } else {
         setErrorMsg(res.error?.message || 'Failed to load admin orders.');
       }
-    } catch {
-      setErrorMsg('An unexpected network error occurred.');
+    } catch (err) {
+      const e = err as Error;
+      setErrorMsg(e?.message || 'An unexpected network error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -97,8 +104,9 @@ export const AdminOrdersClient = () => {
       } else {
         setErrorMsg(res.error?.message || 'Failed to update order status.');
       }
-    } catch {
-      setErrorMsg('An unexpected network error occurred while updating status.');
+    } catch (err) {
+      const e = err as Error;
+      setErrorMsg(e?.message || 'An unexpected network error occurred while updating status.');
     } finally {
       setUpdatingId(null);
     }
@@ -329,9 +337,9 @@ export const AdminOrdersClient = () => {
                       {order.order_code}
                     </td>
                     <td className="px-5 py-5">
-                      <p className="font-semibold text-neutral-900">{order.customer_name}</p>
-                      <p className="text-[10px] text-neutral-500 font-mono mt-0.5">{order.customer_phone}</p>
-                      <p className="text-[10px] text-neutral-500 font-mono mt-0.5">{order.customer_email}</p>
+                      <p className="font-semibold text-neutral-900">{order.customer_name || `User: ${order.user_id}`}</p>
+                      {order.customer_email && <p className="text-xs text-neutral-500">{order.customer_email}</p>}
+                      {order.customer_phone && <p className="text-xs text-neutral-500">{order.customer_phone}</p>}
                     </td>
                     <td className="px-5 py-5 text-neutral-600 text-xs">
                       {formatVietnamDateTime(order.created_at)}

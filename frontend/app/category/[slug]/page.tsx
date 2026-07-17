@@ -26,19 +26,20 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     
     if (!category) {
       return {
-        title: buildTitle(`${fallbackName} Listings`),
+        title: `${fallbackName} Listings`,
         description: `Browse C2C marketplace listings for ${fallbackName.toLowerCase()} and local fashion pieces on StyleHub.`,
       };
     }
 
-    const title = buildTitle(`${category.name} Listings`);
+    // Raw name here: the root layout's title template already appends " — StyleHub".
+    const title = `${category.name} Listings`;
     const description = category.description || `Browse C2C marketplace listings for ${category.name.toLowerCase()} and local fashion pieces on StyleHub.`;
 
     return {
       title,
       description,
       openGraph: {
-        title,
+        title: buildTitle(title),
         description,
         type: 'website',
         url: `${SITE_URL}/category/${slug}`,
@@ -46,7 +47,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     };
   } catch {
     return {
-      title: buildTitle('Category Listings'),
+      title: 'Category Listings',
       description: 'Browse C2C marketplace listings for local fashion pieces on StyleHub.',
     };
   }
@@ -74,7 +75,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       categoryName = meta.category.name || categoryName;
       categoryDesc = meta.category.description || null;
     }
-  } catch {
+  } catch (err) {
+    // A category that genuinely doesn't exist should 404, not show a
+    // "connection issue" message that wrongly implies the backend is down.
+    if (err instanceof Error && /not found/i.test(err.message)) {
+      notFound();
+    }
     hasError = true;
   }
 
