@@ -184,6 +184,53 @@ temple/lens etch, Birkenstock cork sole + ESD logo patch, Crocs strap rivet
 logo, Tan & Loom embossed hardware) — confirmed by direct visual inspection,
 not inferred from the source filename.
 
+## Phase 6.2 expansion (52 new products, added 2026-07-18)
+
+**Provenance:** all 54 image files were added to the repo by a teammate in
+commit `3753a04` ("Them anh san pham cac hang vao thu muc frontend") as local
+static assets — never hotlinked. This pass visually inspected every one of
+those 54 files (not judged by filename) and matched 52 of them to an accurate
+product listing; 1 was too ambiguous to use at all and 1 depicted the wrong
+model than its filename claimed (both detailed below). None are AI-generated;
+each is a real product/press photo.
+
+**Filename ↔ content mismatches found and corrected** (rule: visual content
+always wins over filename):
+
+- `adidas-ultraboost-light.jpg` — the shoe itself is printed with "DURAMO
+  SPEED 2", not Ultraboost Light. Listed as **Adidas Duramo Speed 2**, not
+  Ultraboost.
+- `coolmate-active-v2-tee.jpg` — shows charcoal cargo/jogger pants, not a tee.
+  Listed as a generic **Charcoal Belted Cargo Joggers** (No Brand), not
+  Coolmate, not a tee.
+- `tobi-essential-zip-hoodie.jpg` — shows a pullover hoodie printed "ESSENTIALS
+  FEAR OF GOD", not a Tobi zip hoodie. Listed as **Essentials Fear of God
+  Pullover Hoodie Taupe**, brand corrected to Essentials.
+- `5theway-monogram-wallet.jpg` — shows a "STR8EWAY" branded zip pouch/case,
+  not a wallet, and not "5TheWay". Listed as **STR8EWAY Lightning Bolt Zip
+  Pouch** under the visible brand.
+- `uniqlo-airism-oversized-tee.jpg` — **rejected, not used.** Shows a full
+  outfit (unrelated brown tee + beige cargo pants) with no legible brand mark;
+  too ambiguous to attach to any single accurate listing.
+
+**VERIFIED_EXACT (brand/model logo directly visible):** ader-error-tetris-logo-tee.jpg (Ader Error), adidas-originals-trefoil-tee.jpg (Adidas), arcteryx-beta-ar-shell.jpg (Arc'teryx), bad-habits-rabbit-backpack.jpg (Bad Habits), balenciaga-triple-s-sneaker.jpg (Balenciaga wordmark), bape-shark-full-zip-hoodie.jpg (BAPE), champion-reverse-weave-hoodie.jpg (Champion C-logo), clownz-basic-beanie.jpg + clownz-monogram-jacket.jpg (Clownz), converse-chuck-1970s.jpg (Converse), degrey-leather-backpack.jpg + degrey-line-hoodie.jpg (Degrey), essentials-fog-tee.jpg + tobi-essential-zip-hoodie.jpg (Essentials Fear of God), fila-disruptor-ii-white.jpg (Fila), gucci-gg-marmont-belt.jpg (Gucci GG buckle), hades-shooting-star-tee.jpg (Hades), levents-classic-hoodie.jpg (Levents), machine56-cyber-graphic-tee.jpg (Machine56), mlb-chunky-liner-white.jpg + mlb-ny-yankees-monogram-bag.jpg (MLB/NY Yankees), nb-classic-logo-cap.jpg + "new balance-530-white-silver.jpg" (New Balance), nike-sb-dunk-low-panda.jpg (Nike SB), now-saigon-varsity-jacket.jpg (NOW Saigon), salomon-xt-6-gore-tex.jpg (Salomon), stussy-8-ball-tee.jpg (Stüssy), supreme-camp-cap-black.jpg (Supreme box logo), teelab-studio-oversized-tee.jpg (Teelab Studio), tnf-nuptse-1996-jacket.jpg (The North Face), tobi-parachute-shorts.jpg (Tobi), uniqlo-kaws-graphic-hoodie.jpg (Uniqlo x KAWS), adidas-ultraboost-light.jpg (Adidas, corrected model), patagonia-baggies-shorts.jpg (Patagonia), 5theway-monogram-wallet.jpg (STR8EWAY, corrected type), aoku-messenger-sling-bag.jpg (Aoki).
+
+**VERIFIED_GENERIC (clean product photo, no confirmable brand mark — used
+unbranded even though the filename implied a brand):** uniqlo-uv-protection-jacket.jpg (kept as Uniqlo — matches Uniqlo's real minimal-logo UV-protection parka line), acronym-j1a-gt-jacket.jpg, davies-cargo-pants.jpg, hades-cargo-pants-black.jpg, mango-linen-blend-shirt.jpg, nilmance-water-resistant-cargo.jpg, riot-division-tech-vest.jpg, snow-peak-bucket-hat.jpg, valorant-vct-spark-hoodie.jpg, y-3-kaiwa-chunky-sneaker.jpg, zara-basic-knit-beanie.jpg, zara-slim-fit-trousers.jpg, pull-bear-denim-shorts.jpg, columbia-silver-ridge-shirt.jpg. Each of these had a filename implying a specific brand, but the logo was either absent or too small/illegible to confidently confirm at the available resolution — per the "don't rely on filename alone" rule, they are listed as No Brand generic products instead.
+
+**Rejected (1):** uniqlo-airism-oversized-tee.jpg — see mismatch note above.
+
+**Why the catalog stops at 148, not 200:** every one of the 54 team-added
+assets was individually inspected; 52 passed as accurate listings. Beyond
+that, the same limitation documented in the original Phase 6 pass held:
+Wikimedia Commons and other open-license sources have strong coverage for
+footwear/bags/accessories but very thin, mostly lifestyle/action coverage for
+apparel (hoodies, jackets, jerseys), so sourcing another ~50+ new *exact,
+properly licensed* branded images to reach 200 was not achievable without
+violating the no-AI-generated / no-hotlinked-image / no-unconfident-match
+rules. Accuracy was prioritized over hitting the raw number, consistent with
+the original Phase 6 decision to stop at 96 instead of 120.
+
 **Categories intentionally left without a new asset:** `phone-cases` — no
 Commons search for generic/branded phone cases returned a clean, confidently-
 matchable product photo. Rather than attach a mismatched or lifestyle image,

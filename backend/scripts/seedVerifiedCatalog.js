@@ -54,13 +54,19 @@ function buildDescription(p) {
   return `${p.name}. ${condText}. Size ${p.size}. Authentic ${brandText} listing from a StyleHub community seller — great addition to a streetwear or everyday wardrobe.`;
 }
 
+// Spread deterministic created_at values across the previous 90 days, with
+// LATER array indices (newer manifest entries, e.g. the Phase 6.2 expansion)
+// landing on the MORE RECENT end so "New Arrivals" actually surfaces newly
+// added products instead of the oldest ones in the array.
+const SPAN_STEP = (89 * DAY) / Math.max(P.length - 1, 1);
+
 function buildManagedRows(brandId) {
   const rows = [];
   for (let i = 0; i < P.length; i++) {
     const p = P[i];
     const seller = SELLERS[i % SELLERS.length];
     const url = imgPath(p.img);
-    const created = new Date(BASE_DATE - i * DAY).toISOString();
+    const created = new Date(BASE_DATE - (P.length - 1 - i) * SPAN_STEP).toISOString();
     rows.push({
       _slug_key: p.slug,
       _img: p.img,
@@ -80,7 +86,7 @@ function buildManagedRows(brandId) {
       seller_id: seller.id,
       brand: p.brand ? BRANDS.find(b => b.slug === p.brand).name : 'No Brand',
       brand_id: p.brand ? brandId[p.brand] : null,
-      is_negotiable: i % 4 === 1,
+      is_negotiable: p.neg != null ? p.neg : i % 4 === 1,
       is_featured: !!p.feat,
       status: 'active',
       created_at: created,
@@ -178,9 +184,19 @@ async function run() {
   let toUpdate = 0;
   let unchanged = 0;
   const finalRows = [];
+  // Rows whose live slug differs from the manifest's canonical slug (found via
+  // image-based reuse, not slug match) — renamed by id below, never by
+  // delete+recreate, so product_id (and any order_item/review FK to it) is
+  // never touched.
+  const slugRenames = [];
+  const matchedIds = new Set(); // ids of existing rows the manifest claims, by id — not by (stale) slug string
   for (const row of managedRows) {
     const reuse = bySlug[row._slug_key] || byImage[row._img];
-    const finalSlug = reuse ? reuse.slug : row._slug_key;
+    const finalSlug = row._slug_key; // manifest slug is always authoritative
+    if (reuse) {
+      matchedIds.add(reuse.id);
+      if (reuse.slug !== finalSlug) slugRenames.push({ id: reuse.id, from: reuse.slug, to: finalSlug });
+    }
     const { _slug_key, _img, ...payload } = row;
     payload.slug = finalSlug;
     finalRows.push(payload);
@@ -190,15 +206,25 @@ async function run() {
   }
 
   console.log(`\nPlanned: ${toInsert} insert, ${toUpdate} update, ${unchanged} unchanged, 0 skipped.`);
+  if (slugRenames.length) console.log(`Slug renames to match manifest (by id, product_id unchanged): ${slugRenames.length}`);
   printDistribution(finalRows);
 
-  const managedSlugs = new Set(finalRows.map((r) => r.slug));
-  const leftoverActive = (existing || []).filter((r) => r.status === 'active' && !managedSlugs.has(r.slug));
+  // Filter by id (matchedIds), not by slug string — slugRenames above mean a
+  // row's *old* slug is intentionally absent from managedSlugs even though
+  // that same row (by id) is very much still managed.
+  const leftoverActive = (existing || []).filter((r) => r.status === 'active' && !matchedIds.has(r.id));
   console.log(`\nLeftover active products outside manifest (will be archived on apply): ${leftoverActive.length}`);
 
   if (!apply) {
     console.log('\nDRY RUN — no database writes performed.');
     return;
+  }
+
+  // Rename by id first (never delete+recreate) so the upsert-by-slug below
+  // lands on the same row instead of inserting a duplicate under the new slug.
+  for (const r of slugRenames) {
+    const { error: rErr } = await sb.from('products').update({ slug: r.to }).eq('id', r.id);
+    if (rErr) throw new Error(`slug rename (${r.from} -> ${r.to}): ${rErr.message}`);
   }
 
   const { data: upserted, error: upErr } = await sb
@@ -234,6 +260,7 @@ async function run() {
   console.log('Products upserted (active, verified):', finalRows.length);
   console.log('  inserted:', toInsert, '| updated:', toUpdate, '| unchanged:', unchanged);
   console.log('Leftover products archived:', deactivated);
+  console.log('Slugs renamed to match manifest:', slugRenames.length);
   console.log('Primary product_images synced:', imageRows.length);
 }
 

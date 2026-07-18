@@ -28,8 +28,9 @@ if (!URL || !KEY) { console.error('Supabase env missing.'); process.exit(2); }
 const sb = createClient(URL, KEY, { auth: { persistSession: false } });
 
 const IMG_DIR = path.join(__dirname, '..', '..', 'frontend', 'public', 'images', 'products');
-const MIN_PRODUCTS = 80;
-const MIN_BRANDS = 18;
+const MIN_PRODUCTS = 140;
+const MIN_BRANDS = 25;
+const MAX_BRAND_SHARE = 0.12;
 
 const onDisk = new Set(fs.readdirSync(IMG_DIR));
 const fileOf = (u) => (u && u.startsWith('/images/products/')) ? u.split('/').pop() : null;
@@ -85,13 +86,33 @@ const fail = (m) => failures.push(m);
   if (products.length < MIN_PRODUCTS) fail(`active product count ${products.length} < target ${MIN_PRODUCTS}`);
   if (distinctBrands.size < MIN_BRANDS) fail(`distinct brand count ${distinctBrands.size} < target ${MIN_BRANDS}`);
 
-  // Report
+  // 9 brand concentration — no single brand should dominate the catalog
+  const brandShare = {};
+  products.forEach(p => { if (p.brand_id) brandShare[p.brand_id] = (brandShare[p.brand_id] || 0) + 1; });
+  for (const [bid, count] of Object.entries(brandShare)) {
+    const share = count / products.length;
+    if (share > MAX_BRAND_SHARE) fail(`brand ${bid} share ${(share * 100).toFixed(1)}% exceeds ${MAX_BRAND_SHARE * 100}% cap (${count}/${products.length})`);
+  }
+
+  // 10 distribution ranges
   const saleCount = products.filter(p => p.sale_price != null).length;
+  const featCount = products.filter(p => p.is_featured).length;
+  const negCount = products.filter(p => p.is_negotiable).length;
+  const sellerCount = new Set(products.filter(p => p.seller_id).map(p => p.seller_id)).size;
+  if (sellerCount < 2) fail(`only ${sellerCount} distinct seller(s) used across active catalog`);
+  if (saleCount < 50 || saleCount > 70) fail(`on-sale count ${saleCount} outside target range 50-70`);
+  if (featCount < 20 || featCount > 30) fail(`featured count ${featCount} outside target range 20-30`);
+  if (negCount < 40 || negCount > 60) fail(`negotiable count ${negCount} outside target range 40-60`);
+
+  // Report
   console.log('StyleHub catalog validation');
   console.log('---------------------------');
   console.log('Active products     :', products.length);
   console.log('Distinct brands used:', distinctBrands.size);
+  console.log('Distinct sellers used:', sellerCount);
   console.log('On-sale products    :', saleCount);
+  console.log('Featured products   :', featCount);
+  console.log('Negotiable products :', negCount);
   console.log('Categories in use   :', new Set(products.map(p => p.category_slug)).size);
   console.log('');
   if (failures.length) {

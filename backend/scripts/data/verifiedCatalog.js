@@ -55,6 +55,30 @@ const BRANDS = [
   { slug: 'davies', name: 'Davies', is_local: true },
   { slug: 'shondo', name: 'Shondo', is_local: true },
   { slug: 'bad-habits', name: 'Bad Habits', is_local: true },
+  { slug: 'grimm-dc', name: 'Grimm DC', is_local: true },
+  { slug: 'clownz', name: 'Clownz', is_local: true },
+  { slug: 'machine56', name: 'Machine56', is_local: true },
+  { slug: 'teelab', name: 'Teelab Studio', is_local: true },
+  { slug: 'now-saigon', name: 'NOW Saigon', is_local: true },
+  { slug: 'aoki', name: 'Aoki', is_local: true },
+  { slug: 'str8eway', name: 'STR8EWAY', is_local: true },
+  // Phase 6.2 expansion (2026-07-18, catalog growth toward 200) — new
+  // international brands, each backed by a visually-confirmed logo/wordmark
+  // in a real image the team added in commit 3753a04.
+  { slug: 'ader-error', name: 'Ader Error', is_local: false },
+  { slug: 'arcteryx', name: "Arc'teryx", is_local: false },
+  { slug: 'balenciaga', name: 'Balenciaga', is_local: false },
+  { slug: 'bape', name: 'BAPE', is_local: false },
+  { slug: 'champion', name: 'Champion', is_local: false },
+  { slug: 'gucci', name: 'Gucci', is_local: false },
+  { slug: 'mlb', name: 'MLB', is_local: false },
+  { slug: 'salomon', name: 'Salomon', is_local: false },
+  { slug: 'stussy', name: 'Stussy', is_local: false },
+  { slug: 'supreme', name: 'Supreme', is_local: false },
+  { slug: 'tobi', name: 'Tobi', is_local: false },
+  { slug: 'essentials', name: 'Essentials Fear of God', is_local: false },
+  { slug: 'fila', name: 'Fila', is_local: false },
+  { slug: 'patagonia', name: 'Patagonia', is_local: false },
 ];
 
 // ---------------------------------------------------------------------------
@@ -222,6 +246,73 @@ const P = [
   { slug: 'adidas-stan-smith-white-navy', name: 'Adidas Stan Smith', brand: 'adidas', cat: 'shoes', img: 'adidas-stan-smith.jpg', price: 1890000, cond: 'new_with_tags', size: 'EU 40', feat: true },
   { slug: 'crocs-classic-clog-black', name: 'Crocs Classic Clog', brand: 'crocs', cat: 'slides', img: 'crocs-classic-clog.jpg', price: 590000, sale: 450000, cond: 'like_new', size: 'EU 42' },
   { slug: 'nike-air-max-90-black', name: 'Nike Air Max 90 Black', brand: 'nike', cat: 'shoes', img: 'nike-air-max-90-black.jpg', price: 2150000, sale: 1750000, cond: 'good', size: 'EU 42' },
+
+  // ==== PHASE 6.2 EXPANSION (52 new products, added from commit 3753a04's ====
+  // 54 team-added image assets, added 2026-07-18). Every asset visually
+  // inspected before use — several filenames were misleading vs. actual
+  // content and were corrected here (see IMAGE_SOURCES.md "Phase 6.2" table):
+  // adidas-ultraboost-light.jpg is actually an Adidas Duramo Speed 2 (visible
+  // model text on the shoe), coolmate-active-v2-tee.jpg is cargo joggers not
+  // a tee, tobi-essential-zip-hoodie.jpg is an Essentials Fear of God pullover
+  // (not Tobi, not zip). uniqlo-airism-oversized-tee.jpg was rejected outright
+  // (ambiguous two-garment lifestyle crop, no confirmable brand mark).
+  { slug: 'ader-error-tetris-logo-tee', name: 'Ader Error Tetris Logo Tee', brand: 'ader-error', cat: 't-shirts', img: 'ader-error-tetris-logo-tee.jpg', price: 950000, sale: 750000, cond: 'new_with_tags', size: 'M' },
+  { slug: 'adidas-adicolor-trefoil-tee-white', name: 'Adidas Adicolor Trefoil Tee White', brand: 'adidas', cat: 't-shirts', img: 'adidas-originals-trefoil-tee.jpg', price: 420000, sale: 320000, cond: 'like_new', size: 'S' },
+  { slug: 'arcteryx-beta-ar-shell-jacket', name: "Arc'teryx Beta AR Shell Jacket", brand: 'arcteryx', cat: 'outerwear', img: 'arcteryx-beta-ar-shell.jpg', price: 8900000, cond: 'excellent', size: 'L', feat: true },
+  { slug: 'bad-habits-rolltop-backpack', name: 'Bad Habits Roll-Top Backpack', brand: 'bad-habits', cat: 'backpacks', img: 'bad-habits-rabbit-backpack.jpg', price: 690000, sale: 520000, cond: 'like_new', size: 'One Size', neg: true },
+  { slug: 'balenciaga-triple-s-clear-sole', name: 'Balenciaga Triple S Clear Sole Sneaker', brand: 'balenciaga', cat: 'shoes', img: 'balenciaga-triple-s-sneaker.jpg', price: 6200000, cond: 'like_new', size: 'EU 40', feat: true },
+  { slug: 'bape-1st-camo-shark-hoodie', name: 'BAPE 1st Camo Shark Full-Zip Hoodie', brand: 'bape', cat: 'hoodies', img: 'bape-shark-full-zip-hoodie.jpg', price: 5400000, cond: 'excellent', size: 'L', feat: true },
+  { slug: 'champion-reverse-weave-hoodie', name: 'Champion Reverse Weave Pullover Hoodie', brand: 'champion', cat: 'hoodies', img: 'champion-reverse-weave-hoodie.jpg', price: 780000, sale: 590000, cond: 'good', size: 'L', neg: true },
+  { slug: 'clownz-basic-cuffed-beanie', name: 'Clownz Basic Cuffed Beanie', brand: 'clownz', cat: 'caps-hats', img: 'clownz-basic-beanie.jpg', price: 220000, sale: 165000, cond: 'new_with_tags', size: 'One Size', neg: true },
+  { slug: 'clownz-monogram-bomber', name: 'Clownz Monogram Bomber Jacket', brand: 'clownz', cat: 'outerwear', img: 'clownz-monogram-jacket.jpg', price: 890000, sale: 690000, cond: 'like_new', size: 'M', neg: true },
+  { slug: 'converse-chuck-70-hi-black', name: 'Converse Chuck 70 Hi Black', brand: 'converse', cat: 'shoes', img: 'converse-chuck-1970s.jpg', price: 1650000, sale: 1290000, cond: 'like_new', size: 'EU 39', neg: true },
+  { slug: 'degrey-leather-backpack-cream', name: 'Degrey Leather Backpack Cream', brand: 'degrey', cat: 'backpacks', img: 'degrey-leather-backpack.jpg', price: 750000, cond: 'like_new', size: 'One Size', feat: true },
+  { slug: 'degrey-athlete-track-jacket', name: 'Degrey Athlete Track Jacket', brand: 'degrey', cat: 'outerwear', img: 'degrey-line-hoodie.jpg', price: 620000, sale: 470000, cond: 'good', size: 'L', neg: true },
+  { slug: 'essentials-fog-boxy-tee-black', name: 'Essentials Fear of God Boxy Tee Black', brand: 'essentials', cat: 't-shirts', img: 'essentials-fog-tee.jpg', price: 890000, sale: 690000, cond: 'like_new', size: 'XL', neg: true },
+  { slug: 'essentials-fog-pullover-hoodie-taupe', name: 'Essentials Fear of God Pullover Hoodie Taupe', brand: 'essentials', cat: 'hoodies', img: 'tobi-essential-zip-hoodie.jpg', price: 1650000, sale: 1290000, cond: 'like_new', size: 'L', neg: true },
+  { slug: 'fila-disruptor-ii-white', name: 'Fila Disruptor II White', brand: 'fila', cat: 'shoes', img: 'fila-disruptor-ii-white.jpg', price: 780000, sale: 590000, cond: 'new_with_tags', size: 'EU 39', neg: true },
+  { slug: 'grimm-dc-logo-cap', name: 'Grimm DC Logo Cap', brand: 'grimm-dc', cat: 'caps-hats', img: 'grimm-dc-logo-cap.jpg', price: 260000, sale: 195000, cond: 'new_with_tags', size: 'One Size', neg: true },
+  { slug: 'gucci-gg-marmont-belt', name: 'Gucci GG Marmont Leather Belt', brand: 'gucci', cat: 'accessories', img: 'gucci-gg-marmont-belt.jpg', price: 5900000, cond: 'excellent', size: 'One Size', feat: true },
+  { slug: 'hades-shooting-star-tee-white', name: 'Hades Shooting Star Tee White', brand: 'hades', cat: 't-shirts', img: 'hades-shooting-star-tee.jpg', price: 480000, sale: 360000, cond: 'like_new', size: 'M', neg: true },
+  { slug: 'levents-classic-logo-hoodie', name: 'Levents Classic Logo Hoodie', brand: 'levents', cat: 'hoodies', img: 'levents-classic-hoodie.jpg', price: 460000, sale: 350000, cond: 'good', size: 'L', neg: true },
+  { slug: 'machine56-cyber-graphic-tee', name: 'Machine56 Cyber Graphic Tee', brand: 'machine56', cat: 't-shirts', img: 'machine56-cyber-graphic-tee.jpg', price: 350000, sale: 265000, cond: 'like_new', size: 'M', neg: true },
+  { slug: 'mlb-chunky-liner-sneaker', name: 'MLB Chunky Liner Sneaker NY', brand: 'mlb', cat: 'shoes', img: 'mlb-chunky-liner-white.jpg', price: 1850000, sale: 1450000, cond: 'like_new', size: 'EU 40' },
+  { slug: 'mlb-ny-yankees-monogram-bag', name: 'MLB NY Yankees Monogram Crossbody Bag', brand: 'mlb', cat: 'crossbody-bags', img: 'mlb-ny-yankees-monogram-bag.jpg', price: 2100000, cond: 'excellent', size: 'One Size', feat: true },
+  { slug: 'new-balance-classic-logo-cap', name: 'New Balance Classic Logo Cap', brand: 'new-balance', cat: 'caps-hats', img: 'nb-classic-logo-cap.jpg', price: 320000, sale: 240000, cond: 'new_with_tags', size: 'One Size', neg: true },
+  { slug: 'new-balance-530-white-silver', name: 'New Balance 530 White Silver', brand: 'new-balance', cat: 'shoes', img: 'new balance-530-white-silver.jpg', price: 2250000, sale: 1790000, cond: 'like_new', size: 'EU 41', neg: true },
+  { slug: 'nike-sb-dunk-low-panda', name: 'Nike SB Dunk Low Panda', brand: 'nike', cat: 'shoes', img: 'nike-sb-dunk-low-panda.jpg', price: 2950000, cond: 'new_with_tags', size: 'EU 42', feat: true },
+  { slug: 'now-saigon-varsity-jacket', name: 'NOW Saigon Varsity Jacket', brand: 'now-saigon', cat: 'outerwear', img: 'now-saigon-varsity-jacket.jpg', price: 890000, sale: 690000, cond: 'like_new', size: 'L', neg: true },
+  { slug: 'salomon-xt-6-gore-tex', name: 'Salomon XT-6 Gore-Tex Trail Sneaker', brand: 'salomon', cat: 'shoes', img: 'salomon-xt-6-gore-tex.jpg', price: 3200000, cond: 'like_new', size: 'EU 42', feat: true },
+  { slug: 'stussy-8-ball-tee-white', name: 'Stussy 8-Ball Tee White', brand: 'stussy', cat: 't-shirts', img: 'stussy-8-ball-tee.jpg', price: 590000, sale: 450000, cond: 'like_new', size: 'L', neg: true },
+  { slug: 'supreme-box-logo-camp-cap-black', name: 'Supreme Box Logo Camp Cap Black', brand: 'supreme', cat: 'caps-hats', img: 'supreme-camp-cap-black.jpg', price: 1450000, cond: 'excellent', size: 'One Size', feat: true },
+  { slug: 'teelab-studio-oversized-tee-white', name: 'Teelab Studio Oversized Tee White', brand: 'teelab', cat: 't-shirts', img: 'teelab-studio-oversized-tee.jpg', price: 280000, sale: 210000, cond: 'new_with_tags', size: 'XL', neg: true },
+  { slug: 'tnf-nuptse-1996-jacket-black', name: 'The North Face Nuptse 1996 Jacket Black', brand: 'the-north-face', cat: 'outerwear', img: 'tnf-nuptse-1996-jacket.jpg', price: 3900000, cond: 'excellent', size: 'L', feat: true },
+  { slug: 'tobi-parachute-shorts-cream', name: 'Tobi Parachute Shorts Cream', brand: 'tobi', cat: 'shorts', img: 'tobi-parachute-shorts.jpg', price: 350000, sale: 265000, cond: 'good', size: 'M', neg: true },
+  { slug: 'uniqlo-ut-kaws-graphic-hoodie', name: 'Uniqlo UT x KAWS Graphic Hoodie', brand: 'uniqlo', cat: 'hoodies', img: 'uniqlo-kaws-graphic-hoodie.jpg', price: 620000, cond: 'like_new', size: 'L' },
+  { slug: 'uniqlo-pocketable-uv-protection-jacket-white', name: 'Uniqlo Pocketable UV Protection Jacket White', brand: 'uniqlo', cat: 'outerwear', img: 'uniqlo-uv-protection-jacket.jpg', price: 390000, cond: 'good', size: 'M' },
+  { slug: 'adidas-duramo-speed-2', name: 'Adidas Duramo Speed 2', brand: 'adidas', cat: 'shoes', img: 'adidas-ultraboost-light.jpg', price: 1850000, sale: 1450000, cond: 'new_with_tags', size: 'EU 41', neg: true },
+  { slug: 'patagonia-baggies-shorts-green', name: 'Patagonia Baggies Shorts Green', brand: 'patagonia', cat: 'shorts', img: 'patagonia-baggies-shorts.jpg', price: 890000, sale: 690000, cond: 'like_new', size: 'M', neg: true },
+  { slug: 'str8eway-lightning-bolt-zip-pouch', name: 'STR8EWAY Lightning Bolt Zip Pouch', brand: 'str8eway', cat: 'accessories', img: '5theway-monogram-wallet.jpg', price: 220000, sale: 165000, cond: 'good', size: 'One Size', neg: true },
+  { slug: 'aoki-camo-messenger-sling-bag', name: 'Aoki Camo Messenger Sling Bag', brand: 'aoki', cat: 'crossbody-bags', img: 'aoku-messenger-sling-bag.jpg', price: 380000, sale: 290000, cond: 'good', size: 'One Size', neg: true },
+
+  // ---- generic/unbranded listings (image shows no confirmable brand mark,
+  // or the filename's claimed brand/model could not be visually confirmed —
+  // some filenames also mismatch actual garment type; listed here honestly
+  // under the visible product only) ----
+  { slug: 'black-technical-hooded-jacket', name: 'Black Technical Hooded Jacket', brand: null, cat: 'outerwear', img: 'acronym-j1a-gt-jacket.jpg', price: 620000, sale: 470000, cond: 'good', size: 'L', neg: true },
+  { slug: 'charcoal-belted-cargo-joggers', name: 'Charcoal Belted Cargo Joggers', brand: null, cat: 'pants', img: 'coolmate-active-v2-tee.jpg', price: 260000, sale: 195000, cond: 'good', size: 'M', neg: true },
+  { slug: 'black-zip-cargo-utility-pants', name: 'Black Zip-Cargo Utility Pants', brand: null, cat: 'pants', img: 'davies-cargo-pants.jpg', price: 310000, cond: 'good', size: 'L' },
+  { slug: 'washed-black-panelstitch-cargo-pants', name: 'Washed Black Panel-Stitch Cargo Pants', brand: null, cat: 'pants', img: 'hades-cargo-pants-black.jpg', price: 340000, cond: 'like_new', size: 'M' },
+  { slug: 'beige-linen-camp-collar-shirt', name: 'Beige Linen-Blend Camp Collar Shirt', brand: null, cat: 'shirts', img: 'mango-linen-blend-shirt.jpg', price: 300000, cond: 'good', size: 'M' },
+  { slug: 'navy-water-resistant-cargo-pants', name: 'Navy Water-Resistant Cargo Pants', brand: null, cat: 'pants', img: 'nilmance-water-resistant-cargo.jpg', price: 420000, cond: 'like_new', size: 'L' },
+  { slug: 'black-quilted-technical-vest', name: 'Black Quilted Technical Vest', brand: null, cat: 'outerwear', img: 'riot-division-tech-vest.jpg', price: 480000, cond: 'good', size: 'M' },
+  { slug: 'black-fisherman-bucket-hat', name: 'Black Fisherman Bucket Hat', brand: null, cat: 'caps-hats', img: 'snow-peak-bucket-hat.jpg', price: 150000, cond: 'good', size: 'One Size' },
+  { slug: 'purple-colorblock-zip-hoodie', name: 'Purple Colorblock Zip Hoodie', brand: null, cat: 'hoodies', img: 'valorant-vct-spark-hoodie.jpg', price: 380000, cond: 'good', size: 'L' },
+  { slug: 'black-chunky-leather-sneaker', name: 'Black Chunky Leather Sneaker', brand: null, cat: 'shoes', img: 'y-3-kaiwa-chunky-sneaker.jpg', price: 520000, cond: 'good', size: 'EU 42' },
+  { slug: 'olive-ribbed-knit-beanie', name: 'Olive Ribbed Knit Beanie', brand: null, cat: 'caps-hats', img: 'zara-basic-knit-beanie.jpg', price: 120000, cond: 'new_with_tags', size: 'One Size' },
+  { slug: 'black-slim-fit-trousers', name: 'Black Slim-Fit Trousers', brand: null, cat: 'pants', img: 'zara-slim-fit-trousers.jpg', price: 280000, cond: 'good', size: 'M' },
+  { slug: 'light-wash-denim-mom-shorts', name: 'Light-Wash Denim Mom Shorts', brand: null, cat: 'shorts', img: 'pull-bear-denim-shorts.jpg', price: 220000, cond: 'good', size: 'S' },
+  { slug: 'grey-vented-camp-collar-shirt', name: 'Grey Vented Camp Collar Shirt', brand: null, cat: 'shirts', img: 'columbia-silver-ridge-shirt.jpg', price: 310000, cond: 'good', size: 'L' },
 ];
 
 function assertData() {
