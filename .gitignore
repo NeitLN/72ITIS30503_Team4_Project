@@ -15,3 +15,11 @@ pnpm-debug.log*
 
 node_modules/
 **/node_modules/
+
+# Local development artifacts
+.claude/
+backend/scripts/_catalog_dump.json
+backend/scripts/_introspect.js
+backend/scripts/_introspect2.js
+backend/scripts/_previews/
+frontend/smoke_shots/
