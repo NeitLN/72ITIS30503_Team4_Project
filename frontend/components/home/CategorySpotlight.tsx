@@ -1,62 +1,68 @@
 import { Container } from '../ui/Container';
-import { getCategories } from '../../lib/catalog';
-import { Category } from '../../types/category';
 import Link from 'next/link';
 import { ROUTES } from '../../constants/routes';
 
-export const CategorySpotlight = async () => {
-  let categories: Category[] = [];
+const CATEGORY_GROUPS = [
+  {
+    id: 'tops',
+    name: 'Tops',
+    slug: 'tops',
+    description: 'T-shirts, hoodies, and jackets',
+  },
+  {
+    id: 'bottoms',
+    name: 'Bottoms',
+    slug: 'bottoms',
+    description: 'Pants, shorts, and jeans',
+  },
+  {
+    id: 'accessories',
+    name: 'Accessories',
+    slug: 'accessories-group',
+    description: 'Hats, wallets, and more',
+  },
+  {
+    id: 'bags',
+    name: 'Bags',
+    slug: 'bags-group',
+    description: 'Backpacks and crossbody bags',
+  },
+];
 
-  try {
-    const res = await getCategories();
-    categories = res.data || [];
-  } catch {
-    // Fails gracefully — section hides itself below
-  }
-
-  // No hardcoded fallback categories: if the API has none, skip the section.
-  if (categories.length === 0) return null;
-
-  const displayCategories = categories.slice(0, 6);
-
+export const CategorySpotlight = () => {
   return (
     <section className="border-t border-neutral-200 bg-neutral-50 py-20 sm:py-24">
       <Container>
-        <div className="mb-10">
-          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
-            Browse the racks
-          </p>
-          <h2 className="font-display text-3xl font-black uppercase tracking-tight sm:text-4xl">
-            Shop by category
-          </h2>
+        <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+              Browse the racks
+            </p>
+            <h2 className="font-display text-3xl font-black uppercase tracking-tight sm:text-4xl">
+              Shop by category
+            </h2>
+          </div>
         </div>
 
-        {/* Editorial index list — categories as a table of contents */}
-        <ul className="border-t border-neutral-200">
-          {displayCategories.map((cat) => (
-            <li key={cat.id} className="border-b border-neutral-200">
-              <Link
-                href={ROUTES.CATEGORY(cat.slug)}
-                className="group flex items-baseline justify-between gap-4 py-5 transition-colors hover:bg-white sm:px-4"
-              >
-                <span className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-                  <span className="font-display text-xl font-extrabold uppercase tracking-tight text-neutral-900 sm:text-2xl">
-                    {cat.name}
-                  </span>
-                  <span className="truncate text-sm text-neutral-500">
-                    {cat.description || `Listings in ${cat.name}`}
-                  </span>
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="shrink-0 font-mono text-sm text-neutral-400 transition-transform group-hover:translate-x-1 group-hover:text-neutral-900"
-                >
-                  →
-                </span>
-              </Link>
-            </li>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {CATEGORY_GROUPS.map((cat) => (
+            <Link
+              key={cat.id}
+              href={ROUTES.CATEGORY(cat.slug)}
+              className="group block border border-neutral-200 bg-white p-6 transition-all hover:-translate-y-1 hover:border-neutral-900 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:ring-offset-2"
+            >
+              <h3 className="font-display text-2xl font-extrabold uppercase tracking-tight text-neutral-900 mb-2">
+                {cat.name}
+              </h3>
+              <p className="text-sm text-neutral-500">
+                {cat.description}
+              </p>
+              <div className="mt-6 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-900 transition-transform group-hover:translate-x-1">
+                Shop now <span aria-hidden="true">→</span>
+              </div>
+            </Link>
           ))}
-        </ul>
+        </div>
       </Container>
     </section>
   );

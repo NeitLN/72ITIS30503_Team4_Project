@@ -56,4 +56,4 @@ ON CONFLICT (code) DO UPDATE SET
   minimum_order_amount = EXCLUDED.minimum_order_amount,
   starts_at = EXCLUDED.starts_at,
   expires_at = EXCLUDED.expires_at,
-  is_active = EXCLUDED.is_active;
+  is_active = EXCLUDED.is_active;s

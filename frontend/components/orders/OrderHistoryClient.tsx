@@ -17,6 +17,7 @@ type Order = {
   payment_method: string;
   subtotal: number;
   shipping_fee: number;
+  discount_amount?: number;
   total_amount: number;
   created_at: string;
 };
@@ -44,8 +45,11 @@ export const OrderHistoryClient = () => {
             }
           }
         })
-        .catch(() => {
-          if (active) setErrorMsg('An unexpected network error occurred.');
+        .catch((err) => {
+          if (active) {
+            const e = err as Error;
+            setErrorMsg(e?.message || 'An unexpected network error occurred.');
+          }
         })
         .finally(() => {
           if (active) setIsLoading(false);
@@ -74,8 +78,9 @@ export const OrderHistoryClient = () => {
       } else {
         setErrorMsg(res.error?.message || 'Failed to load orders.');
       }
-    } catch {
-      setErrorMsg('An unexpected network error occurred.');
+    } catch (err) {
+      const e = err as Error;
+      setErrorMsg(e?.message || 'An unexpected network error occurred.');
     } finally {
       setIsLoading(false);
     }

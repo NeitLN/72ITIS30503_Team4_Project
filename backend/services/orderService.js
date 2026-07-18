@@ -57,7 +57,8 @@ const validateOrderPayload = (payload) => {
 
 const calculateTotals = (items, appliedCoupon = null) => {
   const subtotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
-  const shipping_fee = subtotal > 0 ? 30000 : 0;
+  // Free shipping over 500,000 VND, matching the threshold promised in the cart UI.
+  const shipping_fee = subtotal > 500000 || subtotal === 0 ? 0 : 30000;
   
   let discount_amount = 0;
 
@@ -147,30 +148,43 @@ const createOrder = async (user, payload) => {
   const orderCode = await generateOrderCode();
   
   // 1. Insert into orders table
+  const orderPayload = {
+    // Original required NOT NULL columns
+    customer_name: customer.name,
+    customer_email: customer.email,
+    customer_phone: customer.phone,
+    customer_address: customer.address,
+    customer_city: customer.city,
+    payment_method: paymentMethod,
+    total_amount: totals.total_amount,
+    status: 'pending',
+
+    // Newer columns
+    user_id: user.id,
+    shipping_address: customer.address,
+    city: customer.city,
+    subtotal: totals.subtotal,
+    shipping_fee: totals.shipping_fee,
+    discount_amount: totals.discount_amount,
+    order_code: orderCode,
+    notes: notes?.trim() || null
+  };
+
   const { data: order, error: orderError } = await supabase
     .from('orders')
-    .insert([{
-      order_code: orderCode,
-      user_id: user.id, // Comes securely from auth token middleware
-      customer_name: customer.name.trim(),
-      customer_email: customer.email.trim().toLowerCase(),
-      customer_phone: customer.phone.trim(),
-      shipping_address: customer.address.trim(),
-      city: customer.city?.trim() || null,
-      payment_method: paymentMethod,
-      subtotal: totals.subtotal,
-      shipping_fee: totals.shipping_fee,
-      discount_amount: totals.discount_amount,
-      total_amount: totals.total_amount,
-      notes: notes?.trim() || null,
-      status: 'pending' // Enforced default
-    }])
+    .insert([orderPayload])
     .select()
     .single();
     
   if (orderError) {
-    console.error('Error inserting parent order:', orderError);
-    throw new Error('Database error while saving the order record.');
+    console.error('Order insert payload:', orderPayload);
+    console.error('Order insert error:', {
+      message: orderError?.message,
+      details: orderError?.details,
+      hint: orderError?.hint,
+      code: orderError?.code,
+    });
+    throw new Error(orderError?.message || 'Database error while saving the order record.');
   }
 
   // 1b. Insert into order_coupons if applicable
@@ -180,8 +194,7 @@ const createOrder = async (user, payload) => {
       .insert([{
         order_id: order.id,
         coupon_id: appliedCoupon.id,
-        discount_amount: totals.discount_amount,
-        code: appliedCoupon.code // Optional redundancy depending on schema, safe to omit if not required by DB, but report said add if available
+        discount_amount: totals.discount_amount
       }]);
       
     if (couponError) {
@@ -229,7 +242,7 @@ const listMyOrders = async (userId) => {
   
   const { data, error } = await supabase
     .from('orders')
-    .select('id, order_code, status, payment_method, subtotal, shipping_fee, total_amount, created_at')
+    .select('id, order_code, status, payment_method, subtotal, shipping_fee, discount_amount, total_amount, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
     
@@ -246,7 +259,7 @@ const listAllOrders = async () => {
   
   const { data, error } = await supabase
     .from('orders')
-    .select('id, order_code, customer_name, customer_email, customer_phone, payment_method, status, subtotal, shipping_fee, total_amount, created_at, updated_at')
+    .select('id, order_code, user_id, customer_name, customer_email, customer_phone, status, payment_method, subtotal, shipping_fee, discount_amount, total_amount, created_at, updated_at')
     .order('created_at', { ascending: false });
     
   if (error) {

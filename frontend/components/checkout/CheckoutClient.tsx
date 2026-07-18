@@ -41,7 +41,8 @@ export const CheckoutClient = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const defaultShippingCost = cartSubtotal > 0 ? 30000 : 0;
+  // Free shipping over 500,000 VND, matching the threshold shown in the cart UI.
+  const defaultShippingCost = cartSubtotal > 500000 || cartSubtotal === 0 ? 0 : 30000;
   const displayShipping = verifiedShipping !== null ? verifiedShipping : defaultShippingCost;
   const grandTotal = verifiedTotal !== null ? verifiedTotal : cartSubtotal + displayShipping;
 
@@ -72,8 +73,9 @@ export const CheckoutClient = () => {
         setVerifiedTotal(null);
         setVerifiedShipping(null);
       }
-    } catch {
-      setCouponError(vi.common.error);
+    } catch (err) {
+      const e = err as Error;
+      setCouponError(e?.message || vi.common.error);
     } finally {
       setIsApplyingCoupon(false);
     }
@@ -150,8 +152,10 @@ export const CheckoutClient = () => {
       } else {
         setErrorMsg(res.error?.message || vi.common.error);
       }
-    } catch {
-      setErrorMsg(vi.common.error);
+    } catch (err) {
+      console.error('Checkout error:', err);
+      const e = err as Error;
+      setErrorMsg(e?.message || vi.common.error);
     } finally {
       setIsPlacing(false);
     }
@@ -232,8 +236,8 @@ export const CheckoutClient = () => {
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12">
         {/* Left: Shipping Form */}
         <div className="lg:col-span-7">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="border border-neutral-200 p-6 sm:p-8 bg-white">
+          <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
+            <div className="border border-[var(--border)] p-6 sm:p-8 bg-[var(--background)] rounded-[var(--radius-card)]">
               <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-6">
                 1. {vi.checkout.formTitle}
               </h2>
@@ -374,15 +378,6 @@ export const CheckoutClient = () => {
                 )}
               </div>
             </div>
-
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full py-4 text-sm font-mono uppercase tracking-wider font-bold"
-              disabled={isPlacing}
-            >
-              {isPlacing ? vi.checkout.processingOrder : vi.checkout.placeOrder}
-            </Button>
           </form>
         </div>
 
@@ -485,6 +480,18 @@ export const CheckoutClient = () => {
                 <span className="font-mono text-base">{formatVND(grandTotal)}</span>
               </div>
             </dl>
+
+            <div className="mt-8">
+              <Button
+                form="checkout-form"
+                type="submit"
+                size="lg"
+                className="w-full py-4 text-sm font-mono uppercase tracking-wider font-bold"
+                disabled={isPlacing || cart.length === 0}
+              >
+                {isPlacing ? vi.checkout.processingOrder : vi.checkout.placeOrder}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -13,10 +13,10 @@ router.post('/', requireAuth, async (req, res) => {
     const order = await orderService.createOrder(req.user, req.body);
     return success(res, order);
   } catch (err) {
+    console.error('Create order route error:', err);
     if (err.status) {
       return error(res, err.status, err.message);
     }
-    console.error('Order creation error:', err);
     return error(res, 400, err.message || 'Failed to create order');
   }
 });

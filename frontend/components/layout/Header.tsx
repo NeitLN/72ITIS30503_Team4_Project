@@ -28,7 +28,7 @@ export const Header = async () => {
             StyleHub
           </Link>
 
-          <nav aria-label="Main navigation" className="flex items-center gap-4 sm:gap-5">
+          <nav aria-label="Main navigation" className="flex min-w-0 items-center gap-4 overflow-x-auto sm:gap-5">
             <ShopMegaMenu />
             <Link href={ROUTES.ABOUT} className="hidden text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 md:block whitespace-nowrap">
               About
