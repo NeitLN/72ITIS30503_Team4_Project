@@ -1,122 +1,307 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
+import { useAuth } from '../../hooks/useAuth';
 import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
 import { ROUTES } from '../../constants/routes';
-import { formatVND } from '../../lib/format';
+import { getMyProfile, updateMyProfile, uploadAvatar, MyProfile } from '../../lib/profile';
+import { getProductsBySeller } from '../../lib/catalog';
+
+type FormState = {
+  display_name: string;
+  username: string;
+  bio: string;
+  location: string;
+};
+
+const LOCATIONS = ['Ho Chi Minh City', 'Hanoi', 'Da Nang', 'Can Tho', 'Hai Phong', 'Bien Hoa', 'Nha Trang', 'Hue'];
+
+function toForm(p: MyProfile): FormState {
+  return {
+    display_name: p.full_name || '',
+    username: p.username || '',
+    bio: p.bio || '',
+    location: p.location || '',
+  };
+}
 
 export const ProfileClient = () => {
   const { cartCount, isHydrated: isCartHydrated } = useCart();
   const { wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
+  const { isAuthenticated, isHydrated: isAuthHydrated } = useAuth();
 
-  const isLoaded = isCartHydrated && isWishlistHydrated;
+  const [profile, setProfile] = useState<MyProfile | null>(null);
+  const [form, setForm] = useState<FormState | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
-  const mockUser = {
-    full_name: 'Võ Việt Tiến',
-    username: 'vietstyle',
-    location: 'Ho Chi Minh City, Vietnam',
-    bio: 'Curating local streetwear, archive pieces, sneakers, and everyday essentials.',
-    seller_rating: 4.9,
-    sold_count: 24,
-    member_since: '2026',
-    is_verified_seller: true,
+  const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const saveLockRef = useRef(false);
+
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  const [activeListingCount, setActiveListingCount] = useState<number | null>(null);
+
+  const isHydrated = isCartHydrated && isWishlistHydrated;
+
+  useEffect(() => {
+    if (!isAuthHydrated || !isAuthenticated) return;
+    let cancelled = false;
+    (async () => {
+      setProfileLoading(true);
+      setProfileError(null);
+      try {
+        const res = await getMyProfile();
+        if (cancelled) return;
+        if (res.success) {
+          setProfile(res.data);
+          setForm(toForm(res.data));
+        } else {
+          setProfileError(res.error.message || 'Failed to load your profile.');
+        }
+      } catch {
+        if (!cancelled) setProfileError('Network error — the backend may be offline.');
+      } finally {
+        if (!cancelled) setProfileLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isAuthHydrated, isAuthenticated]);
+
+  useEffect(() => {
+    if (!profile?.username) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getProductsBySeller(profile.username as string, { limit: '1' });
+        if (!cancelled) setActiveListingCount(Number(res.meta?.count ?? res.data?.length ?? 0));
+      } catch {
+        // Non-fatal — the count simply won't be shown.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [profile?.username]);
+
+  const setField = (field: keyof FormState, value: string) => {
+    setForm((prev) => (prev ? { ...prev, [field]: value } : prev));
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
-  const initial = mockUser.full_name.charAt(0).toUpperCase();
+  const validate = (f: FormState): Record<string, string> => {
+    const e: Record<string, string> = {};
+    const name = f.display_name.trim();
+    if (!name || name.length < 2) e.display_name = 'Display name must be at least 2 characters.';
+    else if (name.length > 60) e.display_name = 'Display name must be under 60 characters.';
+    else if (!/[a-zA-Z0-9À-ỹ]/.test(name)) e.display_name = 'Display name must contain more than just symbols.';
 
-  const mockListings = [
-    {
-      id: 'mock-1',
-      name: 'DirtyCoins Washed Hoodie',
-      price: 420000,
-      condition: 'Like new',
-      size: 'M',
-      status: 'Active',
-    },
-    {
-      id: 'mock-2',
-      name: 'Adidas Trefoil Cap',
-      price: 180000,
-      condition: 'Very good',
-      size: 'One size',
-      status: 'Active',
-    },
-    {
-      id: 'mock-3',
-      name: 'Levi’s Vintage Denim Jacket',
-      price: 690000,
-      condition: 'Good',
-      size: 'L',
-      status: 'Draft',
-    },
-    {
-      id: 'mock-4',
-      name: 'Ananas Low Top Sneakers',
-      price: 550000,
-      condition: 'Excellent',
-      size: '42',
-      status: 'Active',
-    },
-  ];
+    const username = f.username.trim().toLowerCase();
+    if (!username) e.username = 'Choose a username so buyers can find your storefront.';
+    else if (username.length < 3 || username.length > 30) e.username = 'Username must be 3–30 characters.';
+    else if (!/^[a-z0-9_-]+$/.test(username)) e.username = 'Username may only contain lowercase letters, numbers, underscores, and hyphens.';
+
+    if (f.bio.length > 500) e.bio = 'Bio must be under 500 characters.';
+    if (f.location.length > 100) e.location = 'Location must be under 100 characters.';
+    return e;
+  };
+
+  const focusFirstError = (fieldErrors: Record<string, string>) => {
+    const first = Object.keys(fieldErrors)[0];
+    if (first) document.getElementById(`profile-${first}`)?.focus();
+  };
+
+  const handleSave = async () => {
+    if (saveLockRef.current || !form) return;
+    const fieldErrors = validate(form);
+    if (Object.keys(fieldErrors).length) {
+      setErrors(fieldErrors);
+      focusFirstError(fieldErrors);
+      return;
+    }
+
+    saveLockRef.current = true;
+    setIsSaving(true);
+    setSaveError(null);
+    setStatusMessage('Saving your profile…');
+
+    try {
+      const res = await updateMyProfile({
+        display_name: form.display_name.trim(),
+        username: form.username.trim().toLowerCase(),
+        bio: form.bio.trim(),
+        location: form.location.trim(),
+      });
+      if (res.success) {
+        setProfile(res.data);
+        setForm(toForm(res.data));
+        setIsEditing(false);
+        setStatusMessage('Profile saved successfully.');
+      } else {
+        setSaveError(res.error.message || 'Failed to save profile.');
+        if (res.error.details) setErrors((prev) => ({ ...prev, ...res.error.details }));
+        setStatusMessage('Saving failed. Please review the errors below.');
+      }
+    } catch {
+      setSaveError('Network error — the backend may be offline. Your changes were not lost.');
+      setStatusMessage('Saving failed due to a network error.');
+    } finally {
+      saveLockRef.current = false;
+      setIsSaving(false);
+    }
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setAvatarError(null);
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setAvatarError('Only JPEG, PNG, and WebP images are allowed.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Image exceeds the 5MB limit.');
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const res = await uploadAvatar(file);
+      if (res.success) {
+        setProfile(res.data);
+      } else {
+        setAvatarError(res.error.message || 'Failed to upload avatar.');
+      }
+    } catch {
+      setAvatarError('Network error — the backend may be offline.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  // ---- Auth gate ----
+  if (!isAuthHydrated) {
+    return <Container className="py-16 text-center animate-pulse">Loading your account…</Container>;
+  }
+  if (!isAuthenticated) {
+    return (
+      <Container className="py-16 sm:py-24 max-w-md">
+        <div className="border border-neutral-200 bg-white p-6 sm:p-10 text-center">
+          <span className="text-4xl mb-4 block" aria-hidden="true">🔒</span>
+          <h1 className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900 mb-2">
+            Sign in to view your profile
+          </h1>
+          <p className="text-sm text-neutral-500 mb-8">
+            Log in or create an account to manage your profile — you&apos;ll come right back here.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link href={`${ROUTES.LOGIN}?redirect=${ROUTES.PROFILE}`}>
+              <Button size="lg" className="w-full font-mono text-xs uppercase tracking-wider">Log in</Button>
+            </Link>
+            <Link href={`${ROUTES.REGISTER}?redirect=${ROUTES.PROFILE}`}>
+              <Button variant="outline" size="lg" className="w-full font-mono text-xs uppercase tracking-wider">Create account</Button>
+            </Link>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+  if (profileLoading) {
+    return <Container className="py-16 text-center animate-pulse">Loading your profile…</Container>;
+  }
+  if (profileError || !profile || !form) {
+    return (
+      <Container className="py-16 max-w-md text-center">
+        <p role="alert" className="text-sm text-red-600 mb-4">{profileError || 'Could not load your profile.'}</p>
+        <Button onClick={() => window.location.reload()} className="font-mono text-xs uppercase tracking-wider">Retry</Button>
+      </Container>
+    );
+  }
+
+  const initial = (profile.full_name || profile.email || 'U').charAt(0).toUpperCase();
 
   return (
     <div className="bg-neutral-50 min-h-screen pb-16">
-      {/* 1. Demo User Profile Header */}
+      <div aria-live="polite" className="sr-only">{statusMessage}</div>
+
       <section className="border-b border-neutral-200 bg-white pt-10 pb-12 sm:pt-16 sm:pb-16 shadow-sm">
         <Container>
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center border-2 border-neutral-950 bg-neutral-950 font-display text-4xl font-extrabold text-white sm:h-28 sm:w-28 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              {initial}
+            <div className="relative shrink-0">
+              {profile.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profile.avatar_url}
+                  alt={`${profile.full_name}'s avatar`}
+                  className="h-24 w-24 sm:h-28 sm:w-28 border-2 border-neutral-950 object-cover shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                />
+              ) : (
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center border-2 border-neutral-950 bg-neutral-950 font-display text-4xl font-extrabold text-white sm:h-28 sm:w-28 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  {initial}
+                </div>
+              )}
+              <label
+                htmlFor="avatar-input"
+                className="mt-2 block cursor-pointer text-center font-mono text-[10px] uppercase tracking-wider text-neutral-500 hover:text-neutral-900"
+              >
+                {avatarUploading ? 'Uploading…' : 'Change photo'}
+              </label>
+              <input
+                id="avatar-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleAvatarChange}
+                disabled={avatarUploading}
+                className="sr-only"
+              />
+              {avatarError && <p role="alert" className="mt-1 text-[11px] text-red-600 max-w-[7rem] text-center">{avatarError}</p>}
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-xl font-bold text-neutral-900 sm:text-2xl truncate">
-                  {mockUser.full_name}
-                </h1>
-                <span className="font-mono text-xs text-neutral-500 bg-neutral-100 px-2 py-0.5">
-                  @{mockUser.username}
-                </span>
-                {mockUser.is_verified_seller && (
-                  <span className="inline-flex items-center gap-1 border border-neutral-950 bg-neutral-950 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-white">
-                    Verified Seller
-                  </span>
+                <h1 className="text-xl font-bold text-neutral-900 sm:text-2xl truncate">{profile.full_name}</h1>
+                {profile.username && (
+                  <span className="font-mono text-xs text-neutral-500 bg-neutral-100 px-2 py-0.5">@{profile.username}</span>
                 )}
               </div>
-
-              <p className="mt-3 max-w-2xl text-sm text-neutral-600 leading-relaxed italic">
-                &ldquo;{mockUser.bio}&rdquo;
-              </p>
-
+              {profile.bio && <p className="mt-3 max-w-2xl text-sm text-neutral-600 leading-relaxed italic">&ldquo;{profile.bio}&rdquo;</p>}
               <div className="mt-6 flex flex-wrap gap-4 text-xs font-mono text-neutral-500 border-t border-neutral-100 pt-4">
-                <span className="flex items-center gap-1.5">
-                  ⭐ <strong className="text-neutral-900 font-semibold">{mockUser.seller_rating} / 5.0</strong>
-                </span>
-                <span className="hidden sm:inline text-neutral-300">|</span>
-                <span className="flex items-center gap-1.5">
-                  🛍️ <strong className="text-neutral-900 font-semibold">{mockUser.sold_count} Sold Listings</strong>
-                </span>
-                <span className="hidden sm:inline text-neutral-300">|</span>
-                <span className="flex items-center gap-1.5">
-                  📍 <strong className="text-neutral-900 font-semibold">{mockUser.location}</strong>
-                </span>
-                <span className="hidden sm:inline text-neutral-300">|</span>
+                {profile.location && (
+                  <span className="flex items-center gap-1.5">📍 <strong className="text-neutral-900 font-semibold">{profile.location}</strong></span>
+                )}
                 <span className="flex items-center gap-1.5 text-neutral-500">
-                  Member since {mockUser.member_since}
+                  Member since {new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
                 </span>
               </div>
             </div>
-            
+
             <div className="flex flex-col gap-2 shrink-0 sm:w-48">
+              <Button data-testid="profile-edit-toggle" onClick={() => setIsEditing((v) => !v)} variant={isEditing ? 'outline' : 'primary'} className="w-full font-mono text-xs uppercase tracking-wider">
+                {isEditing ? 'Cancel editing' : 'Edit profile'}
+              </Button>
+              {profile.username ? (
+                <Link href={`/seller/${profile.username}`} className="w-full" data-testid="profile-view-storefront">
+                  <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">View public storefront</Button>
+                </Link>
+              ) : (
+                <p className="text-[11px] text-neutral-500 text-center">Set a username to unlock your public storefront.</p>
+              )}
               <Link href={ROUTES.SELL} className="w-full">
-                <Button className="w-full font-mono text-xs uppercase tracking-wider">Start Selling</Button>
-              </Link>
-              <Link href={`/seller/${mockUser.username}`} className="w-full">
-                <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">View Public Shop</Button>
+                <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">Start selling</Button>
               </Link>
             </div>
           </div>
@@ -125,71 +310,87 @@ export const ProfileClient = () => {
 
       <Container className="mt-10 sm:mt-14">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          
-          {/* Main Column */}
           <div className="lg:col-span-8 flex flex-col gap-8">
-            
-            {/* 2. Account Overview Cards */}
-            <section>
-              <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 mb-4">
-                Overview
-              </h2>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div className="border border-neutral-200 bg-white p-4">
-                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Wishlist Items</p>
-                  <p className="font-display text-2xl font-bold">{isLoaded ? wishlistCount : '-'}</p>
+            {isEditing ? (
+              <section className="border border-neutral-200 bg-white p-6 sm:p-8">
+                <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-6">
+                  Edit profile
+                </h2>
+                {saveError && (
+                  <div role="alert" className="mb-6 border border-red-300 bg-red-50 p-4 text-sm text-red-700">{saveError}</div>
+                )}
+                <div className="space-y-6">
+                  <div>
+                    <label htmlFor="profile-display_name" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Display name *</label>
+                    <input
+                      id="profile-display_name" type="text" value={form.display_name}
+                      onChange={(e) => setField('display_name', e.target.value)}
+                      aria-invalid={!!errors.display_name} aria-describedby={errors.display_name ? 'profile-display_name-error' : undefined}
+                      className={`w-full border ${errors.display_name ? 'border-red-500' : 'border-neutral-300'} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
+                    />
+                    {errors.display_name && <p id="profile-display_name-error" className="text-red-500 text-xs mt-1">{errors.display_name}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="profile-username" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Username *</label>
+                    <input
+                      id="profile-username" type="text" value={form.username}
+                      onChange={(e) => setField('username', e.target.value)}
+                      placeholder="lowercase-letters-numbers-hyphens"
+                      aria-invalid={!!errors.username} aria-describedby={errors.username ? 'profile-username-error' : undefined}
+                      className={`w-full border ${errors.username ? 'border-red-500' : 'border-neutral-300'} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
+                    />
+                    {errors.username && <p id="profile-username-error" className="text-red-500 text-xs mt-1">{errors.username}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="profile-bio" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Bio</label>
+                    <textarea
+                      id="profile-bio" value={form.bio} onChange={(e) => setField('bio', e.target.value)}
+                      rows={4} aria-invalid={!!errors.bio} aria-describedby={errors.bio ? 'profile-bio-error' : undefined}
+                      className={`w-full border ${errors.bio ? 'border-red-500' : 'border-neutral-300'} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
+                    />
+                    {errors.bio && <p id="profile-bio-error" className="text-red-500 text-xs mt-1">{errors.bio}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="profile-location" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Location</label>
+                    <select
+                      id="profile-location" value={form.location} onChange={(e) => setField('location', e.target.value)}
+                      className="w-full border border-neutral-300 bg-white px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none"
+                    >
+                      <option value="">Not specified</option>
+                      {LOCATIONS.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
+                    </select>
+                  </div>
+                  <div className="pt-4 border-t border-neutral-100 flex justify-end">
+                    <Button data-testid="profile-save" onClick={handleSave} disabled={isSaving} aria-busy={isSaving} className="font-mono text-xs uppercase tracking-wider">
+                      {isSaving ? 'Saving…' : 'Save changes'}
+                    </Button>
+                  </div>
                 </div>
-                <div className="border border-neutral-200 bg-white p-4">
-                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Cart Items</p>
-                  <p className="font-display text-2xl font-bold">{isLoaded ? cartCount : '-'}</p>
+              </section>
+            ) : (
+              <section>
+                <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 mb-4">Overview</h2>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  <div className="border border-neutral-200 bg-white p-4">
+                    <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Wishlist Items</p>
+                    <p className="font-display text-2xl font-bold">{isHydrated ? wishlistCount : '-'}</p>
+                  </div>
+                  <div className="border border-neutral-200 bg-white p-4">
+                    <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Cart Items</p>
+                    <p className="font-display text-2xl font-bold">{isHydrated ? cartCount : '-'}</p>
+                  </div>
+                  <div className="border border-neutral-200 bg-white p-4">
+                    <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Active Listings</p>
+                    <p className="font-display text-2xl font-bold">{activeListingCount ?? '-'}</p>
+                  </div>
                 </div>
-                <div className="border border-neutral-200 bg-white p-4">
-                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Active Listings</p>
-                  <p className="font-display text-2xl font-bold">3</p>
-                </div>
-                <div className="border border-neutral-200 bg-white p-4">
-                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Profile Trust</p>
-                  <p className="font-display text-2xl font-bold">100%</p>
-                </div>
-              </div>
-            </section>
-
-            {/* 3. My Listings Section */}
-            <section>
-              <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 mb-4">
-                My Recent Listings
-              </h2>
-              <div className="border border-neutral-200 bg-white overflow-hidden">
-                <ul className="divide-y divide-neutral-200">
-                  {mockListings.map((item) => (
-                    <li key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <h3 className="font-bold text-neutral-900">{item.name}</h3>
-                        <p className="font-mono text-xs text-neutral-500 mt-1">
-                          {formatVND(item.price)} · Size {item.size} · {item.condition}
-                        </p>
-                      </div>
-                      <span className={`px-2 py-1 font-mono text-[10px] uppercase tracking-wider font-bold inline-flex w-fit ${
-                        item.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-neutral-100 text-neutral-600'
-                      }`}>
-                        {item.status}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
-
+              </section>
+            )}
           </div>
 
-          {/* Sidebar */}
           <div className="lg:col-span-4 flex flex-col gap-6">
-            
-            {/* 4. Buyer Activity Section */}
             <section className="border border-neutral-200 bg-white p-6">
-              <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-900 font-bold mb-4">
-                Buyer Activity
-              </h2>
+              <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-900 font-bold mb-4">Buyer Activity</h2>
               <ul className="space-y-3 mb-6 font-medium text-sm">
                 <li><Link href={ROUTES.CART} className="text-neutral-600 hover:text-neutral-900">→ View Shopping Cart</Link></li>
                 <li><Link href={ROUTES.WISHLIST} className="text-neutral-600 hover:text-neutral-900">→ View Wishlist</Link></li>
@@ -198,18 +399,13 @@ export const ProfileClient = () => {
               <div className="bg-neutral-50 p-3 text-xs text-neutral-500 leading-relaxed border border-neutral-100">
                 <p className="mb-2">View your real checkout history and order status in My Orders.</p>
                 <Link href={ROUTES.ORDERS}>
-                  <Button variant="outline" size="sm" className="font-mono text-[10px] uppercase tracking-wider">
-                    My Orders
-                  </Button>
+                  <Button variant="outline" size="sm" className="font-mono text-[10px] uppercase tracking-wider">My Orders</Button>
                 </Link>
               </div>
             </section>
 
-            {/* 5. Seller Mode Card */}
             <section className="border border-neutral-950 bg-neutral-950 text-white p-6 shadow-[4px_4px_0px_0px_rgba(200,200,200,1)]">
-              <h2 className="font-mono text-xs uppercase tracking-[0.2em] font-bold mb-2">
-                Seller Hub
-              </h2>
+              <h2 className="font-mono text-xs uppercase tracking-[0.2em] font-bold mb-2">Seller Hub</h2>
               <p className="text-sm text-neutral-300 leading-relaxed mb-6">
                 Turn your pre-loved fashion, streetwear, and sneakers into cash. List items to the community in minutes.
               </p>
@@ -219,17 +415,6 @@ export const ProfileClient = () => {
                 </button>
               </Link>
             </section>
-
-            {/* 6. Trust & Safety Panel */}
-            <section className="border border-neutral-200 bg-white p-6">
-              <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-900 font-bold mb-4">
-                Trust & Safety
-              </h2>
-              <p className="text-xs text-neutral-600 leading-relaxed">
-                StyleHub demo focuses on marketplace discovery and listing presentation. Payments, identity verification, and order processing are intentionally not enabled.
-              </p>
-            </section>
-
           </div>
         </div>
       </Container>

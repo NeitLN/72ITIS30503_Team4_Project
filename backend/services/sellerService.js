@@ -1,112 +1,103 @@
-const { supabase, isSupabaseConfigured } = require('../lib/supabase');
+/**
+ * Phase 8 — real public seller storefronts.
+ *
+ * Replaces the previous implementation, which never returned null and
+ * fabricated a plausible-looking profile (rating, sold count, bio) for ANY
+ * username string, including gibberish. This version returns only real
+ * data derived from the actual schema, or null for an unknown seller —
+ * callers (routes/sellers.js) turn that into a real 404.
+ *
+ * Only a safe, explicit column allowlist is ever selected from `users` —
+ * never `select('*')` — so email/password_hash/phone/role never even enter
+ * server memory for a public request.
+ */
+const { supabaseAdmin, isSupabaseAdminConfigured } = require('../lib/supabase');
+const { normalizeUsername, isValidUsernameFormat } = require('./profileService');
 
 const checkDb = () => {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseAdminConfigured()) {
     throw new Error('DATABASE_NOT_CONFIGURED');
   }
 };
 
-// Map popular old-schema seller names to realistic mockup statistics for consistency
-const MOCK_SELLERS = {
-  'thu ha': {
-    full_name: 'Thu Ha',
-    username: 'Thu Ha',
-    location: 'Ba Dinh, Hanoi',
-    seller_rating: 4.7,
-    sold_count: 34,
-    is_verified_seller: true,
-    bio: 'Passionate sneakers and vintage streetwear collector. Selling pieces from my personal closet to make room for new drops. 100% authentic.'
-  },
-  'tien nguyen': {
-    full_name: 'Tien Nguyen',
-    username: 'Tien Nguyen',
-    location: 'District 1, HCMC',
-    seller_rating: 4.9,
-    sold_count: 152,
-    is_verified_seller: true,
-    bio: 'Streetwear enthusiast. Curating unique local brands and pre-loved streetwear grails in Vietnam.'
-  },
-  'minh tran': {
-    full_name: 'Minh Tran',
-    username: 'Minh Tran',
-    location: 'Hanoi, VN',
-    seller_rating: 4.8,
-    sold_count: 89,
-    is_verified_seller: true,
-    bio: 'Curator of local archives and retro streetwear aesthetics.'
-  }
-};
+const PUBLIC_SELLER_COLUMNS = 'id, username, full_name, avatar_url, bio, location, created_at';
 
-const getSellerByUsername = async (username) => {
+async function getSellerByUsername(rawUsername) {
   checkDb();
-  
-  const decodedUsername = decodeURIComponent(username).trim();
-  const normalizedKey = decodedUsername.toLowerCase();
-  
-  try {
-    // Try querying Supabase users table (for new schema)
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', decodedUsername)
-      .single();
 
-    // If query succeeds and user is found, return it
-    if (!error && data) {
-      return {
-        id: data.id,
-        username: data.username,
-        full_name: data.full_name,
-        avatar_url: data.avatar_url,
-        location: data.location,
-        seller_rating: data.seller_rating,
-        sold_count: data.sold_count,
-        is_verified_seller: data.is_verified_seller,
-        created_at: data.created_at,
-        bio: data.bio || `Passionate street fashion curator based in Vietnam. Passed from my closet to yours.`,
-        response_time: data.response_time || `Within an hour`
-      };
+  const normalized = normalizeUsername(decodeURIComponent(String(rawUsername || '')));
+  if (!isValidUsernameFormat(normalized)) return null;
+
+  const { data: user, error } = await supabaseAdmin
+    .from('users')
+    .select(PUBLIC_SELLER_COLUMNS)
+    .eq('username', normalized)
+    .maybeSingle();
+  if (error) throw error;
+  if (!user) return null;
+
+  const { count: activeListingCount } = await supabaseAdmin
+    .from('products')
+    .select('id', { count: 'exact', head: true })
+    .eq('seller_id', user.id)
+    .eq('status', 'active');
+
+  const { data: sellerProductIds } = await supabaseAdmin
+    .from('products')
+    .select('id')
+    .eq('seller_id', user.id);
+  const productIds = (sellerProductIds || []).map((p) => p.id);
+
+  // Real sold count: completed order_items whose product belongs to this
+  // seller. Zero (not fabricated) when there is nothing to derive.
+  let soldCount = 0;
+  if (productIds.length) {
+    const { data: completedOrders } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('status', 'completed');
+    const completedOrderIds = (completedOrders || []).map((o) => o.id);
+    if (completedOrderIds.length) {
+      const { count } = await supabaseAdmin
+        .from('order_items')
+        .select('id', { count: 'exact', head: true })
+        .in('product_id', productIds)
+        .in('order_id', completedOrderIds);
+      soldCount = count || 0;
     }
-  } catch (err) {
-    // If table/column doesn't exist, we fail gracefully and fallback to mock mapping
   }
 
-  // FALLBACK MECHANISM:
-  // If database fails, lacks the column, or is empty, map the requested username to our mock profiles
-  const matchedMock = MOCK_SELLERS[normalizedKey];
-  if (matchedMock) {
-    return {
-      id: normalizedKey.replace(/\s+/g, '-'),
-      username: decodedUsername,
-      full_name: matchedMock.full_name,
-      avatar_url: null,
-      location: matchedMock.location,
-      seller_rating: matchedMock.seller_rating,
-      sold_count: matchedMock.sold_count,
-      is_verified_seller: matchedMock.is_verified_seller,
-      created_at: new Date().toISOString(),
-      bio: matchedMock.bio,
-      response_time: 'Within an hour'
-    };
+  // Real rating/review count: published reviews on this seller's products.
+  let averageRating = null;
+  let reviewCount = 0;
+  if (productIds.length) {
+    const { data: reviews } = await supabaseAdmin
+      .from('reviews')
+      .select('rating')
+      .in('product_id', productIds)
+      .eq('status', 'published');
+    reviewCount = (reviews || []).length;
+    if (reviewCount > 0) {
+      averageRating = Math.round((reviews.reduce((sum, r) => sum + Number(r.rating), 0) / reviewCount) * 10) / 10;
+    }
   }
 
-  // Dynamic generate profile for any other clicked seller to prevent any 404 blockages
-  const formattedName = decodedUsername.replace(/[-_]+/g, ' ');
   return {
-    id: normalizedKey.replace(/\s+/g, '-'),
-    username: decodedUsername,
-    full_name: formattedName.charAt(0).toUpperCase() + formattedName.slice(1),
-    avatar_url: null,
-    location: 'Vietnam',
-    seller_rating: 4.8,
-    sold_count: 12,
-    is_verified_seller: false,
-    created_at: new Date().toISOString(),
-    bio: `Curator of pre-loved streetwear and local fashion listings on StyleHub. Welcome to my catalog!`,
-    response_time: 'Within a few hours'
+    id: user.id,
+    username: user.username,
+    full_name: user.full_name,
+    avatar_url: user.avatar_url || null,
+    bio: user.bio || null,
+    location: user.location || null,
+    created_at: user.created_at,
+    is_verified_seller: false, // no real verification field/process exists yet — never fabricated
+    active_listing_count: activeListingCount || 0,
+    sold_count: soldCount,
+    seller_rating: averageRating,
+    review_count: reviewCount,
   };
-};
+}
 
 module.exports = {
-  getSellerByUsername
+  getSellerByUsername,
 };

@@ -37,13 +37,14 @@ export interface SellerProfile {
   username: string;
   full_name: string;
   avatar_url: string | null;
+  bio: string | null;
   location: string | null;
-  seller_rating: number | null;
-  sold_count: number | null;
-  is_verified_seller: boolean;
   created_at: string;
-  bio: string;
-  response_time: string;
+  is_verified_seller: boolean;
+  active_listing_count: number;
+  sold_count: number;
+  seller_rating: number | null;
+  review_count: number;
 }
 
 export async function getSellerByUsername(username: string) {

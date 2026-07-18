@@ -91,6 +91,8 @@ export interface ListingView {
   sellerName: string;
   /** Display handle: "@username" for real sellers, plain fallback label otherwise. */
   sellerHandle: string;
+  /** Real, unprefixed username — null when there is no linkable storefront (e.g. a legacy seed seller with only a flat seller_name). Use this, not sellerHandle, to decide whether to render a link. */
+  sellerUsername: string | null;
   sellerRating: string | null;
   sellerLocation: string;
   isVerifiedSeller: boolean;
@@ -135,6 +137,7 @@ export function getListingView(product: Product): ListingView {
     categoryName: product.category?.name ?? prettifySlug(product.category_slug) ?? null,
     sellerName,
     sellerHandle: username ? `@${username}` : sellerName,
+    sellerUsername: username || null,
     sellerRating: seller.seller_rating != null ? String(seller.seller_rating) : null,
     sellerLocation: product.location || seller.location || 'Vietnam',
     isVerifiedSeller: Boolean(seller.is_verified_seller),

@@ -34,7 +34,7 @@ router.get('/:username/products', async (req, res) => {
 
     const { data, meta } = await productService.getProducts({
       ...req.query,
-      seller: req.params.username
+      seller: seller.username // normalized value resolved above, not the raw param
     });
     
     return success(res, data, meta);

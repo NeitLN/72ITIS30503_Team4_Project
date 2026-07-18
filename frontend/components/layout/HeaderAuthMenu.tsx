@@ -18,7 +18,7 @@ export const HeaderAuthMenu = () => {
       <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium whitespace-nowrap">
         <div className="hidden md:flex items-center">
           <Link href={ROUTES.PROFILE} className="text-neutral-900 transition-colors hover:text-neutral-500 font-semibold truncate max-w-[120px]">
-            {user.role === 'admin' ? 'StyleHub' : 'StyleHub'}
+            {user.full_name || user.name || 'My Profile'}
           </Link>
           {user.role === 'admin' && (
             <span className="ml-1.5 text-[9px] uppercase tracking-wider font-mono text-neutral-500">

@@ -3,6 +3,8 @@ import { getApiBaseUrl } from './api';
 export type AuthUser = {
   id: string;
   name: string;
+  full_name?: string;
+  username?: string | null;
   email: string;
   role: 'customer' | 'admin' | 'seller';
 };
