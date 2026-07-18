@@ -40,7 +40,10 @@ const failures = [];
 const fail = (m) => failures.push(m);
 
 (async () => {
-  const { data: products, error } = await sb.from('products').select('*').eq('status', 'active');
+  // Phase 7: scope validation to the seed-managed catalog only. Real /sell
+  // listings (listing_source='user') grow independently and must never
+  // affect — or be affected by — these seed-catalog integrity checks.
+  const { data: products, error } = await sb.from('products').select('*').eq('status', 'active').eq('listing_source', 'seed');
   if (error) { console.error('query error:', error.message); process.exit(2); }
   const { data: cats } = await sb.from('categories').select('slug');
   const catSet = new Set((cats || []).map(c => c.slug));

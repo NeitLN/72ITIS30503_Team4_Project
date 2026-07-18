@@ -89,6 +89,7 @@ function buildManagedRows(brandId) {
       is_negotiable: p.neg != null ? p.neg : i % 4 === 1,
       is_featured: !!p.feat,
       status: 'active',
+      listing_source: 'seed', // Phase 7: never touch real /sell listings (listing_source='user')
       created_at: created,
       updated_at: created,
     });
@@ -100,6 +101,7 @@ const TRACKED_FIELDS = [
   'name', 'price', 'sale_price', 'category_slug', 'image_url', 'thumbnail',
   'description', 'stock', 'condition', 'size', 'location', 'seller_name',
   'seller_id', 'brand', 'brand_id', 'is_negotiable', 'is_featured', 'status',
+  'listing_source',
 ];
 
 function rowsDiffer(existing, incoming) {
@@ -212,7 +214,12 @@ async function run() {
   // Filter by id (matchedIds), not by slug string — slugRenames above mean a
   // row's *old* slug is intentionally absent from managedSlugs even though
   // that same row (by id) is very much still managed.
-  const leftoverActive = (existing || []).filter((r) => r.status === 'active' && !matchedIds.has(r.id));
+  // Phase 7: never archive a real user listing (listing_source='user'), even
+  // if it happens to be unmatched by the manifest — only seed-managed rows
+  // that fell out of the manifest are eligible for leftover archival.
+  const leftoverActive = (existing || []).filter(
+    (r) => r.status === 'active' && !matchedIds.has(r.id) && r.listing_source !== 'user',
+  );
   console.log(`\nLeftover active products outside manifest (will be archived on apply): ${leftoverActive.length}`);
 
   if (!apply) {

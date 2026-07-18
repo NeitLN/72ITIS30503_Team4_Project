@@ -6,6 +6,7 @@ const { success, error } = require('./utils/apiResponse');
 
 const productRoutes = require('./routes/products');
 const categoryRoutes = require('./routes/categories');
+const brandRoutes = require('./routes/brands');
 const cartRoutes = require('./routes/cart');
 const profileRoutes = require('./routes/profile');
 const sellerRoutes = require('./routes/sellers');
@@ -36,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/brands', brandRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/sellers', sellerRoutes);

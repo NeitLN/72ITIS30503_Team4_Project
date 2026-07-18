@@ -4,7 +4,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Sell Your Fashion Archive',
-  description: 'Create a demo listing preview for streetwear, sneakers, accessories, and pre-loved fashion. No real product publishing occurs in this lab demo.',
+  description: 'List streetwear, sneakers, accessories, and pre-loved fashion for sale on StyleHub in six quick steps.',
 };
 
 export default function SellPage() {
@@ -13,7 +13,7 @@ export default function SellPage() {
       <PageHeader
         eyebrow="Seller Hub"
         title="List your archive. Find its next owner."
-        lede="Create a StyleHub listing preview in minutes. This demo does not publish real products or upload files."
+        lede="Publish a real StyleHub listing in six quick steps — it goes live across the marketplace immediately."
       />
       <SellListingClient />
     </main>
