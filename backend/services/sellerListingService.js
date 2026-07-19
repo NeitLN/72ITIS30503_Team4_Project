@@ -19,6 +19,7 @@ const listingService = require('./listingService');
 const { isKnownLocation } = require('../constants/vnLocations');
 const { SHOE_LIKE_CATEGORIES } = require('../constants/shoeCategories');
 const { isValidTransition, LISTING_STATUSES } = require('../constants/listingStatus');
+const sustainability = require('../constants/sustainability');
 
 const {
   ALLOWED_MIME,
@@ -63,14 +64,23 @@ const LISTING_COLUMNS = [
 async function attachImages(products) {
   if (!products.length) return products;
   const ids = products.map((p) => p.id);
-  const { data: images } = await supabaseAdmin
-    .from('product_images')
-    .select('id, product_id, url, alt_text, sort_order, is_primary')
-    .in('product_id', ids)
-    .order('sort_order', { ascending: true });
+  const [{ data: images }, { data: sustainabilityRows }] = await Promise.all([
+    supabaseAdmin
+      .from('product_images')
+      .select('id, product_id, url, alt_text, sort_order, is_primary')
+      .in('product_id', ids)
+      .order('sort_order', { ascending: true }),
+    supabaseAdmin
+      .from('product_sustainability')
+      .select('product_id, lifecycle_type, material, repair_history, upcycle_details, product_story, reuse_packaging, claim_source')
+      .in('product_id', ids),
+  ]);
   return products.map((p) => ({
     ...p,
     images: (images || []).filter((img) => img.product_id === p.id),
+    sustainability: sustainability.toPublicSustainability(
+      (sustainabilityRows || []).find((row) => row.product_id === p.id),
+    ),
   }));
 }
 
@@ -245,6 +255,7 @@ async function updateMyListing(userId, id, rawFields) {
   const existing = await getMyListingById(userId, id); // throws 404 if not owned/seed
 
   const { updates, errors, categorySlug, size } = validatePartialFields(rawFields);
+  const productJourney = sustainability.validateSustainability(rawFields);
 
   // Cross-field shoe-size rule, evaluated against the EFFECTIVE (post-update)
   // category/size so a category-only or size-only edit is still checked
@@ -277,8 +288,31 @@ async function updateMyListing(userId, id, rawFields) {
     updates.brand_id = brandId;
   }
 
-  if (Object.keys(updates).length === 0) {
+  if (Object.keys(updates).length === 0 && !productJourney.provided) {
     return existing; // nothing to change — not an error, just a no-op
+  }
+
+  if (productJourney.provided) {
+    const { error: rpcError } = await supabaseAdmin.rpc('stylehub_update_listing_with_sustainability', {
+      p_seller_id: userId,
+      p_product_id: id,
+      p_expected_updated_at: rawFields.expected_updated_at || null,
+      p_product_updates: updates,
+      p_sustainability: sustainability.toDatabasePayload(productJourney.value),
+    });
+
+    if (rpcError) {
+      const message = String(rpcError.message || '');
+      if (message.includes('LISTING_STALE')) {
+        throw new SellerListingError('Sản phẩm đã được cập nhật ở một nơi khác. Vui lòng tải lại trang.', 409);
+      }
+      if (message.includes('LISTING_NOT_FOUND')) {
+        throw new SellerListingError('Không tìm thấy sản phẩm.', 404);
+      }
+      throw rpcError;
+    }
+
+    return getMyListingById(userId, id);
   }
 
   updates.updated_at = new Date().toISOString();

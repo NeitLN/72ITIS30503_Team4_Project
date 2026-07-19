@@ -220,6 +220,9 @@ with sync_playwright() as p:
     page2.select_option("#condition", "good")
     page2.select_option("#size", "EU 42")
     page2.click("[data-testid=sell-next]")
+    expect(page2.locator("#sell-lifecycle_type-not_specified")).to_be_visible(timeout=5000)
+    page2.check("#sell-lifecycle_type-not_specified")
+    page2.click("[data-testid=sell-next]")
     expect(page2.locator("#location")).to_be_visible(timeout=5000)
 
     # All 34 provinces available on an empty query.

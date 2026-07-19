@@ -1,3 +1,5 @@
+import type { ProductSustainability } from '../lib/productJourney';
+
 export interface Seller {
   username?: string;
   full_name?: string;
@@ -61,6 +63,7 @@ export interface Product {
   category?: CategoryRef | null;
   images?: ProductImage[];
   variants?: Record<string, unknown>[];
+  sustainability?: ProductSustainability;
 
   // Flat UI mappings (some endpoints return these instead of relations)
   size?: string;

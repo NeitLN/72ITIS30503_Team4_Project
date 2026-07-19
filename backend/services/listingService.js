@@ -22,6 +22,7 @@ const { supabaseAdmin, isSupabaseAdminConfigured } = require('../lib/supabase');
 const brandService = require('./brandService');
 const { isKnownLocation } = require('../constants/vnLocations');
 const { SHOE_LIKE_CATEGORIES } = require('../constants/shoeCategories');
+const sustainability = require('../constants/sustainability');
 
 const BUCKET = 'product-images';
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -221,8 +222,8 @@ function extFromMime(mimetype) {
 const recentSubmissions = new Map(); // userId -> { key, productId, expiresAt }
 const DEDUPE_WINDOW_MS = 5000;
 
-function dedupeKey(fields) {
-  return `${fields.name}::${fields.price}::${fields.category_slug}`;
+function dedupeKey(fields, productJourney) {
+  return `${fields.name}::${fields.price}::${fields.category_slug}::${JSON.stringify(productJourney)}`;
 }
 
 async function createListing(user, rawFields, files) {
@@ -242,6 +243,7 @@ async function createListing(user, rawFields, files) {
   const sellerName = userRow.full_name || userRow.name || user.email || 'Người bán StyleHub';
 
   const fields = validateFields(rawFields, sellerName);
+  const productJourney = sustainability.validateSustainability(rawFields);
   validateFiles(files);
 
   const { data: category, error: catErr } = await supabaseAdmin
@@ -272,7 +274,7 @@ async function createListing(user, rawFields, files) {
   // event loop: whichever concurrent request's continuation is scheduled
   // first reserves the slot before the other request's continuation can run.
   const now = Date.now();
-  const key = `${dedupeKey(fields)}::${fields.brand_slug || ''}`;
+  const key = `${dedupeKey(fields, productJourney)}::${fields.brand_slug || ''}`;
   const prev = recentSubmissions.get(user.id);
   if (prev && prev.key === key && prev.expiresAt > now) {
     if (prev.status === 'done') {
@@ -357,6 +359,19 @@ async function createListing(user, rawFields, files) {
     if (prodErr) throw new Error(`Product creation failed: ${prodErr.message}`);
 
     try {
+      if (productJourney.provided) {
+        const { error: sustainabilityErr } = await supabaseAdmin
+          .from('product_sustainability')
+          .insert({
+            product_id: product.id,
+            ...sustainability.toDatabasePayload(productJourney.value),
+            claim_source: 'seller_declared',
+          });
+        if (sustainabilityErr) {
+          throw new Error(`Product Journey creation failed: ${sustainabilityErr.message}`);
+        }
+      }
+
       const rows = imageRecords.map((r) => ({ ...r, product_id: product.id }));
       const { error: imgErr } = await supabaseAdmin.from('product_images').insert(rows);
       if (imgErr) throw new Error(`Image records failed: ${imgErr.message}`);

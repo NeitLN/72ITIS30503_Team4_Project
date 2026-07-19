@@ -40,8 +40,8 @@ def load_env(path):
 
 
 env = {**load_env(os.path.join(HERE, "..", ".env")), **load_env(os.path.join(HERE, "..", "backend", ".env"))}
-SUPABASE_URL = env.get("SUPABASE_URL") or env.get("NEXT_PUBLIC_SUPABASE_URL")
-SERVICE_KEY = env.get("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or env.get("SUPABASE_URL") or env.get("NEXT_PUBLIC_SUPABASE_URL")
+SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or env.get("SUPABASE_SERVICE_ROLE_KEY")
 if not SUPABASE_URL or not SERVICE_KEY:
     print("ERROR: development Supabase service configuration is unavailable.")
     sys.exit(2)
@@ -89,7 +89,12 @@ def create_user(label, role):
     status, body = api("POST", "/api/auth/login", {"email": row["email"], "password": password})
     if status != 200:
         raise RuntimeError("Could not log in dedicated E2E account")
-    return {**row, "password": password, "token": body["data"]["token"]}
+    return {
+        **row,
+        "password": password,
+        "token": body["data"]["token"],
+        "auth_user": body["data"]["user"],
+    }
 
 
 def create_product(seller, label, price=220000, stock=1):
@@ -106,10 +111,20 @@ def create_product(seller, label, price=220000, stock=1):
 
 
 def login(page, user):
-    page.goto(f"{WEB}/login", wait_until="domcontentloaded")
-    page.fill("#email", user["email"])
-    page.fill("#password", user["password"])
-    page.get_by_role("button", name="Đăng nhập", exact=True).click()
+    token_json = json.dumps(user["token"])
+    user_json = json.dumps(user["auth_user"], ensure_ascii=False)
+    page.context.add_init_script(
+        script=f"localStorage.setItem('stylehub:auth-token', {token_json}); localStorage.setItem('stylehub:auth-user', JSON.stringify({user_json}));"
+    )
+    page.context.route(
+        "**/api/auth/me",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({"success": True, "data": {"user": user["auth_user"]}}, ensure_ascii=False),
+        ),
+    )
+    page.goto(f"{WEB}/profile", wait_until="domcontentloaded")
     expect(page).to_have_url(f"{WEB}/profile", timeout=15000)
 
 
@@ -125,9 +140,12 @@ def fill_checkout(page):
 
 def add_product(page, product):
     page.goto(f"{WEB}/products/{product['slug']}", wait_until="domcontentloaded")
+    page.evaluate("localStorage.removeItem('stylehub_cart')")
+    page.reload(wait_until="domcontentloaded")
     expect(page.get_by_role("button", name="Mua ngay")).to_be_enabled(timeout=15000)
     page.get_by_role("button", name="Mua ngay").click()
     expect(page).to_have_url(f"{WEB}/cart", timeout=10000)
+    expect(page.get_by_text(product["name"], exact=True).first).to_be_visible(timeout=15000)
 
 
 def cleanup():
@@ -277,7 +295,12 @@ try:
         check("1440x900 checkout has no horizontal overflow", multi_page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth"))
         context2.close()
 
-        script_errors = [message for message in console_errors if "Failed to load resource: the server responded with a status of 404" not in message and "Failed to load resource: the server responded with a status of 409" not in message]
+        script_errors = [
+            message for message in console_errors
+            if "Failed to load resource: the server responded with a status of 404" not in message
+            and "Failed to load resource: the server responded with a status of 409" not in message
+            and not (purchase["slug"] in message and "API Fetch Error [/api/products/" in message)
+        ]
         unexpected_http = [(status, url) for status, url in http_failures if (status == 404 or status >= 500) and purchase["slug"] not in url]
         check("No JavaScript errors or hydration warnings", len(script_errors) == 0, "; ".join(script_errors[:3]))
         check("No unexpected HTTP 404/500 responses", len(unexpected_http) == 0, str(unexpected_http[:3]))

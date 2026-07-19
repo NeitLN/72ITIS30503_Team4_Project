@@ -9,6 +9,7 @@ import { Combobox } from '../ui/Combobox';
 import { ROUTES } from '../../constants/routes';
 import { ProductCard } from '../product/ProductCard';
 import { Product } from '../../types/product';
+import { ProductJourneyFields } from '../sustainability/ProductJourneyFields';
 import { useAuth } from '../../hooks/useAuth';
 import { getCategoryTree } from '../../lib/catalog';
 import { Category } from '../../types/category';
@@ -20,6 +21,13 @@ import {
   CONDITIONS, CLOTHING_SIZES, SHOE_SIZES, SHOE_LIKE_CATEGORIES, UNBRANDED_LABEL,
   MAX_IMAGES, MAX_IMAGE_BYTES, ALLOWED_IMAGE_MIME as ALLOWED_MIME,
 } from '../../lib/listingOptions';
+import {
+  EMPTY_PRODUCT_JOURNEY,
+  ProductJourneyFormState,
+  getLifecycleOption,
+  prepareProductJourney,
+  validateProductJourney,
+} from '../../lib/productJourney';
 
 type FormState = {
   name: string;
@@ -33,6 +41,7 @@ type FormState = {
   stock: string;
   location: string;
   is_negotiable: boolean;
+  product_journey: ProductJourneyFormState;
 };
 
 const INITIAL_FORM: FormState = {
@@ -47,6 +56,7 @@ const INITIAL_FORM: FormState = {
   stock: '1',
   location: 'Thành phố Hồ Chí Minh',
   is_negotiable: false,
+  product_journey: EMPTY_PRODUCT_JOURNEY,
 };
 
 const DRAFT_KEY = 'stylehub:sell-draft-v2';
@@ -129,7 +139,14 @@ export const SellListingClient = () => {
     const timer = setTimeout(() => {
       try {
         const saved = localStorage.getItem(DRAFT_KEY);
-        if (saved) setForm({ ...INITIAL_FORM, ...JSON.parse(saved) });
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setForm({
+            ...INITIAL_FORM,
+            ...parsed,
+            product_journey: { ...EMPTY_PRODUCT_JOURNEY, ...(parsed.product_journey || {}) },
+          });
+        }
       } catch {
         // ignore corrupt draft
       }
@@ -173,10 +190,20 @@ export const SellListingClient = () => {
     });
   };
 
+  const setProductJourney = (value: ProductJourneyFormState) => {
+    setForm((prev) => ({ ...prev, product_journey: value }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      for (const key of ['lifecycle_type', 'material', 'repair_history', 'upcycle_details', 'product_story']) delete next[key];
+      return next;
+    });
+  };
+
   const focusFirstError = (fieldErrors: Record<string, string>) => {
     const first = Object.keys(fieldErrors)[0];
     if (first) {
-      document.getElementById(first)?.focus();
+      const journeyFields = new Set(['lifecycle_type', 'material', 'repair_history', 'upcycle_details', 'product_story']);
+      document.getElementById(journeyFields.has(first) ? `sell-${first}` : first)?.focus();
     }
   };
 
@@ -208,6 +235,7 @@ export const SellListingClient = () => {
     if (targetStep === 3) {
       if (!form.condition) e.condition = 'Vui lòng chọn tình trạng sản phẩm.';
       if (!form.size) e.size = 'Vui lòng chọn kích thước.';
+      Object.assign(e, validateProductJourney(form.product_journey));
     }
     if (targetStep === 4) {
       const price = Number(form.price);
@@ -328,6 +356,7 @@ export const SellListingClient = () => {
     fd.append('stock', form.stock);
     fd.append('location', form.location.trim());
     fd.append('is_negotiable', String(form.is_negotiable));
+    fd.append('sustainability', JSON.stringify(prepareProductJourney(form.product_journey)));
     images.forEach((img) => fd.append('images', img.file));
 
     try {
@@ -411,6 +440,7 @@ export const SellListingClient = () => {
   };
 
   const errClass = (field: string) => (errors[field] ? 'border-red-500' : 'border-neutral-300');
+  const lifecycleOption = getLifecycleOption(form.product_journey.lifecycle_type);
 
   return (
     <Container className="py-10 sm:py-16">
@@ -552,6 +582,12 @@ export const SellListingClient = () => {
                     {isShoeLike && <p className="text-[10px] text-neutral-500 mt-1 uppercase font-mono tracking-wide">Giày dép dùng kích thước theo chuẩn EU.</p>}
                   </div>
                 </div>
+                <ProductJourneyFields
+                  idPrefix="sell"
+                  value={form.product_journey}
+                  onChange={setProductJourney}
+                  errors={errors}
+                />
               </div>
             )}
 
@@ -678,6 +714,25 @@ export const SellListingClient = () => {
                   <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Số lượng</dt><dd className="text-neutral-900">{form.stock}</dd></div>
                   <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Tỉnh/Thành phố</dt><dd className="text-neutral-900">{form.location}{form.is_negotiable ? ' · Có thể thương lượng' : ''}</dd></div>
                   <div className="sm:col-span-2"><dt className="font-mono text-[10px] uppercase text-neutral-400">Mô tả</dt><dd className="text-neutral-900 whitespace-pre-wrap">{form.description}</dd></div>
+                  <div className="sm:col-span-2 border-t border-neutral-100 pt-4">
+                    <dt className="font-mono text-[10px] uppercase text-neutral-400">Product Journey · Người bán cung cấp</dt>
+                    <dd className="mt-1 text-neutral-900">{lifecycleOption?.previewLabel || 'Not specified'}</dd>
+                    {form.product_journey.material && form.product_journey.lifecycle_type !== 'not_specified' && (
+                      <dd className="mt-1 text-neutral-600">Chất liệu: {form.product_journey.material}</dd>
+                    )}
+                    {form.product_journey.repair_history && form.product_journey.lifecycle_type === 'repaired' && (
+                      <dd className="mt-1 whitespace-pre-wrap text-neutral-600">Đã sửa: {form.product_journey.repair_history}</dd>
+                    )}
+                    {form.product_journey.upcycle_details && form.product_journey.lifecycle_type === 'upcycled' && (
+                      <dd className="mt-1 whitespace-pre-wrap text-neutral-600">Tái thiết kế: {form.product_journey.upcycle_details}</dd>
+                    )}
+                    {form.product_journey.product_story && form.product_journey.lifecycle_type !== 'not_specified' && (
+                      <dd className="mt-1 whitespace-pre-wrap text-neutral-600">Câu chuyện: {form.product_journey.product_story}</dd>
+                    )}
+                    {form.product_journey.reuse_packaging && form.product_journey.lifecycle_type !== 'not_specified' && (
+                      <dd className="mt-1 text-neutral-600">Dự định sử dụng lại bao bì phù hợp khi giao hàng.</dd>
+                    )}
+                  </div>
                 </dl>
                 <div>
                   <p className="font-mono text-[10px] uppercase text-neutral-400 mb-2">Hình ảnh ({images.length})</p>
@@ -732,6 +787,11 @@ export const SellListingClient = () => {
             <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-400 mb-3">Live Preview</h3>
             <div className="pointer-events-none">
               <ProductCard product={previewProduct} />
+            </div>
+            <div className="mt-3 border-t border-neutral-200 pt-3" data-testid="sell-product-journey-preview">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">Product Journey</p>
+              <p className="mt-1 text-sm font-medium text-neutral-900">{lifecycleOption?.previewLabel || 'Not specified'}</p>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-500">Thông tin do người bán cung cấp, chưa được StyleHub kiểm định.</p>
             </div>
 
             <div className="mt-8 border border-neutral-200 bg-neutral-50 p-6">

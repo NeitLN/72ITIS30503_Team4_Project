@@ -143,6 +143,8 @@ with sync_playwright() as p:
     check("Shoe category shows EU size options", any("EU" in o for o in size_options), str(size_options))
     page.select_option("#condition", "good")
     page.select_option("#size", "EU 42")
+    page.check("#sell-lifecycle_type-not_specified")
+    check("Phase 7 flow explicitly selects the backward-compatible Not Specified journey", True)
     page.click("[data-testid=sell-next]")
     expect(page.get_by_text("Bước 4")).to_be_visible(timeout=5000)
     check("Step 3 -> Step 4 advanced", True)

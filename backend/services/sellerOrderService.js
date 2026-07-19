@@ -57,7 +57,7 @@ async function listMyOrderItems(userId, query = {}) {
 
   let base = supabaseAdmin
     .from('order_items')
-    .select('id, order_id, product_id, product_name, product_slug, image_url, size, condition, quantity, unit_price, price, line_total, fulfillment_status, created_at', { count: 'exact' })
+    .select('id, order_id, product_id, product_name, product_slug, image_url, size, condition, quantity, unit_price, price, line_total, fulfillment_status, lifecycle_type_snapshot, claim_source_snapshot, created_at', { count: 'exact' })
     .eq('seller_id', userId);
   if (query.status) base = base.eq('fulfillment_status', query.status);
 
@@ -73,7 +73,7 @@ async function getMyOrderById(userId, orderId) {
 
   const { data: items, error } = await supabaseAdmin
     .from('order_items')
-    .select('id, order_id, product_id, product_name, product_slug, image_url, size, condition, quantity, unit_price, price, line_total, fulfillment_status, created_at')
+    .select('id, order_id, product_id, product_name, product_slug, image_url, size, condition, quantity, unit_price, price, line_total, fulfillment_status, lifecycle_type_snapshot, claim_source_snapshot, created_at')
     .eq('order_id', orderId)
     .eq('seller_id', userId);
   if (error) throw error;

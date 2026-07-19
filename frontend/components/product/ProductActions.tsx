@@ -31,7 +31,7 @@ interface VariantRow {
 
 export const ProductActions = ({ product }: ProductActionsProps) => {
   const router = useRouter();
-  const { addToCart } = useCart();
+  const { addToCart, isHydrated: isCartHydrated } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [added, setAdded] = useState(false);
 
@@ -204,19 +204,19 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
           <Button
             size="lg"
             className="flex-1 text-sm font-bold uppercase font-mono tracking-wider"
-            disabled={isOutOfStock}
+            disabled={isOutOfStock || !isCartHydrated}
             onClick={handleBuyNow}
           >
-            {isOutOfStock ? 'Hết hàng' : 'Mua ngay'}
+            {isOutOfStock ? 'Hết hàng' : isCartHydrated ? 'Mua ngay' : 'Đang tải giỏ hàng…'}
           </Button>
           <Button
             size="lg"
             variant="secondary"
             className="flex-1 font-mono text-xs uppercase tracking-wider"
-            disabled={isOutOfStock}
+            disabled={isOutOfStock || !isCartHydrated}
             onClick={handleAddToCart}
           >
-            {added ? '✓ Đã thêm vào giỏ' : 'Thêm vào giỏ hàng'}
+            {!isCartHydrated ? 'Đang tải giỏ hàng…' : added ? '✓ Đã thêm vào giỏ' : 'Thêm vào giỏ hàng'}
           </Button>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">

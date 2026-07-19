@@ -250,7 +250,7 @@ async function getOrderById(orderId, user) {
 
   const { data: items, error: itemsError } = await supabaseAdmin
     .from('order_items')
-    .select('id, product_id, variant_id, product_name, product_slug, variant_name, image_url, sku, size, condition, unit_price, price, quantity, line_total, fulfillment_status, created_at')
+    .select('id, product_id, variant_id, product_name, product_slug, variant_name, image_url, sku, size, condition, unit_price, price, quantity, line_total, fulfillment_status, lifecycle_type_snapshot, claim_source_snapshot, created_at')
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
   if (itemsError) throw new ServiceError('ORDER_LOAD_FAILED', 'Không thể tải chi tiết đơn hàng.', 500);

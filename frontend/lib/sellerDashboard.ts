@@ -1,5 +1,6 @@
 import { getApiBaseUrl } from './api';
 import { getStoredToken } from './auth';
+import type { ProductSustainability } from './productJourney';
 
 export interface SellerListingImage {
   id: string;
@@ -33,6 +34,7 @@ export interface SellerListing {
   created_at: string;
   updated_at: string;
   images: SellerListingImage[];
+  sustainability: ProductSustainability;
 }
 
 export interface SellerListingStats {

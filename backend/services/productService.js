@@ -1,4 +1,5 @@
-const { supabase, isSupabaseConfigured } = require('../lib/supabase');
+const { supabase, supabaseAdmin, isSupabaseConfigured } = require('../lib/supabase');
+const { toPublicSustainability } = require('../constants/sustainability');
 
 const checkDb = () => {
   if (!isSupabaseConfigured()) {
@@ -6,7 +7,7 @@ const checkDb = () => {
   }
 };
 
-const attachRelations = async (products) => {
+const attachRelations = async (products, { sustainabilityDetails = false } = {}) => {
   if (!products || products.length === 0) return products;
 
   const sellerIds = [...new Set(products.map(p => p.seller_id).filter(Boolean))];
@@ -18,6 +19,7 @@ const attachRelations = async (products) => {
   let brands = [];
   let categories = [];
   let images = [];
+  let sustainabilityRows = [];
 
   if (sellerIds.length > 0) {
     try {
@@ -47,11 +49,22 @@ const attachRelations = async (products) => {
     } catch (e) {}
   }
 
+  if (productIds.length > 0) {
+    try {
+      const { data } = await supabaseAdmin
+        .from('product_sustainability')
+        .select('product_id, lifecycle_type, material, repair_history, upcycle_details, product_story, reuse_packaging, claim_source')
+        .in('product_id', productIds);
+      if (data) sustainabilityRows = data;
+    } catch (e) {}
+  }
+
   return products.map(product => {
     const seller = users.find(u => u.id === product.seller_id);
     const brand = brands.find(b => b.id === product.brand_id);
     const category = categories.find(c => c.slug === product.category_slug);
     const productImages = images.filter(i => i.product_id === product.id);
+    const productSustainability = sustainabilityRows.find((row) => row.product_id === product.id);
 
     return {
       ...product,
@@ -74,6 +87,7 @@ const attachRelations = async (products) => {
         name: category.name,
         slug: category.slug
       } : null,
+      sustainability: toPublicSustainability(productSustainability, { minimal: !sustainabilityDetails }),
       images: productImages.map(img => ({
         image_url: img.url || img.image_url || img.image || '',
         alt_text: img.alt_text || '',
@@ -191,7 +205,7 @@ const getProducts = async (options = {}) => {
     validData = data.filter(p => p.sale_price < p.price);
   }
 
-  const enrichedData = await attachRelations(validData);
+  const enrichedData = await attachRelations(validData, { sustainabilityDetails: false });
 
   return {
     data: enrichedData,
@@ -219,7 +233,7 @@ const getProductBySlug = async (slug, { includeAllStatuses = false } = {}) => {
   if (error) throw error;
   if (!data) return null;
 
-  const enrichedData = await attachRelations([data]);
+  const enrichedData = await attachRelations([data], { sustainabilityDetails: true });
   return enrichedData[0];
 };
 

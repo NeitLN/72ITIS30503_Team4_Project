@@ -15,6 +15,13 @@ import {
 import {
   SellerListing, getMyListing, updateMyListing, addListingImages, removeListingImage, reorderListingImages,
 } from '../../lib/sellerDashboard';
+import { ProductJourneyFields } from '../sustainability/ProductJourneyFields';
+import {
+  ProductJourneyFormState,
+  prepareProductJourney,
+  toProductJourneyForm,
+  validateProductJourney,
+} from '../../lib/productJourney';
 
 interface ListingEditFormProps {
   listingId: string;
@@ -34,6 +41,7 @@ type FormState = {
   stock: string;
   location: string;
   is_negotiable: boolean;
+  product_journey: ProductJourneyFormState;
 };
 
 function toForm(listing: SellerListing): FormState {
@@ -49,6 +57,7 @@ function toForm(listing: SellerListing): FormState {
     stock: String(listing.stock),
     location: listing.location,
     is_negotiable: listing.is_negotiable,
+    product_journey: toProductJourneyForm(listing.sustainability),
   };
 }
 
@@ -111,6 +120,15 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
     });
   };
 
+  const setProductJourney = (value: ProductJourneyFormState) => {
+    setForm((prev) => (prev ? { ...prev, product_journey: value } : prev));
+    setErrors((prev) => {
+      const next = { ...prev };
+      for (const key of ['lifecycle_type', 'material', 'repair_history', 'upcycle_details', 'product_story']) delete next[key];
+      return next;
+    });
+  };
+
   const getBrandOptions = (query: string): string[] => {
     const q = normalizeVnText(query);
     const names = brands.map((b) => b.name);
@@ -140,7 +158,13 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
     const stock = Number(f.stock);
     if (!Number.isInteger(stock) || stock < 0) e.stock = 'Số lượng phải là số nguyên và không âm.';
     if (!f.location.trim()) e.location = 'Vui lòng chọn một tỉnh/thành phố hợp lệ.';
+    Object.assign(e, validateProductJourney(f.product_journey));
     return e;
+  };
+
+  const focusFirstError = (fieldErrors: Record<string, string>) => {
+    const first = Object.keys(fieldErrors)[0];
+    if (first) document.getElementById(first === 'lifecycle_type' ? 'edit-lifecycle_type' : `edit-${first}`)?.focus();
   };
 
   const handleSave = async () => {
@@ -148,6 +172,7 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
     const fieldErrors = validate(form);
     if (Object.keys(fieldErrors).length) {
       setErrors(fieldErrors);
+      focusFirstError(fieldErrors);
       return;
     }
 
@@ -168,6 +193,7 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
         stock: form.stock,
         location: form.location.trim(),
         is_negotiable: form.is_negotiable,
+        sustainability: prepareProductJourney(form.product_journey),
         expected_updated_at: listing.updated_at,
       });
       if (res.success) {
@@ -390,6 +416,13 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
           />
           Có thể thương lượng giá
         </label>
+
+        <ProductJourneyFields
+          idPrefix="edit"
+          value={form.product_journey}
+          onChange={setProductJourney}
+          errors={errors}
+        />
 
         {/* Images */}
         <div className="border-t border-neutral-100 pt-6">
