@@ -129,13 +129,48 @@ const validateCouponCode = async (code, subtotal) => {
   return coupon;
 };
 
+// Phase 9: revalidate every cart item against its CURRENT, real product
+// row right before the order is created — a listing a seller hid, sold,
+// or archived (or simply ran out of stock) since it was added to the cart
+// must never be purchasable just because the client's local cart still
+// shows it. Never trust price/availability implied by the client payload.
+const validateItemsAvailability = async (items) => {
+  const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))];
+  if (!productIds.length) return;
+
+  const { data: products, error: fetchErr } = await supabase
+    .from('products')
+    .select('id, name, status, stock')
+    .in('id', productIds);
+  if (fetchErr) throw new Error('Không thể kiểm tra tình trạng sản phẩm. Vui lòng thử lại.');
+
+  const byId = new Map((products || []).map((p) => [p.id, p]));
+  const unavailable = [];
+  for (const item of items) {
+    if (!item.productId) continue;
+    const product = byId.get(item.productId);
+    if (!product || product.status !== 'active') {
+      unavailable.push(item.productName || product?.name || 'một sản phẩm');
+      continue;
+    }
+    if (typeof product.stock === 'number' && product.stock < item.quantity) {
+      unavailable.push(item.productName || product.name);
+    }
+  }
+
+  if (unavailable.length) {
+    throw { status: 409, message: `Sản phẩm sau không còn khả dụng, vui lòng cập nhật giỏ hàng: ${unavailable.join(', ')}.` };
+  }
+};
+
 const createOrder = async (user, payload) => {
   if (!isSupabaseConfigured()) throw new Error('Database is not configured');
-  
+
   validateOrderPayload(payload);
-  
+  await validateItemsAvailability(payload.items);
+
   const { customer, paymentMethod, notes, items, couponCode } = payload;
-  
+
   // Calculate raw subtotal first to validate coupon
   const rawSubtotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
   

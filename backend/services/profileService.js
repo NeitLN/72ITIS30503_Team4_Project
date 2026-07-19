@@ -32,6 +32,7 @@ const RESERVED_USERNAMES = new Set([
   'profile', 'register', 'sell', 'seller', 'sellers', 'shop', 'wishlist',
   'settings', 'help', 'terms', 'static', '_next', 'favicon', 'robots',
   'sitemap', 'www', 'support', 'null', 'undefined', 'me', 'admin-orders',
+  'dashboard',
 ]);
 
 class ProfileValidationError extends Error {

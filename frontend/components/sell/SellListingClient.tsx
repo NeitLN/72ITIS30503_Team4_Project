@@ -16,6 +16,10 @@ import { getBrands, BrandOption } from '../../lib/brands';
 import { createListing } from '../../lib/products';
 import { formatCondition } from '../../lib/format';
 import { VN_PROVINCES, searchVnLocations, normalizeVnText } from '../../lib/vnLocations';
+import {
+  CONDITIONS, CLOTHING_SIZES, SHOE_SIZES, SHOE_LIKE_CATEGORIES, UNBRANDED_LABEL,
+  MAX_IMAGES, MAX_IMAGE_BYTES, ALLOWED_IMAGE_MIME as ALLOWED_MIME,
+} from '../../lib/listingOptions';
 
 type FormState = {
   name: string;
@@ -31,8 +35,6 @@ type FormState = {
   is_negotiable: boolean;
 };
 
-const UNBRANDED_LABEL = 'Không có thương hiệu';
-
 const INITIAL_FORM: FormState = {
   name: '',
   description: '',
@@ -47,26 +49,6 @@ const INITIAL_FORM: FormState = {
   is_negotiable: false,
 };
 
-const CONDITIONS = [
-  { value: 'new_with_tags', label: 'Mới, còn tag' },
-  { value: 'like_new', label: 'Như mới' },
-  { value: 'excellent', label: 'Rất tốt' },
-  { value: 'good', label: 'Tốt' },
-  { value: 'fair', label: 'Tạm được' },
-];
-const CLOTHING_SIZES = [
-  { value: 'XS', label: 'XS' }, { value: 'S', label: 'S' }, { value: 'M', label: 'M' },
-  { value: 'L', label: 'L' }, { value: 'XL', label: 'XL' }, { value: 'XXL', label: 'XXL' },
-  { value: 'One Size', label: 'Một cỡ' },
-];
-const SHOE_SIZES = [
-  ...['EU 36', 'EU 37', 'EU 38', 'EU 39', 'EU 40', 'EU 41', 'EU 42', 'EU 43', 'EU 44', 'EU 45'].map((v) => ({ value: v, label: v })),
-  { value: 'One Size', label: 'Một cỡ' },
-];
-const SHOE_LIKE_CATEGORIES = new Set(['shoes', 'slides', 'boots', 'loafers', 'other-shoes']);
-const MAX_IMAGES = 6;
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const DRAFT_KEY = 'stylehub:sell-draft-v2';
 
 // Step nav + in-panel headings are deliberately English (compact wizard/

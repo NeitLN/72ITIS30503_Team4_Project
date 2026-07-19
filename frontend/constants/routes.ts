@@ -17,7 +17,9 @@ export const ROUTES = {
   REGISTER: '/register',
   ORDERS: '/orders',
   ADMIN_ORDERS: '/admin/orders',
+  SELLER_DASHBOARD: '/seller/dashboard',
   PRODUCT: (slug: string) => `/products/${slug}`,
   CATEGORY: (slug: string) => `/category/${slug}`,
+  SELLER_PROFILE: (username: string) => `/seller/${username}`,
 };
 

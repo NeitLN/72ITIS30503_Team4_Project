@@ -12,6 +12,8 @@ const profileRoutes = require('./routes/profile');
 const sellerRoutes = require('./routes/sellers');
 const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
+const sellerListingRoutes = require('./routes/sellerListings');
+const sellerOrderRoutes = require('./routes/sellerOrders');
 
 const app = express();
 
@@ -41,6 +43,8 @@ app.use('/api/brands', brandRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/sellers', sellerRoutes);
+app.use('/api/seller/listings', sellerListingRoutes);
+app.use('/api/seller/orders', sellerOrderRoutes);
 
 // 404 Handler
 app.use((req, res) => {

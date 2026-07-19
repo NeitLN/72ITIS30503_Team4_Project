@@ -21,6 +21,7 @@ const crypto = require('crypto');
 const { supabaseAdmin, isSupabaseAdminConfigured } = require('../lib/supabase');
 const brandService = require('./brandService');
 const { isKnownLocation } = require('../constants/vnLocations');
+const { SHOE_LIKE_CATEGORIES } = require('../constants/shoeCategories');
 
 const BUCKET = 'product-images';
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -145,9 +146,8 @@ function validateFields(raw, sellerName) {
   // shoe-shaped size (EU sizing or One Size); everything else must not use
   // shoe sizing. Mirrors the same rule already enforced by the Phase 6
   // manifest validator (backend/scripts/data/verifiedCatalog.js assertData).
-  const SHOE_LIKE = new Set(['shoes', 'slides', 'boots', 'loafers', 'other-shoes']);
   if (!errors.size && !errors.category_slug) {
-    const shoeLike = SHOE_LIKE.has(category_slug);
+    const shoeLike = SHOE_LIKE_CATEGORIES.has(category_slug);
     const looksLikeShoeSize = /^EU\s?\d{2}$/i.test(size) || /^one\s?size$/i.test(size);
     if (shoeLike && !looksLikeShoeSize) {
       errors.size = 'Chọn kích thước giày theo chuẩn EU (ví dụ "EU 42") hoặc Một cỡ cho danh mục giày dép.';
@@ -392,4 +392,18 @@ module.exports = {
   ALLOWED_MIME,
   MAX_IMAGES,
   MAX_IMAGE_BYTES,
+  // Exported so Phase 9's edit-listing validation (services/sellerListingService.js)
+  // enforces identical rules instead of a second, potentially-drifting copy.
+  ALLOWED_CONDITIONS,
+  MAX_PRICE,
+  MAX_STOCK,
+  MIN_NAME_LEN,
+  MAX_NAME_LEN,
+  MIN_DESC_LEN,
+  MAX_DESC_LEN,
+  stripControlChars,
+  slugifyBase,
+  generateUniqueSlug,
+  extFromMime,
+  BUCKET,
 };

@@ -203,20 +203,22 @@ const getProducts = async (options = {}) => {
   };
 };
 
-const getProductBySlug = async (slug) => {
+// Phase 9: public product detail must only ever resolve an 'active'
+// listing — a draft/hidden/sold/archived product must not be reachable by
+// guessing or bookmarking its slug once the seller changes its visibility.
+// `includeAllStatuses` is only for trusted internal callers (none yet);
+// the public route (routes/products.js) always uses the default.
+const getProductBySlug = async (slug, { includeAllStatuses = false } = {}) => {
   checkDb();
-  
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('slug', slug)
-    .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') return null; // Not found
-    throw error;
-  }
-  
+  let query = supabase.from('products').select('*').eq('slug', slug);
+  if (!includeAllStatuses) query = query.eq('status', 'active');
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
   const enrichedData = await attachRelations([data]);
   return enrichedData[0];
 };
