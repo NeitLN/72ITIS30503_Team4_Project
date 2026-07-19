@@ -23,8 +23,8 @@ export const HeroSection = () => {
             Sell the archive.
           </h1>
           <p className="mt-8 max-w-xl text-lg leading-relaxed text-neutral-300 sm:text-xl">
-            Local brands, pre-loved pieces, and streetwear finds — listed by sellers across Vietnam,
-            priced in VNĐ, passed from one closet to the next.
+            New and pre-loved fashion — everyday wear, streetwear, footwear, and more, across local
+            and international brands — listed by real sellers across Vietnam and priced in VNĐ.
           </p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
             <Link
@@ -46,7 +46,7 @@ export const HeroSection = () => {
         <div className="border-t border-white/10 py-3">
           <Container>
             <p className="truncate font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-300">
-              Hà Nội → Sài Gòn → Đà Nẵng · Condition checked · VNĐ pricing · Seller to buyer, no middle rack
+              Vietnam-wide · Condition checked · VNĐ pricing · Seller to buyer, no middle rack
             </p>
           </Container>
         </div>

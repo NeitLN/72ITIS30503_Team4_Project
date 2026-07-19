@@ -5,7 +5,7 @@ import { EN } from '../../lib/i18n';
 
 export const metadata: Metadata = {
   title: 'Sell',
-  description: 'List streetwear, sneakers, accessories, and pre-loved fashion for sale on StyleHub in six quick steps.',
+  description: 'List new or pre-loved fashion — any brand, any style — for sale on StyleHub in six quick steps.',
 };
 
 export default function SellPage() {

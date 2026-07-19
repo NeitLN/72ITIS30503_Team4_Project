@@ -10,7 +10,7 @@ import { EN } from '../lib/i18n';
 
 export const metadata: Metadata = {
   title: `StyleHub — ${EN.brand.tagline}`,
-  description: 'Khám phá đồ streetwear, sneaker, thời trang archive và các tin đăng đồ cũ từ người bán độc lập tại Việt Nam.',
+  description: 'Nền tảng thời trang C2C nơi mọi người có thể mua, đăng bán và tìm lại giá trị mới cho các sản phẩm thuộc nhiều thương hiệu, phong cách và tình trạng khác nhau tại Việt Nam.',
 };
 
 export default async function Home() {

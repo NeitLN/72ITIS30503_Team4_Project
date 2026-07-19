@@ -37,7 +37,7 @@ export const CartClient = () => {
             {vi.cart.empty}
           </h2>
           <p className="mt-2 text-sm text-neutral-500 max-w-sm mx-auto">
-            Khám phá thời trang đường phố và ủng hộ các nhà thiết kế địa phương.
+            Khám phá thời trang mới và đã qua sử dụng từ nhiều người bán khác nhau.
           </p>
           <div className="mt-8">
             <Link href="/shop">

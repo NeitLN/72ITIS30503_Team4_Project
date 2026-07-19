@@ -27,7 +27,7 @@ export const WishlistClient = () => {
       <PageHeader
         eyebrow="Yêu thích"
         title="Sản phẩm yêu thích"
-        lede="Lưu lại những món đồ thời trang đường phố và đã qua sử dụng độc đáo mà bạn yêu thích."
+        lede="Lưu lại những sản phẩm thời trang mới và đã qua sử dụng mà bạn yêu thích."
       />
 
       {wishlist.length === 0 ? (
@@ -37,7 +37,7 @@ export const WishlistClient = () => {
             Chưa có sản phẩm yêu thích
           </h2>
           <p className="mt-2 text-sm text-neutral-500 max-w-sm mx-auto">
-            Tìm kiếm những món đồ hiếm, thương hiệu nội địa và các sản phẩm độc đáo bạn muốn lưu lại.
+            Khám phá thời trang mới và đã qua sử dụng từ nhiều thương hiệu, phong cách khác nhau và lưu lại những món bạn thích.
           </p>
           <div className="mt-8">
             <Link href="/shop">

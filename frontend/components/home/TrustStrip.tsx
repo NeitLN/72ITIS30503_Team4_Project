@@ -14,8 +14,8 @@ const highlights = [
     description: 'Local prices, written the way sellers write them: 350.000đ.',
   },
   {
-    title: 'Local fashion community',
-    description: 'Vietnamese brands, thrift culture, and street style in one place.',
+    title: 'C2C community',
+    description: 'Everyday fashion, streetwear, and more — new and pre-loved, from sellers across Vietnam.',
   },
 ];
 

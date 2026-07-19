@@ -11,8 +11,8 @@ import { Metadata } from 'next';
 export const revalidate = 60; // Revalidate cache every 60 seconds
 
 export const metadata: Metadata = {
-  title: 'Cửa Hàng Thời Trang Địa Phương',
-  description: 'Duyệt tin đăng thời trang C2C theo danh mục, thương hiệu, tình trạng và từ khóa. Mua sắm từ người bán độc lập trên StyleHub.',
+  title: 'Chợ Thời Trang C2C',
+  description: 'Duyệt tin đăng thời trang C2C theo danh mục, thương hiệu, tình trạng và từ khóa — sản phẩm mới và đã qua sử dụng từ nhiều người bán trên StyleHub.',
 };
 
 interface ShopPageProps {

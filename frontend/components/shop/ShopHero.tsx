@@ -1,6 +1,6 @@
 import { Container } from '../ui/Container';
 
-const trustBadges = ['Verified sellers', 'Condition checked', 'VNĐ pricing', 'Local fashion'];
+const trustBadges = ['Verified sellers', 'Condition checked', 'VNĐ pricing', 'New & pre-loved'];
 
 export const ShopHero = () => {
   return (
@@ -18,7 +18,7 @@ export const ShopHero = () => {
             Marketplace
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-200 sm:text-lg">
-            Discover local brands, pre-loved pieces, and streetwear listings from sellers across
+            Discover new and pre-loved fashion — any brand, any style — from real sellers across
             Vietnam.
           </p>
           <ul className="mt-8 flex flex-wrap gap-2">

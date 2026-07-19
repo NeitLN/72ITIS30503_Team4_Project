@@ -116,7 +116,7 @@ export function getListingView(product: Product): ListingView {
 
   const username = seller.username || product.sellerUsername;
   const sellerName =
-    username || product.seller_name || product.sellerName || seller.full_name || 'Người bán độc lập';
+    username || product.seller_name || product.sellerName || seller.full_name || 'Người bán trên StyleHub';
 
   return {
     name: product.name || product.title || 'Tin đăng chưa có tên',

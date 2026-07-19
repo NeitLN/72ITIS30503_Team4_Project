@@ -173,7 +173,7 @@ export default async function SellerPage({ params }: SellerPageProps) {
               Chưa có tin đang bán
             </h3>
             <p className="mt-2 text-sm text-neutral-500 max-w-sm mx-auto">
-              Người bán này chưa đăng bán món đồ thời trang đường phố hay thời trang nào.
+              Người bán này chưa đăng bán sản phẩm nào.
             </p>
             <div className="mt-8">
               <Link href="/shop">

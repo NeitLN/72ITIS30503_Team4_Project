@@ -412,7 +412,7 @@ export const ProfileClient = () => {
             <section className="border border-neutral-950 bg-neutral-950 text-white p-6 shadow-[4px_4px_0px_0px_rgba(200,200,200,1)]">
               <h2 className="font-mono text-xs uppercase tracking-[0.2em] font-bold mb-2">{EN.sell.hubEyebrow}</h2>
               <p className="text-sm text-neutral-300 leading-relaxed mb-6">
-                Turn your pre-loved fashion, streetwear, and sneakers into cash. List items to the community in minutes.
+                Turn new or pre-loved fashion — any brand, any style — into cash. List items to the community in minutes.
               </p>
               <Link href={ROUTES.SELL} className="block w-full">
                 <button className="w-full bg-white text-neutral-900 px-4 py-2 font-mono text-xs uppercase tracking-wider font-bold hover:bg-neutral-200 transition-colors">

@@ -34,8 +34,8 @@ export const Footer = () => {
           <div>
             <p className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900">StyleHub</p>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-neutral-500">
-              A C2C fashion marketplace for local brands, pre-loved pieces, and streetwear — sold by
-              people, not warehouses.
+              A C2C fashion marketplace where people buy, sell, and rediscover pieces across
+              different brands, styles, and stories.
             </p>
           </div>
           {linkGroups.map((group) => (
@@ -58,7 +58,7 @@ export const Footer = () => {
 
         <div className="flex flex-col items-center gap-2 border-t border-neutral-200 py-6 sm:flex-row sm:justify-between">
           <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-400">
-            Hà Nội · Sài Gòn · Đà Nẵng
+            Buyers and sellers nationwide — all 34 provinces and cities
           </p>
           <p className="text-xs text-neutral-400">
             &copy; {new Date().getFullYear()} StyleHub — a student demo project. All rights reserved.

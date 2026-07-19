@@ -15,7 +15,7 @@ export const Header = async () => {
       <div className="border-b border-neutral-200 bg-neutral-900 py-1.5">
         <Container>
           <p className="truncate text-center font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-300">
-            Hà Nội → Sài Gòn · Pre-loved · Local brands · Streetwear · Peer to peer
+            Buy • Sell • Rewear · New &amp; Pre-loved · Everyday Fashion · C2C Community
           </p>
         </Container>
       </div>

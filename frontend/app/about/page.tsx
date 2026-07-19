@@ -7,7 +7,7 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Learn about StyleHub, the C2C fashion marketplace for streetwear, local brands, and pre-loved items in Vietnam.',
+    'StyleHub is a C2C fashion marketplace where people buy, sell, and rediscover pieces across different brands, styles, and stories — in Vietnam.',
 };
 
 const principles = [
@@ -34,7 +34,7 @@ export default function AboutPage() {
       <PageHeader
         eyebrow="The marketplace"
         title="About StyleHub"
-        lede="A community-driven fashion marketplace connecting buyers and sellers across Vietnam — streetwear, local brands, and curated pre-loved pieces."
+        lede="A C2C fashion marketplace where people buy, sell, and rediscover pieces across different brands, styles, and stories — connecting buyers and sellers across Vietnam."
       />
 
       <Container className="max-w-4xl py-14 sm:py-16">
@@ -42,8 +42,8 @@ export default function AboutPage() {
           <h2 className="mb-4 font-display text-2xl font-black uppercase tracking-tight">Why StyleHub</h2>
           <p className="leading-relaxed text-neutral-600">
             We believe fashion should be circular, accessible, and community-focused. Whether
-            you&apos;re hunting for a sold-out release from a local Vietnamese brand or clearing
-            your closet to make room for new styles, StyleHub gives you a place to do it safely and
+            you&apos;re after a new piece from your favorite brand, a rare find, or clearing your
+            closet to make room for new styles, StyleHub gives you a place to do it safely and
             simply — seller to buyer, no middle rack.
           </p>
         </section>
