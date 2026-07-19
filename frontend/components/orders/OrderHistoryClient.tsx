@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
-import { listMyOrders } from '../../lib/orders';
+import { cancelOrder, listMyOrders } from '../../lib/orders';
 import { formatVND, formatVietnamDateTime } from '../../lib/format';
 import { ROUTES } from '../../constants/routes';
 import { Container } from '../ui/Container';
@@ -28,6 +28,7 @@ export const OrderHistoryClient = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -103,6 +104,20 @@ export const OrderHistoryClient = () => {
 
   const formatPaymentMethod = (method: string) => {
     return tPaymentMethod(method);
+  };
+
+  const handleCancel = async (order: Order) => {
+    if (!window.confirm(`Hủy đơn ${order.order_code}? Tồn kho sẽ được hoàn lại nếu đơn đủ điều kiện.`)) return;
+    setCancellingId(order.id);
+    setErrorMsg(null);
+    try {
+      await cancelOrder(order.id);
+      setOrders((current) => current.map((item) => item.id === order.id ? { ...item, status: 'cancelled' } : item));
+    } catch (err) {
+      setErrorMsg((err as Error).message || 'Không thể hủy đơn hàng.');
+    } finally {
+      setCancellingId(null);
+    }
   };
 
   if (!isHydrated || isLoading) {
@@ -195,6 +210,7 @@ export const OrderHistoryClient = () => {
                   <th className="px-5 py-4 font-semibold">{vi.orders.total}</th>
                   <th className="px-5 py-4 font-semibold">{vi.orders.paymentMethod}</th>
                   <th className="px-5 py-4 font-semibold">{vi.orders.status}</th>
+                  <th className="px-5 py-4 font-semibold text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 text-sm">
@@ -214,6 +230,19 @@ export const OrderHistoryClient = () => {
                     </td>
                     <td className="px-5 py-5">
                       {getStatusBadge(order.status)}
+                    </td>
+                    <td className="px-5 py-5 text-right">
+                      {order.status === 'pending' && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={cancellingId === order.id}
+                          onClick={() => handleCancel(order)}
+                          className="font-mono text-[10px] uppercase tracking-wider"
+                        >
+                          {cancellingId === order.id ? 'Đang hủy…' : 'Hủy đơn'}
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

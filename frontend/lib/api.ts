@@ -1,3 +1,5 @@
+import { unstable_rethrow } from 'next/navigation';
+
 export function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 }
@@ -23,6 +25,7 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
 
     return data;
   } catch (error) {
+    unstable_rethrow(error);
     console.error(`API Fetch Error [${path}]:`, error);
     throw error;
   }

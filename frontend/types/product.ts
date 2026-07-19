@@ -37,6 +37,7 @@ export interface Product {
   slug: string;
   description?: string;
   product_type?: 'simple' | 'variable';
+  inventory_mode?: 'simple' | 'variant';
   condition: string;
   price: number;
   sale_price?: number | null;
@@ -50,7 +51,7 @@ export interface Product {
   thumbnail?: string;
   image_url?: string;
   image?: string;
-  status?: 'draft' | 'active' | 'sold' | 'archived';
+  status?: 'draft' | 'active' | 'hidden' | 'sold' | 'archived';
   is_featured?: boolean;
   created_at?: string;
 

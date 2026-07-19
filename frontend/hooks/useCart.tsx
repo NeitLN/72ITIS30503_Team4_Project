@@ -10,6 +10,7 @@ interface CartContextType {
   addToCart: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
+  updateAuthoritativePrice: (id: string, unitPrice: number) => void;
   clearCart: () => void;
   isHydrated: boolean;
 }
@@ -70,6 +71,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setCart([]);
   };
 
+  const updateAuthoritativePrice = (id: string, unitPrice: number) => {
+    setCart((prevCart) => prevCart.map((item) => (
+      item.id === id ? { ...item, price: unitPrice, salePrice: null } : item
+    )));
+  };
+
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
   const cartSubtotal = cart.reduce(
     (total, item) => total + (item.salePrice ?? item.price) * item.quantity,
@@ -85,6 +92,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         addToCart,
         removeFromCart,
         updateQuantity,
+        updateAuthoritativePrice,
         clearCart,
         isHydrated,
       }}

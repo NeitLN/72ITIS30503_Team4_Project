@@ -5,7 +5,7 @@ const { authenticateUser, requireAuth } = require('../middleware/auth');
 const { success, error } = require('../utils/apiResponse');
 
 function handleServiceError(err, res, fallback) {
-  if (err.status) return error(res, err.status, err.message);
+  if (err.status) return error(res, err.status, err.message, err.details, err.code);
   console.error(fallback, err);
   return error(res, 500, 'Đã xảy ra lỗi hệ thống.');
 }

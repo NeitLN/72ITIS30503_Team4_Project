@@ -4,15 +4,15 @@ import { Category } from '../types/category';
 
 export async function getProducts(params?: Record<string, string>) {
   const query = params ? '?' + new URLSearchParams(params).toString() : '';
-  return apiFetch<{ success: boolean; data: Product[]; meta: Record<string, unknown> }>(`/api/products${query}`, { next: { revalidate: 60 } });
+  return apiFetch<{ success: boolean; data: Product[]; meta: Record<string, unknown> }>(`/api/products${query}`, { cache: 'no-store' });
 }
 
 export async function getFeaturedProducts() {
-  return apiFetch<{ success: boolean; data: Product[]; meta: Record<string, unknown> }>('/api/products/featured', { next: { revalidate: 60 } });
+  return apiFetch<{ success: boolean; data: Product[]; meta: Record<string, unknown> }>('/api/products/featured', { cache: 'no-store' });
 }
 
 export async function getProductBySlug(slug: string) {
-  return apiFetch<{ success: boolean; data: Product }>(`/api/products/${slug}`, { next: { revalidate: 60 } });
+  return apiFetch<{ success: boolean; data: Product }>(`/api/products/${slug}`, { cache: 'no-store' });
 }
 
 export async function getCategories() {
@@ -29,7 +29,7 @@ export async function getCategoryBySlug(slug: string) {
 
 export async function getProductsByCategorySlug(slug: string, params?: Record<string, string>) {
   const query = params ? '?' + new URLSearchParams(params).toString() : '';
-  return apiFetch<{ success: boolean; data: Product[]; meta: { category?: Category; count?: number; page?: number; limit?: number } }>(`/api/categories/${slug}/products${query}`, { next: { revalidate: 60 } });
+  return apiFetch<{ success: boolean; data: Product[]; meta: { category?: Category; count?: number; page?: number; limit?: number } }>(`/api/categories/${slug}/products${query}`, { cache: 'no-store' });
 }
 
 export interface SellerProfile {
@@ -48,10 +48,10 @@ export interface SellerProfile {
 }
 
 export async function getSellerByUsername(username: string) {
-  return apiFetch<{ success: boolean; data: SellerProfile }>(`/api/sellers/${username}`, { next: { revalidate: 60 } });
+  return apiFetch<{ success: boolean; data: SellerProfile }>(`/api/sellers/${username}`, { cache: 'no-store' });
 }
 
 export async function getProductsBySeller(username: string, params?: Record<string, string>) {
   const query = params ? '?' + new URLSearchParams(params).toString() : '';
-  return apiFetch<{ success: boolean; data: Product[]; meta: Record<string, unknown> }>(`/api/sellers/${username}/products${query}`, { next: { revalidate: 60 } });
+  return apiFetch<{ success: boolean; data: Product[]; meta: Record<string, unknown> }>(`/api/sellers/${username}/products${query}`, { cache: 'no-store' });
 }

@@ -48,24 +48,15 @@ async function getSellerByUsername(rawUsername) {
     .eq('seller_id', user.id);
   const productIds = (sellerProductIds || []).map((p) => p.id);
 
-  // Real sold count: completed order_items whose product belongs to this
-  // seller. Zero (not fabricated) when there is nothing to derive.
+  // Real sold count uses the immutable seller snapshot on order_items, so a
+  // later product edit cannot rewrite historical seller attribution.
   let soldCount = 0;
-  if (productIds.length) {
-    const { data: completedOrders } = await supabaseAdmin
-      .from('orders')
-      .select('id')
-      .eq('status', 'completed');
-    const completedOrderIds = (completedOrders || []).map((o) => o.id);
-    if (completedOrderIds.length) {
-      const { count } = await supabaseAdmin
-        .from('order_items')
-        .select('id', { count: 'exact', head: true })
-        .in('product_id', productIds)
-        .in('order_id', completedOrderIds);
-      soldCount = count || 0;
-    }
-  }
+  const { count: completedItemCount } = await supabaseAdmin
+    .from('order_items')
+    .select('id', { count: 'exact', head: true })
+    .eq('seller_id', user.id)
+    .eq('fulfillment_status', 'completed');
+  soldCount = completedItemCount || 0;
 
   // Real rating/review count: published reviews on this seller's products.
   let averageRating = null;

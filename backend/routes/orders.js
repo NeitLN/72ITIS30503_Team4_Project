@@ -4,20 +4,64 @@ const orderService = require('../services/orderService');
 const { authenticateUser, requireAuth, requireAdmin } = require('../middleware/auth');
 const { success, error } = require('../utils/apiResponse');
 
+function handleOrderError(err, res, fallbackMessage) {
+  if (err.status) {
+    return error(res, err.status, err.message, err.details, err.code);
+  }
+  console.error(fallbackMessage, err);
+  return error(res, 500, 'Đã xảy ra lỗi hệ thống.', undefined, 'INTERNAL_ERROR');
+}
+
 // Apply authenticateUser middleware to all routes in this file
 router.use(authenticateUser);
 
 // POST /api/orders
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const order = await orderService.createOrder(req.user, req.body);
+    const idempotencyKey = req.get('Idempotency-Key');
+    const order = await orderService.createOrder(req.user, req.body, idempotencyKey);
     return success(res, order);
   } catch (err) {
-    console.error('Create order route error:', err);
-    if (err.status) {
-      return error(res, err.status, err.message);
+    return handleOrderError(err, res, 'Create order route error:');
+  }
+});
+
+// POST /api/orders/preview — authoritative, read-only cart pricing.
+router.post('/preview', requireAuth, async (req, res) => {
+  try {
+    const quote = await orderService.quoteOrder(req.user, req.body);
+    return success(res, quote);
+  } catch (err) {
+    return handleOrderError(err, res, 'Checkout preview error:');
+  }
+});
+
+// POST /api/orders/validate-coupon — coupon and totals are resolved from
+// authoritative product rows, never from client prices.
+router.post('/validate-coupon', requireAuth, async (req, res) => {
+  try {
+    if (!req.body?.code || !String(req.body.code).trim()) {
+      return error(res, 400, 'Vui lòng nhập mã giảm giá.', undefined, 'COUPON_INVALID');
     }
-    return error(res, 400, err.message || 'Không thể tạo đơn hàng.');
+    const quote = await orderService.quoteOrder(req.user, {
+      items: req.body.items,
+      couponCode: req.body.code,
+      paymentMethod: 'cod',
+    });
+    return success(res, {
+      coupon: quote.coupon,
+      totals: {
+        subtotal: quote.subtotal,
+        shipping_fee: quote.shipping_fee,
+        discount_amount: quote.discount_amount,
+        total_amount: quote.total_amount,
+      },
+      price_changes: quote.price_changes,
+      requires_review: quote.requires_review,
+      message: 'Áp dụng mã giảm giá thành công.',
+    });
+  } catch (err) {
+    return handleOrderError(err, res, 'Coupon validation error:');
   }
 });
 
@@ -49,11 +93,17 @@ router.get('/:id', requireAuth, async (req, res) => {
     const order = await orderService.getOrderById(req.params.id, req.user);
     return success(res, order);
   } catch (err) {
-    if (err.status) {
-      return error(res, err.status, err.message);
-    }
-    console.error(`Get order ${req.params.id} error:`, err);
-    return error(res, 500, 'Không thể tải chi tiết đơn hàng.');
+    return handleOrderError(err, res, `Get order ${req.params.id} error:`);
+  }
+});
+
+// POST /api/orders/:id/cancel — buyer-owned, exactly-once cancellation.
+router.post('/:id/cancel', requireAuth, async (req, res) => {
+  try {
+    const result = await orderService.cancelOrder(req.user, req.params.id);
+    return success(res, result);
+  } catch (err) {
+    return handleOrderError(err, res, `Cancel order ${req.params.id} error:`);
   }
 });
 
@@ -66,53 +116,10 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
       return error(res, 400, 'Vui lòng cung cấp trạng thái đơn hàng.');
     }
 
-    const updatedOrder = await orderService.updateOrderStatus(req.params.id, status);
+    const updatedOrder = await orderService.updateOrderStatus(req.params.id, status, req.user);
     return success(res, updatedOrder);
   } catch (err) {
-    if (err.status) {
-      return error(res, err.status, err.message);
-    }
-    console.error(`Update order status ${req.params.id} error:`, err);
-    return error(res, 500, err.message || 'Không thể cập nhật trạng thái đơn hàng.');
-  }
-});
-
-// POST /api/orders/validate-coupon
-router.post('/validate-coupon', requireAuth, async (req, res) => {
-  try {
-    const { code, items } = req.body;
-
-    if (!code || !code.trim()) {
-      return error(res, 400, 'Vui lòng nhập mã giảm giá.');
-    }
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return error(res, 400, 'Cần có sản phẩm trong giỏ hàng để áp dụng mã giảm giá.');
-    }
-
-    const rawSubtotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
-    const coupon = await orderService.validateCouponCode(code, rawSubtotal);
-    const totals = orderService.calculateTotals(items, coupon);
-
-    return success(res, {
-      coupon: {
-        code: coupon.code,
-        discount_type: coupon.discount_type,
-        discount_value: coupon.discount_value
-      },
-      totals: {
-        subtotal: totals.subtotal,
-        shipping_fee: totals.shipping_fee,
-        discount_amount: totals.discount_amount,
-        total_amount: totals.total_amount
-      },
-      message: 'Áp dụng mã giảm giá thành công.'
-    });
-  } catch (err) {
-    if (err.status) {
-      return error(res, err.status, err.message);
-    }
-    console.error('Coupon validation error:', err);
-    return error(res, 500, 'Không thể áp dụng mã giảm giá.');
+    return handleOrderError(err, res, `Update order status ${req.params.id} error:`);
   }
 });
 

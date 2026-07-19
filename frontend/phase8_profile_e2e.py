@@ -21,10 +21,11 @@ from playwright.sync_api import sync_playwright, expect
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-BASE = "http://localhost:3000"
-API_BASE = "http://localhost:8080"
+BASE = os.environ.get("PHASE_WEB_BASE", "http://localhost:3000")
+API_BASE = os.environ.get("PHASE_API_BASE", "http://localhost:8080")
 QA_EMAIL = os.environ.get("PHASE7_QA_EMAIL", "phase7-qa-seller@stylehub.demo")
 QA_PASSWORD = os.environ.get("PHASE7_QA_PASSWORD")
+QA_LISTING_SLUG = os.environ.get("PHASE8_QA_LISTING_SLUG", "nike-air-max-90-black-lightly-worn")
 if not QA_PASSWORD:
     print("ERROR: set PHASE7_QA_PASSWORD before running this test.")
     sys.exit(2)
@@ -253,7 +254,7 @@ with sync_playwright() as p:
     found_link = False
     deadline = time.time() + 70
     while time.time() < deadline:
-        page2.goto(f"{BASE}/products/nike-air-max-90-black-lightly-worn", wait_until="load")
+        page2.goto(f"{BASE}/products/{QA_LISTING_SLUG}", wait_until="load")
         if page2.locator(f"a[href='/seller/{RUN_USERNAME}']").count() > 0:
             found_link = True
             break

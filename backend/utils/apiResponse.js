@@ -24,13 +24,17 @@ const success = (res, data, meta = undefined) => {
  * @param {string} message - Error message for the client
  * @param {any} [details] - Optional error details (avoid sensitive data)
  */
-const error = (res, statusCode, message, details = undefined) => {
+const error = (res, statusCode, message, details = undefined, code = undefined) => {
   const response = {
     success: false,
     error: {
       message
     }
   };
+
+  if (code !== undefined) {
+    response.error.code = code;
+  }
   
   if (details !== undefined) {
     response.error.details = details;

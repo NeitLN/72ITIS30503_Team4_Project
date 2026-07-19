@@ -499,7 +499,7 @@ async function getMyListingStats(userId) {
     const { data: items } = await supabaseAdmin
       .from('order_items')
       .select('id, quantity, line_total, unit_price, price, fulfillment_status, product_id, order_id')
-      .in('product_id', productIds);
+      .eq('seller_id', userId);
 
     for (const item of items || []) {
       if (item.fulfillment_status === 'completed') {

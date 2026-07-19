@@ -252,22 +252,30 @@ const getProductVariants = async (productId) => {
         )
       `)
       .eq('product_id', productId)
-      .eq('is_active', true);
+      .eq('status', 'active')
+      .order('title', { ascending: true });
 
     if (error) throw error;
-    return data;
+    return (data || []).map((variant) => ({
+      ...variant,
+      stock_quantity: variant.stock,
+      stock_status: variant.stock > 0 && variant.status === 'active' ? 'in_stock' : 'out_of_stock',
+    }));
   } catch (err) {
     // Fallback if relational mapping fails
     const { data: fallbackData, error: fallbackError } = await supabase
       .from('product_variants')
       .select('*')
       .eq('product_id', productId)
-      .eq('is_active', true);
+      .eq('status', 'active')
+      .order('title', { ascending: true });
       
     if (fallbackError || !fallbackData) return [];
     
     return fallbackData.map(v => ({
       ...v,
+      stock_quantity: v.stock,
+      stock_status: v.stock > 0 && v.status === 'active' ? 'in_stock' : 'out_of_stock',
       variant_attribute_values: []
     }));
   }

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { formatVND } from '../../lib/format';
 import { Button } from '../ui/Button';
 import { vi } from '../../lib/i18n';
+import { estimateShipping, FREE_SHIPPING_THRESHOLD } from '../../lib/checkout';
 
 interface CartSummaryProps {
   subtotal: number;
@@ -13,7 +14,7 @@ export const CartSummary = ({ subtotal }: CartSummaryProps) => {
   const router = useRouter();
 
   // Vietnam typical shipping costs
-  const shippingCost = subtotal > 500000 ? 0 : 30000;
+  const shippingCost = estimateShipping(subtotal);
   const grandTotal = subtotal + shippingCost;
 
   const handleCheckout = () => {
@@ -57,9 +58,9 @@ export const CartSummary = ({ subtotal }: CartSummaryProps) => {
         </Button>
       </div>
 
-      {subtotal <= 500000 && (
+      {subtotal <= FREE_SHIPPING_THRESHOLD && (
         <p className="mt-4 text-center font-mono text-[10px] text-neutral-500">
-          Mua thêm {formatVND(500000 - subtotal)} để được **MIỄN PHÍ GIAO HÀNG**!
+          Mua thêm {formatVND(FREE_SHIPPING_THRESHOLD - subtotal + 1)} để được MIỄN PHÍ GIAO HÀNG!
         </p>
       )}
 

@@ -93,7 +93,7 @@ router.get('/:slug', async (req, res) => {
     }
     
     // If it's a variable product, fetch variants
-    if (product.product_type === 'variable') {
+    if (product.inventory_mode === 'variant' || product.product_type === 'variable') {
       const variants = await productService.getProductVariants(product.id);
       product.variants = variants;
     }

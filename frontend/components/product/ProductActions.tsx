@@ -18,6 +18,7 @@ interface VariantRow {
   price: number;
   sale_price: number | null;
   stock_quantity: number;
+  stock?: number;
   stock_status: 'in_stock' | 'out_of_stock';
   variant_attribute_values?: Array<{
     attribute_value?: {
@@ -39,11 +40,16 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
 
   // Cast product variants securely
   const variants = (product.variants ?? []) as unknown as VariantRow[];
-  const isVariableProduct = product.product_type === 'variable' && variants.length > 0;
+  const normalizedVariants = variants.map((variant) => ({
+    ...variant,
+    stock_quantity: variant.stock_quantity ?? variant.stock ?? 0,
+    stock_status: variant.stock_status ?? ((variant.stock_quantity ?? variant.stock ?? 0) > 0 ? 'in_stock' : 'out_of_stock'),
+  }));
+  const isVariableProduct = (product.inventory_mode === 'variant' || product.product_type === 'variable') && normalizedVariants.length > 0;
 
   // Initialize selected variant state to the first variant if variable product
   const [selectedVariant, setSelectedVariant] = useState<VariantRow | null>(
-    isVariableProduct ? variants[0] : null
+    isVariableProduct ? normalizedVariants[0] : null
   );
 
   const getVariantLabel = (v: VariantRow) => {
@@ -135,7 +141,7 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
             Chọn kích thước / phân loại
           </p>
           <div className="flex flex-wrap gap-2">
-            {variants.map((v) => {
+            {normalizedVariants.map((v) => {
               const label = getVariantLabel(v);
               const isSelected = selectedVariant?.id === v.id;
               const isVarOut = v.stock_quantity === 0 || v.stock_status === 'out_of_stock';
