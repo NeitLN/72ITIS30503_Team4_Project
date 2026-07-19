@@ -18,30 +18,30 @@ export const HeaderAuthMenu = () => {
       <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium whitespace-nowrap">
         <div className="hidden md:flex items-center">
           <Link href={ROUTES.PROFILE} className="text-neutral-900 transition-colors hover:text-neutral-500 font-semibold truncate max-w-[120px]">
-            {user.full_name || user.name || 'My Profile'}
+            {user.full_name || user.name || 'Hồ sơ của tôi'}
           </Link>
           {user.role === 'admin' && (
             <span className="ml-1.5 text-[9px] uppercase tracking-wider font-mono text-neutral-500">
-              [ADMIN]
+              [QUẢN TRỊ]
             </span>
           )}
         </div>
 
         {user.role === 'admin' && (
           <Link href={ROUTES.ADMIN_ORDERS} className="text-neutral-600 transition-colors hover:text-neutral-900 hidden sm:inline-block">
-            Admin
+            Quản trị
           </Link>
         )}
 
         <Link href={ROUTES.ORDERS} className="text-neutral-600 transition-colors hover:text-neutral-900 hidden sm:inline-block">
-          Orders
+          Đơn hàng
         </Link>
-        
+
         <button
           onClick={() => logout()}
           className="text-neutral-600 transition-colors hover:text-neutral-900 focus:outline-none"
         >
-          Logout
+          Đăng xuất
         </button>
       </div>
     );
@@ -50,10 +50,10 @@ export const HeaderAuthMenu = () => {
   return (
     <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium whitespace-nowrap">
       <Link href={ROUTES.LOGIN} className="text-neutral-600 transition-colors hover:text-neutral-900">
-        Log in
+        Đăng nhập
       </Link>
       <Link href={ROUTES.REGISTER} className="hidden text-neutral-600 transition-colors hover:text-neutral-900 sm:inline-block">
-        Join
+        Đăng ký
       </Link>
     </div>
   );

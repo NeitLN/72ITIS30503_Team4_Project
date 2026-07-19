@@ -10,15 +10,15 @@ router.post('/register', async (req, res) => {
     const { name, email, password, role, adminCode } = req.body;
 
     if (!name || !name.trim()) {
-      return error(res, 400, 'Name is required');
+      return error(res, 400, 'Vui lòng nhập họ và tên.');
     }
 
     if (!email || !email.includes('@')) {
-      return error(res, 400, 'Valid email is required');
+      return error(res, 400, 'Vui lòng nhập email hợp lệ.');
     }
 
     if (!password || password.length < 6) {
-      return error(res, 400, 'Password must be at least 6 characters');
+      return error(res, 400, 'Mật khẩu phải có ít nhất 6 ký tự.');
     }
 
     const user = await authService.registerUser({ name, email, password, role, adminCode });
@@ -30,7 +30,7 @@ router.post('/register', async (req, res) => {
       return error(res, err.status, err.message);
     }
     console.error('Registration error:', err);
-    return error(res, 500, 'Internal server error during registration');
+    return error(res, 500, 'Đã xảy ra lỗi trong quá trình đăng ký.');
   }
 });
 
@@ -40,7 +40,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return error(res, 400, 'Email and password are required');
+      return error(res, 400, 'Vui lòng nhập email và mật khẩu.');
     }
 
     const user = await authService.loginUser({ email, password });
@@ -52,7 +52,7 @@ router.post('/login', async (req, res) => {
       return error(res, err.status, err.message);
     }
     console.error('Login error:', err);
-    return error(res, 500, 'Internal server error during login');
+    return error(res, 500, 'Đã xảy ra lỗi trong quá trình đăng nhập.');
   }
 });
 
@@ -60,22 +60,22 @@ router.post('/login', async (req, res) => {
 router.get('/me', authenticateUser, requireAuth, async (req, res) => {
   try {
     const user = await authService.getUserById(req.user.id);
-    
+
     if (!user) {
-      return error(res, 401, 'User no longer exists');
+      return error(res, 401, 'Người dùng không còn tồn tại.');
     }
-    
+
     return success(res, { user });
   } catch (err) {
     console.error('Me error:', err);
-    return error(res, 500, 'Internal server error fetching user profile');
+    return error(res, 500, 'Đã xảy ra lỗi khi tải thông tin người dùng.');
   }
 });
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
   // Stateless token, just tell client to clear it
-  return success(res, { message: 'Logged out successfully' });
+  return success(res, { message: 'Đăng xuất thành công.' });
 });
 
 module.exports = router;

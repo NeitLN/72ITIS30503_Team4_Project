@@ -26,14 +26,14 @@ export function ContactForm() {
     };
     const nextErrors: FormErrors = {};
 
-    if (!values.fullName) nextErrors.fullName = 'Please enter your full name.';
+    if (!values.fullName) nextErrors.fullName = 'Vui lòng nhập họ và tên của bạn.';
     if (!values.email) {
-      nextErrors.email = 'Please enter your email address.';
+      nextErrors.email = 'Vui lòng nhập địa chỉ email của bạn.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-      nextErrors.email = 'Please enter a valid email address.';
+      nextErrors.email = 'Vui lòng nhập địa chỉ email hợp lệ.';
     }
-    if (!values.subject) nextErrors.subject = 'Please select a subject.';
-    if (!values.message) nextErrors.message = 'Please enter your message.';
+    if (!values.subject) nextErrors.subject = 'Vui lòng chọn chủ đề.';
+    if (!values.message) nextErrors.message = 'Vui lòng nhập nội dung tin nhắn.';
 
     setErrors(nextErrors);
     setIsSubmitted(false);
@@ -64,7 +64,7 @@ export function ContactForm() {
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       <div>
         <label htmlFor="fullName" className="mb-1.5 block text-sm font-medium text-neutral-700">
-          Full name
+          Họ và tên
         </label>
         <input
           type="text"
@@ -75,7 +75,7 @@ export function ContactForm() {
           aria-invalid={Boolean(errors.fullName)}
           aria-describedby={errors.fullName ? 'fullName-error' : undefined}
           className={fieldClassName}
-          placeholder="Your name"
+          placeholder="Tên của bạn"
           onInput={clearFieldError}
         />
         {errors.fullName ? (
@@ -110,7 +110,7 @@ export function ContactForm() {
 
       <div>
         <label htmlFor="subject" className="mb-1.5 block text-sm font-medium text-neutral-700">
-          Subject
+          Chủ đề
         </label>
         <select
           id="subject"
@@ -123,12 +123,12 @@ export function ContactForm() {
           onChange={clearFieldError}
         >
           <option value="" disabled>
-            Select a subject
+            Chọn chủ đề
           </option>
-          <option>General inquiry</option>
-          <option>Report a seller</option>
-          <option>Order issue</option>
-          <option>Technical support</option>
+          <option>Câu hỏi chung</option>
+          <option>Báo cáo người bán</option>
+          <option>Vấn đề đơn hàng</option>
+          <option>Hỗ trợ kỹ thuật</option>
         </select>
         {errors.subject ? (
           <p id="subject-error" className="mt-1.5 text-xs text-red-700">
@@ -139,7 +139,7 @@ export function ContactForm() {
 
       <div>
         <label htmlFor="message" className="mb-1.5 block text-sm font-medium text-neutral-700">
-          Message
+          Nội dung tin nhắn
         </label>
         <textarea
           id="message"
@@ -149,7 +149,7 @@ export function ContactForm() {
           aria-invalid={Boolean(errors.message)}
           aria-describedby={errors.message ? 'message-error' : undefined}
           className={fieldClassName}
-          placeholder="How can we help?"
+          placeholder="Chúng tôi có thể giúp gì cho bạn?"
           onInput={clearFieldError}
         />
         {errors.message ? (
@@ -160,12 +160,12 @@ export function ContactForm() {
       </div>
 
       <Button type="submit" className="mt-2 w-full" size="lg">
-        Send message
+        Gửi tin nhắn
       </Button>
 
       {isSubmitted ? (
         <p role="status" className="border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          Your message has been received. Our support team will get back to you soon.
+          Chúng tôi đã nhận được tin nhắn của bạn. Đội ngũ hỗ trợ sẽ phản hồi sớm nhất có thể.
         </p>
       ) : null}
     </form>

@@ -27,16 +27,16 @@ export const SellerMiniCard = ({ listing }: SellerMiniCardProps) => {
   );
 
   return (
-    <section aria-label="Seller information" className="border border-neutral-200 bg-white">
+    <section aria-label="Thông tin người bán" className="border border-neutral-200 bg-white">
       <div className="border-b border-neutral-200 px-4 py-2">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">Sold by</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">Bán bởi</p>
       </div>
       <div className="flex items-start gap-4 px-4 py-4">
         {hasStorefront ? (
           <Link
             href={`/seller/${listing.sellerUsername}`}
             className="flex h-12 w-12 shrink-0 items-center justify-center border border-neutral-900 bg-neutral-900 font-display text-lg font-extrabold text-white hover:bg-neutral-800 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer"
-            title={`View @${listing.sellerUsername}'s profile`}
+            title={`Xem trang cá nhân của @${listing.sellerUsername}`}
           >
             {initial}
           </Link>
@@ -47,24 +47,24 @@ export const SellerMiniCard = ({ listing }: SellerMiniCardProps) => {
               <Link
                 href={`/seller/${listing.sellerUsername}`}
                 className="truncate hover:underline text-neutral-950 font-bold cursor-pointer"
-                title={`View @${listing.sellerUsername}'s profile`}
+                title={`Xem trang cá nhân của @${listing.sellerUsername}`}
               >
                 {listing.sellerHandle}
               </Link>
             ) : nameBlock}
             {listing.isVerifiedSeller && (
               <span className="inline-flex items-center gap-1 border border-neutral-900 bg-neutral-900 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-white">
-                Verified
+                Đã xác thực
               </span>
             )}
           </p>
           <p className="mt-1 font-mono text-xs text-neutral-600">
-            {listing.sellerRating ? `★ ${listing.sellerRating}` : 'No ratings yet'}
+            {listing.sellerRating ? `★ ${listing.sellerRating}` : 'Chưa có đánh giá'}
             {' · '}
-            {listing.soldCount != null ? `${listing.soldCount} sold` : 'New seller'}
+            {listing.soldCount != null ? `Đã bán ${listing.soldCount}` : 'Người bán mới'}
           </p>
           <p className="mt-1 text-xs text-neutral-500">
-            Ships from {listing.sellerLocation}
+            Gửi từ {listing.sellerLocation}
           </p>
         </div>
       </div>

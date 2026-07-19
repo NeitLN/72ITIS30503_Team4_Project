@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { ROUTES } from '../../constants/routes';
 
 const steps = [
-  { step: '01', title: 'Upload photos', description: 'Shoot your piece in daylight — front, back, tags, flaws.' },
-  { step: '02', title: 'Add details', description: 'Brand, size, and an honest condition label.' },
-  { step: '03', title: 'Set price', description: 'In VNĐ, the way the local market reads it.' },
-  { step: '04', title: 'Publish listing', description: 'Go live and chat with buyers directly.' },
+  { step: '01', title: 'Tải ảnh lên', description: 'Chụp sản phẩm dưới ánh sáng ban ngày — mặt trước, mặt sau, nhãn mác, lỗi (nếu có).' },
+  { step: '02', title: 'Thêm thông tin', description: 'Thương hiệu, kích thước và tình trạng thực tế.' },
+  { step: '03', title: 'Đặt giá', description: 'Bằng VNĐ, theo cách thị trường trong nước vẫn dùng.' },
+  { step: '04', title: 'Đăng tin', description: 'Đăng công khai và trò chuyện trực tiếp với người mua.' },
 ];
 
 export const SellerCTA = () => {
@@ -15,14 +15,14 @@ export const SellerCTA = () => {
       <Container>
         <div className="bg-neutral-950 px-6 py-12 text-white sm:px-12 sm:py-16">
           <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-400">
-            Become a seller
+            Trở thành người bán
           </p>
           <h2 className="max-w-2xl font-display text-4xl font-black uppercase leading-[0.95] tracking-tight sm:text-5xl">
-            Your closet is inventory.
+            Tủ đồ của bạn chính là hàng hóa.
           </h2>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-neutral-300">
-            Anyone on StyleHub can sell. List a piece in minutes and reach buyers hunting for their
-            next fit.
+            Ai cũng có thể bán hàng trên StyleHub. Đăng bán một món đồ chỉ trong vài phút và tiếp
+            cận những người mua đang tìm kiếm outfit tiếp theo.
           </p>
 
           <ol className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -39,7 +39,7 @@ export const SellerCTA = () => {
             href={ROUTES.SELL}
             className="mt-12 inline-flex items-center justify-center bg-white px-8 py-4 text-sm font-semibold uppercase tracking-wide text-neutral-950 transition-colors hover:bg-neutral-200"
           >
-            Start a listing
+            Đăng tin ngay
           </Link>
         </div>
       </Container>

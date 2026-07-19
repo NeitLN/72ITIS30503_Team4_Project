@@ -8,8 +8,8 @@ import { getProducts } from '../lib/catalog';
 import { ROUTES } from '../constants/routes';
 
 export const metadata: Metadata = {
-  title: 'StyleHub — Buy the Drop, Sell the Archive',
-  description: 'Discover local streetwear, sneakers, archive fashion, and pre-loved listings from independent sellers in Vietnam.',
+  title: 'StyleHub — Săn Hàng Mới, Bán Đồ Độc',
+  description: 'Khám phá đồ streetwear, sneaker, thời trang archive và các tin đăng đồ cũ từ người bán độc lập tại Việt Nam.',
 };
 
 export default async function Home() {
@@ -28,20 +28,20 @@ export default async function Home() {
       {/* Server Component Wrapper */}
       <CategorySpotlight />
       <ProductRow
-        eyebrow="Fresh from the community"
-        title="New Arrivals"
-        description="newest active listings from StyleHub sellers"
+        eyebrow="Mới từ cộng đồng"
+        title="Sản phẩm mới"
+        description="những tin đăng mới nhất từ người bán trên StyleHub"
         products={newArrivals}
         viewAllHref={ROUTES.SHOP}
-        emptyMessage="Listings are currently unavailable. Check back soon — or be the first to sell."
+        emptyMessage="Hiện chưa có tin đăng nào. Quay lại sau — hoặc là người đầu tiên đăng bán."
       />
       <ProductRow
-        eyebrow="Limited price drops"
-        title="On Sale"
-        description="active listings currently offered below their original price"
+        eyebrow="Giảm giá có hạn"
+        title="Đang giảm giá"
+        description="tin đăng đang được bán với giá thấp hơn giá gốc"
         products={onSale}
         viewAllHref={ROUTES.SHOP}
-        emptyMessage="No listings on sale right now. Check back soon."
+        emptyMessage="Hiện chưa có tin đăng giảm giá nào. Quay lại sau nhé."
       />
       <SellerCTA />
     </>

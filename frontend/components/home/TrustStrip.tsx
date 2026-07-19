@@ -2,26 +2,26 @@ import { Container } from '../ui/Container';
 
 const highlights = [
   {
-    title: 'Verified sellers',
-    description: 'Ratings, sold counts, and verified badges on every profile.',
+    title: 'Người bán đã xác thực',
+    description: 'Đánh giá, số lượng đã bán và huy hiệu xác thực trên mọi hồ sơ.',
   },
   {
-    title: 'Condition labels',
-    description: 'Every listing states its condition — from new with tags to well worn.',
+    title: 'Ghi rõ tình trạng',
+    description: 'Mỗi tin đăng đều ghi rõ tình trạng — từ mới còn tag đến đã sử dụng nhiều.',
   },
   {
-    title: 'VNĐ pricing',
-    description: 'Local prices, written the way sellers write them: 350.000đ.',
+    title: 'Giá niêm yết bằng VNĐ',
+    description: 'Giá nội địa, viết theo cách người bán vẫn ghi: 350.000đ.',
   },
   {
-    title: 'Local fashion community',
-    description: 'Vietnamese brands, thrift culture, and street style in one place.',
+    title: 'Cộng đồng thời trang địa phương',
+    description: 'Thương hiệu Việt, văn hóa đồ cũ và phong cách đường phố trong một nơi.',
   },
 ];
 
 export const TrustStrip = () => {
   return (
-    <section aria-label="Marketplace trust signals" className="border-b border-neutral-200 bg-white">
+    <section aria-label="Tín hiệu tin cậy trên chợ" className="border-b border-neutral-200 bg-white">
       <Container>
         <div className="grid grid-cols-1 divide-y divide-neutral-200 sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
           {highlights.map((item) => (

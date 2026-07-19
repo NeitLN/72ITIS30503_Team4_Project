@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
+import { Combobox } from '../ui/Combobox';
 import { ROUTES } from '../../constants/routes';
 import { ProductCard } from '../product/ProductCard';
 import { Product } from '../../types/product';
@@ -14,12 +15,13 @@ import { Category } from '../../types/category';
 import { getBrands, BrandOption } from '../../lib/brands';
 import { createListing } from '../../lib/products';
 import { formatCondition } from '../../lib/format';
+import { VN_PROVINCES, searchVnLocations, normalizeVnText } from '../../lib/vnLocations';
 
 type FormState = {
   name: string;
   description: string;
   category_slug: string;
-  brand_slug: string;
+  brand: string;
   condition: string;
   size: string;
   price: string;
@@ -29,30 +31,38 @@ type FormState = {
   is_negotiable: boolean;
 };
 
+const UNBRANDED_LABEL = 'Không có thương hiệu';
+
 const INITIAL_FORM: FormState = {
   name: '',
   description: '',
   category_slug: '',
-  brand_slug: '',
+  brand: '',
   condition: '',
   size: '',
   price: '',
   sale_price: '',
   stock: '1',
-  location: 'Ho Chi Minh City',
+  location: 'Thành phố Hồ Chí Minh',
   is_negotiable: false,
 };
 
 const CONDITIONS = [
-  { value: 'new_with_tags', label: 'New with tags' },
-  { value: 'like_new', label: 'Like new' },
-  { value: 'excellent', label: 'Excellent' },
-  { value: 'good', label: 'Good' },
-  { value: 'fair', label: 'Fair' },
+  { value: 'new_with_tags', label: 'Mới, còn tag' },
+  { value: 'like_new', label: 'Như mới' },
+  { value: 'excellent', label: 'Rất tốt' },
+  { value: 'good', label: 'Tốt' },
+  { value: 'fair', label: 'Tạm được' },
 ];
-const CLOTHING_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size'];
-const SHOE_SIZES = ['EU 36', 'EU 37', 'EU 38', 'EU 39', 'EU 40', 'EU 41', 'EU 42', 'EU 43', 'EU 44', 'EU 45', 'One Size'];
-const LOCATIONS = ['Ho Chi Minh City', 'Hanoi', 'Da Nang', 'Can Tho', 'Hai Phong', 'Bien Hoa', 'Nha Trang', 'Hue'];
+const CLOTHING_SIZES = [
+  { value: 'XS', label: 'XS' }, { value: 'S', label: 'S' }, { value: 'M', label: 'M' },
+  { value: 'L', label: 'L' }, { value: 'XL', label: 'XL' }, { value: 'XXL', label: 'XXL' },
+  { value: 'One Size', label: 'Một cỡ' },
+];
+const SHOE_SIZES = [
+  ...['EU 36', 'EU 37', 'EU 38', 'EU 39', 'EU 40', 'EU 41', 'EU 42', 'EU 43', 'EU 44', 'EU 45'].map((v) => ({ value: v, label: v })),
+  { value: 'One Size', label: 'Một cỡ' },
+];
 const SHOE_LIKE_CATEGORIES = new Set(['shoes', 'slides']);
 const MAX_IMAGES = 6;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -60,12 +70,12 @@ const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const DRAFT_KEY = 'stylehub:sell-draft-v2';
 
 const STEP_LABELS = [
-  'Basic details',
-  'Category & brand',
-  'Condition & size',
-  'Pricing & logistics',
-  'Photos',
-  'Review & publish',
+  'Thông tin cơ bản',
+  'Danh mục & thương hiệu',
+  'Tình trạng & kích thước',
+  'Giá & vận chuyển',
+  'Hình ảnh',
+  'Xem lại & đăng bán',
 ];
 
 type ImageEntry = { file: File; previewUrl: string };
@@ -101,7 +111,7 @@ export const SellListingClient = () => {
         const res = await getCategoryTree();
         if (!cancelled) setCategories(res.data || []);
       } catch {
-        if (!cancelled) setCategoriesError('Could not load categories. Please refresh the page.');
+        if (!cancelled) setCategoriesError('Không thể tải danh mục. Vui lòng tải lại trang.');
       } finally {
         if (!cancelled) setCategoriesLoading(false);
       }
@@ -185,39 +195,47 @@ export const SellListingClient = () => {
   const isShoeLike = SHOE_LIKE_CATEGORIES.has(form.category_slug);
   const sizeOptions = isShoeLike ? SHOE_SIZES : CLOTHING_SIZES;
 
+  const getBrandOptions = (query: string): string[] => {
+    const q = normalizeVnText(query);
+    const names = brands.map((b) => b.name);
+    const filtered = q ? names.filter((n) => normalizeVnText(n).includes(q)) : names;
+    if (!q || normalizeVnText(UNBRANDED_LABEL).includes(q)) return [UNBRANDED_LABEL, ...filtered];
+    return filtered;
+  };
+
   const validateStep = (targetStep: number): Record<string, string> => {
     const e: Record<string, string> = {};
     if (targetStep === 1) {
       const name = form.name.trim();
-      if (!name || name.length < 3) e.name = 'Add a listing title (at least 3 characters).';
-      else if (name.length > 120) e.name = 'Title must be under 120 characters.';
-      else if (!/[a-zA-Z0-9À-ỹ]/.test(name)) e.name = 'Title must contain more than just symbols.';
+      if (!name || name.length < 3) e.name = 'Nhập tên sản phẩm (ít nhất 3 ký tự).';
+      else if (name.length > 120) e.name = 'Tên sản phẩm tối đa 120 ký tự.';
+      else if (!/[a-zA-Z0-9À-ỹ]/.test(name)) e.name = 'Tên sản phẩm phải chứa chữ hoặc số, không chỉ có ký hiệu.';
       const description = form.description.trim();
-      if (!description || description.length < 10) e.description = 'Describe the item in at least 10 characters.';
-      else if (description.length > 2000) e.description = 'Description must be under 2000 characters.';
+      if (!description || description.length < 10) e.description = 'Mô tả sản phẩm ít nhất 10 ký tự.';
+      else if (description.length > 2000) e.description = 'Mô tả tối đa 2000 ký tự.';
     }
     if (targetStep === 2) {
-      if (!form.category_slug) e.category_slug = 'Choose a category.';
+      if (!form.category_slug) e.category_slug = 'Vui lòng chọn danh mục.';
     }
     if (targetStep === 3) {
-      if (!form.condition) e.condition = 'Choose the item condition.';
-      if (!form.size) e.size = 'Choose a size.';
+      if (!form.condition) e.condition = 'Vui lòng chọn tình trạng sản phẩm.';
+      if (!form.size) e.size = 'Vui lòng chọn kích thước.';
     }
     if (targetStep === 4) {
       const price = Number(form.price);
-      if (!form.price || !Number.isFinite(price) || price <= 0) e.price = 'Enter a valid VNĐ price greater than 0.';
-      else if (price > 500_000_000) e.price = 'Price is unreasonably high for a C2C listing.';
+      if (!form.price || !Number.isFinite(price) || price <= 0) e.price = 'Nhập giá bán hợp lệ (VNĐ, lớn hơn 0).';
+      else if (price > 500_000_000) e.price = 'Giá bán quá cao so với thị trường đồ cũ.';
       if (form.sale_price) {
         const sale = Number(form.sale_price);
-        if (!Number.isFinite(sale) || sale <= 0) e.sale_price = 'Sale price must be greater than 0.';
-        else if (Number.isFinite(price) && sale >= price) e.sale_price = 'Sale price must be less than the regular price.';
+        if (!Number.isFinite(sale) || sale <= 0) e.sale_price = 'Giá giảm phải lớn hơn 0.';
+        else if (Number.isFinite(price) && sale >= price) e.sale_price = 'Giá giảm phải thấp hơn giá gốc.';
       }
       const stock = Number(form.stock);
-      if (!Number.isInteger(stock) || stock < 1) e.stock = 'Stock must be a whole number of at least 1.';
-      if (!form.location.trim()) e.location = 'Location is required.';
+      if (!Number.isInteger(stock) || stock < 1) e.stock = 'Số lượng phải là số nguyên và ít nhất là 1.';
+      if (!form.location.trim() || !VN_PROVINCES.includes(form.location.trim())) e.location = 'Vui lòng chọn một tỉnh/thành phố hợp lệ.';
     }
     if (targetStep === 5) {
-      if (images.length === 0) e.images = 'Add at least one photo.';
+      if (images.length === 0) e.images = 'Vui lòng thêm ít nhất một ảnh.';
     }
     return e;
   };
@@ -249,24 +267,24 @@ export const SellListingClient = () => {
     const accepted: ImageEntry[] = [];
     for (const file of incoming) {
       if (images.length + accepted.length >= MAX_IMAGES) {
-        setImageError(`A maximum of ${MAX_IMAGES} photos is allowed.`);
+        setImageError(`Chỉ được đăng tối đa ${MAX_IMAGES} ảnh.`);
         break;
       }
       if (!ALLOWED_MIME.has(file.type)) {
-        setImageError(`"${file.name}" is not a supported format. Use JPEG, PNG, or WebP.`);
+        setImageError(`"${file.name}" không đúng định dạng. Chỉ chấp nhận JPEG, PNG hoặc WebP.`);
         continue;
       }
       if (file.size > MAX_IMAGE_BYTES) {
-        setImageError(`"${file.name}" is larger than 5MB.`);
+        setImageError(`"${file.name}" vượt quá 5MB.`);
         continue;
       }
       if (file.size === 0) {
-        setImageError(`"${file.name}" appears to be empty or corrupt.`);
+        setImageError(`"${file.name}" bị trống hoặc lỗi.`);
         continue;
       }
       const key = `${file.name}:${file.size}`;
       if (existingKeys.has(key)) {
-        setImageError(`"${file.name}" was already added.`);
+        setImageError(`"${file.name}" đã được thêm rồi.`);
         continue;
       }
       existingKeys.add(key);
@@ -308,13 +326,13 @@ export const SellListingClient = () => {
     submitLockRef.current = true;
     setIsSubmitting(true);
     setSubmitError(null);
-    setStatusMessage('Publishing your listing…');
+    setStatusMessage('Đang đăng sản phẩm…');
 
     const fd = new FormData();
     fd.append('name', form.name.trim());
     fd.append('description', form.description.trim());
     fd.append('category_slug', form.category_slug);
-    fd.append('brand_slug', form.brand_slug);
+    fd.append('brand_slug', form.brand.trim());
     fd.append('condition', form.condition);
     fd.append('size', form.size);
     fd.append('price', form.price);
@@ -333,20 +351,20 @@ export const SellListingClient = () => {
         // completed — long enough for a genuine second click to slip through
         // as a real second network request. Only the error paths below
         // release the guard, since only they leave the user on this page.
-        setStatusMessage('Listing published successfully.');
+        setStatusMessage('Đăng sản phẩm thành công.');
         localStorage.removeItem(DRAFT_KEY);
         images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
         router.push(ROUTES.PRODUCT(res.data.slug));
         return;
       }
-      setSubmitError(res.error.message || 'Failed to publish listing.');
+      setSubmitError(res.error.message || 'Không thể đăng sản phẩm.');
       if (res.error.details) setErrors((prev) => ({ ...prev, ...res.error.details }));
-      setStatusMessage('Publishing failed. Please review the errors below.');
+      setStatusMessage('Đăng sản phẩm không thành công. Vui lòng kiểm tra lại các lỗi bên dưới.');
       submitLockRef.current = false;
       setIsSubmitting(false);
     } catch {
-      setSubmitError('Network error — the backend may be offline. Your details were not lost.');
-      setStatusMessage('Publishing failed due to a network error.');
+      setSubmitError('Lỗi kết nối — hệ thống có thể đang tạm ngưng. Thông tin của bạn chưa bị mất.');
+      setStatusMessage('Đăng sản phẩm không thành công do lỗi kết nối.');
       submitLockRef.current = false;
       setIsSubmitting(false);
     }
@@ -354,7 +372,7 @@ export const SellListingClient = () => {
 
   // ---- Auth gate ----
   if (!isHydrated) {
-    return <Container className="py-16 text-center animate-pulse">Loading selling tools…</Container>;
+    return <Container className="py-16 text-center animate-pulse">Đang tải công cụ đăng bán…</Container>;
   }
   if (!isAuthenticated) {
     return (
@@ -362,21 +380,21 @@ export const SellListingClient = () => {
         <div className="border border-neutral-200 bg-white p-6 sm:p-10 text-center">
           <span className="text-4xl mb-4 block" aria-hidden="true">🔒</span>
           <h1 className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900 mb-2">
-            Sign in to sell
+            Đăng nhập để đăng bán
           </h1>
           <p className="text-sm text-neutral-500 mb-8">
-            You need a StyleHub account to publish a listing. Log in or create an account to continue — you&apos;ll
-            come right back here.
+            Bạn cần có tài khoản StyleHub để đăng sản phẩm. Đăng nhập hoặc tạo tài khoản để tiếp tục —
+            bạn sẽ được đưa trở lại đây ngay sau đó.
           </p>
           <div className="flex flex-col gap-3">
             <Link href={`${ROUTES.LOGIN}?redirect=${ROUTES.SELL}`}>
               <Button size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
-                Log in
+                Đăng nhập
               </Button>
             </Link>
             <Link href={`${ROUTES.REGISTER}?redirect=${ROUTES.SELL}`}>
               <Button variant="outline" size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
-                Create account
+                Tạo tài khoản
               </Button>
             </Link>
           </div>
@@ -385,18 +403,22 @@ export const SellListingClient = () => {
     );
   }
 
+  const displayBrand = !form.brand || normalizeVnText(form.brand) === normalizeVnText(UNBRANDED_LABEL)
+    ? UNBRANDED_LABEL
+    : form.brand;
+
   const previewProduct: Product = {
     id: 'draft',
     slug: '#',
-    name: form.name || 'Untitled listing',
+    name: form.name || 'Tin đăng chưa có tên',
     price: Number(form.price) || 0,
     sale_price: form.sale_price ? Number(form.sale_price) : null,
     condition: form.condition || 'good',
-    size: form.size || 'One size',
+    size: form.size || 'One Size',
     location: form.location,
     status: 'active',
     thumbnail_url: images[0]?.previewUrl,
-    brand: form.brand_slug ? { name: brands.find((b) => b.slug === form.brand_slug)?.name } : undefined,
+    brand: form.brand ? { name: displayBrand } : undefined,
     category: form.category_slug ? { name: leafCategories.find((c) => c.slug === form.category_slug)?.name } : undefined,
   };
 
@@ -440,25 +462,25 @@ export const SellListingClient = () => {
             {step === 1 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Step 1 — Basic details
+                  Bước 1 — Thông tin cơ bản
                 </h2>
                 <div>
-                  <label htmlFor="name" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Listing title *</label>
+                  <label htmlFor="name" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Tên sản phẩm *</label>
                   <input
                     id="name" type="text" value={form.name}
                     onChange={(e) => setField('name', e.target.value)}
-                    placeholder="e.g., Vintage Levi's 501 Denim Jacket"
+                    placeholder="Ví dụ: Áo khoác denim Levi's 501 vintage"
                     aria-invalid={!!errors.name} aria-describedby={errors.name ? 'name-error' : undefined}
                     className={`w-full border ${errClass('name')} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
                   />
                   {errors.name && <p id="name-error" className="text-red-500 text-xs mt-1">{errors.name}</p>}
                 </div>
                 <div>
-                  <label htmlFor="description" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Description *</label>
+                  <label htmlFor="description" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Mô tả *</label>
                   <textarea
                     id="description"
                     value={form.description} onChange={(e) => setField('description', e.target.value)}
-                    placeholder="Describe the item, including any flaws, measurements, or styling tips."
+                    placeholder="Miêu tả sản phẩm: tình trạng, lỗi (nếu có), số đo, cách phối đồ..."
                     rows={5} aria-invalid={!!errors.description} aria-describedby={errors.description ? 'description-error' : undefined}
                     className={`w-full border ${errClass('description')} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
                   />
@@ -471,35 +493,38 @@ export const SellListingClient = () => {
             {step === 2 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Step 2 — Category & brand
+                  Bước 2 — Danh mục & thương hiệu
                 </h2>
                 {categoriesError && <p className="text-red-500 text-xs">{categoriesError}</p>}
                 <div>
-                  <label htmlFor="category_slug" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Category *</label>
+                  <label htmlFor="category_slug" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Danh mục *</label>
                   <select
                     id="category_slug"
                     value={form.category_slug} onChange={(e) => setField('category_slug', e.target.value)}
                     disabled={categoriesLoading} aria-invalid={!!errors.category_slug}
                     className={`w-full border ${errClass('category_slug')} bg-white px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none disabled:opacity-50`}
                   >
-                    <option value="">{categoriesLoading ? 'Loading categories…' : 'Select category'}</option>
+                    <option value="">{categoriesLoading ? 'Đang tải danh mục…' : 'Chọn danh mục'}</option>
                     {leafCategories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
                   </select>
                   {errors.category_slug && <p className="text-red-500 text-xs mt-1">{errors.category_slug}</p>}
                   {!categoriesLoading && leafCategories.length === 0 && !categoriesError && (
-                    <p className="text-xs text-neutral-500 mt-1">No categories are available right now.</p>
+                    <p className="text-xs text-neutral-500 mt-1">Hiện chưa có danh mục nào.</p>
                   )}
                 </div>
                 <div>
-                  <label htmlFor="brand_slug" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Brand</label>
-                  <select
-                    id="brand_slug" value={form.brand_slug} onChange={(e) => setField('brand_slug', e.target.value)}
+                  <label htmlFor="brand" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Thương hiệu</label>
+                  <Combobox
+                    id="brand"
+                    value={form.brand}
+                    onChange={(v) => setField('brand', v)}
+                    getOptions={brandsLoading ? () => [] : getBrandOptions}
+                    allowFreeText
+                    placeholder={brandsLoading ? 'Đang tải thương hiệu…' : 'Nhập hoặc chọn thương hiệu'}
+                    description="Chọn một thương hiệu có sẵn hoặc tự nhập tên thương hiệu mới."
                     disabled={brandsLoading}
-                    className="w-full border border-neutral-300 bg-white px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none disabled:opacity-50"
-                  >
-                    <option value="">{brandsLoading ? 'Loading brands…' : 'No Brand / Independent'}</option>
-                    {brands.map((b) => <option key={b.slug} value={b.slug}>{b.name}</option>)}
-                  </select>
+                    emptyMessage="Không tìm thấy thương hiệu — nhấn Enter để dùng tên bạn vừa nhập."
+                  />
                 </div>
               </div>
             )}
@@ -508,35 +533,35 @@ export const SellListingClient = () => {
             {step === 3 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Step 3 — Condition & size
+                  Bước 3 — Tình trạng & kích thước
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="condition" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Condition *</label>
+                    <label htmlFor="condition" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Tình trạng *</label>
                     <select
                       id="condition"
                       value={form.condition} onChange={(e) => setField('condition', e.target.value)}
                       aria-invalid={!!errors.condition}
                       className={`w-full border ${errClass('condition')} bg-white px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
                     >
-                      <option value="">Select condition</option>
+                      <option value="">Chọn tình trạng</option>
                       {CONDITIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                     {errors.condition && <p className="text-red-500 text-xs mt-1">{errors.condition}</p>}
                   </div>
                   <div>
-                    <label htmlFor="size" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Size *</label>
+                    <label htmlFor="size" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Kích thước *</label>
                     <select
                       id="size"
                       value={form.size} onChange={(e) => setField('size', e.target.value)}
                       aria-invalid={!!errors.size}
                       className={`w-full border ${errClass('size')} bg-white px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
                     >
-                      <option value="">Select size</option>
-                      {sizeOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                      <option value="">Chọn kích thước</option>
+                      {sizeOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                     </select>
                     {errors.size && <p className="text-red-500 text-xs mt-1">{errors.size}</p>}
-                    {isShoeLike && <p className="text-[10px] text-neutral-500 mt-1 uppercase font-mono tracking-wide">Footwear uses EU sizing.</p>}
+                    {isShoeLike && <p className="text-[10px] text-neutral-500 mt-1 uppercase font-mono tracking-wide">Giày dép dùng kích thước theo chuẩn EU.</p>}
                   </div>
                 </div>
               </div>
@@ -546,11 +571,11 @@ export const SellListingClient = () => {
             {step === 4 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Step 4 — Pricing & logistics
+                  Bước 4 — Giá & vận chuyển
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="price" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Price (VNĐ) *</label>
+                    <label htmlFor="price" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Giá bán (VNĐ) *</label>
                     <input
                       id="price" type="number" min="1" value={form.price}
                       onChange={(e) => setField('price', e.target.value)}
@@ -560,17 +585,17 @@ export const SellListingClient = () => {
                     {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
                   </div>
                   <div>
-                    <label htmlFor="sale_price" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Sale price (optional)</label>
+                    <label htmlFor="sale_price" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Giá giảm (không bắt buộc)</label>
                     <input
                       id="sale_price" type="number" min="1" value={form.sale_price}
                       onChange={(e) => setField('sale_price', e.target.value)}
-                      placeholder="Leave blank for no discount" aria-invalid={!!errors.sale_price}
+                      placeholder="Để trống nếu không giảm giá" aria-invalid={!!errors.sale_price}
                       className={`w-full border ${errClass('sale_price')} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
                     />
                     {errors.sale_price && <p className="text-red-500 text-xs mt-1">{errors.sale_price}</p>}
                   </div>
                   <div>
-                    <label htmlFor="stock" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Stock *</label>
+                    <label htmlFor="stock" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Số lượng *</label>
                     <input
                       id="stock" type="number" min="1" value={form.stock}
                       onChange={(e) => setField('stock', e.target.value)}
@@ -580,16 +605,19 @@ export const SellListingClient = () => {
                     {errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock}</p>}
                   </div>
                   <div>
-                    <label htmlFor="location" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Location *</label>
-                    <select
+                    <label htmlFor="location" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Tỉnh/Thành phố *</label>
+                    <Combobox
                       id="location"
-                      value={form.location} onChange={(e) => setField('location', e.target.value)}
-                      aria-invalid={!!errors.location}
-                      className={`w-full border ${errClass('location')} bg-white px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
-                    >
-                      {LOCATIONS.map((loc) => <option key={loc} value={loc}>{loc}</option>)}
-                    </select>
-                    {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+                      value={form.location}
+                      onChange={(v) => setField('location', v)}
+                      getOptions={searchVnLocations}
+                      placeholder="Tìm tỉnh/thành phố..."
+                      description="Gõ có dấu hoặc không dấu, ví dụ &quot;da nang&quot; hoặc &quot;tphcm&quot;."
+                      ariaInvalid={!!errors.location}
+                      ariaDescribedBy={errors.location ? 'location-error' : undefined}
+                      emptyMessage="Không tìm thấy tỉnh/thành phố phù hợp."
+                    />
+                    {errors.location && <p id="location-error" className="text-red-500 text-xs mt-1">{errors.location}</p>}
                   </div>
                 </div>
                 <label className="flex items-center gap-2 text-sm text-neutral-700">
@@ -598,7 +626,7 @@ export const SellListingClient = () => {
                     onChange={(e) => setField('is_negotiable', e.target.checked)}
                     className="h-4 w-4 border-neutral-300"
                   />
-                  Price is negotiable
+                  Có thể thương lượng giá
                 </label>
               </div>
             )}
@@ -607,11 +635,11 @@ export const SellListingClient = () => {
             {step === 5 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Step 5 — Photos
+                  Bước 5 — Hình ảnh
                 </h2>
                 <div>
                   <label htmlFor="images" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">
-                    Photos * (up to {MAX_IMAGES}, JPEG/PNG/WebP, max 5MB each)
+                    Hình ảnh * (tối đa {MAX_IMAGES} ảnh, JPEG/PNG/WebP, mỗi ảnh tối đa 5MB)
                   </label>
                   <input
                     id="images" type="file" multiple
@@ -628,13 +656,13 @@ export const SellListingClient = () => {
                     {images.map((img, i) => (
                       <li key={img.previewUrl} className="relative border border-neutral-200">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={img.previewUrl} alt={`Listing photo ${i + 1}${i === 0 ? ' (primary)' : ''}`} className="aspect-square w-full object-cover" />
+                        <img src={img.previewUrl} alt={`Ảnh sản phẩm ${i + 1}${i === 0 ? ' (ảnh chính)' : ''}`} className="aspect-square w-full object-cover" />
                         {i === 0 && (
-                          <span className="absolute top-1 left-1 bg-neutral-900 text-white text-[9px] font-mono uppercase px-1.5 py-0.5">Primary</span>
+                          <span className="absolute top-1 left-1 bg-neutral-900 text-white text-[9px] font-mono uppercase px-1.5 py-0.5">Ảnh chính</span>
                         )}
                         <button
                           type="button" onClick={() => removeImage(i)}
-                          aria-label={`Remove photo ${i + 1}`}
+                          aria-label={`Xóa ảnh ${i + 1}`}
                           className="absolute top-1 right-1 bg-white/90 border border-neutral-300 text-neutral-700 text-xs h-5 w-5 flex items-center justify-center hover:bg-red-50 hover:border-red-300 hover:text-red-600"
                         >
                           ×
@@ -650,25 +678,25 @@ export const SellListingClient = () => {
             {step === 6 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Step 6 — Review & publish
+                  Bước 6 — Xem lại & đăng bán
                 </h2>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Title</dt><dd className="text-neutral-900">{form.name}</dd></div>
-                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Category</dt><dd className="text-neutral-900">{leafCategories.find((c) => c.slug === form.category_slug)?.name || form.category_slug}</dd></div>
-                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Brand</dt><dd className="text-neutral-900">{brands.find((b) => b.slug === form.brand_slug)?.name || 'No Brand / Independent'}</dd></div>
-                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Condition</dt><dd className="text-neutral-900">{formatCondition(form.condition)}</dd></div>
-                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Size</dt><dd className="text-neutral-900">{form.size}</dd></div>
-                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Price</dt><dd className="text-neutral-900">{Number(form.price).toLocaleString('vi-VN')} VNĐ{form.sale_price ? ` (sale: ${Number(form.sale_price).toLocaleString('vi-VN')} VNĐ)` : ''}</dd></div>
-                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Stock</dt><dd className="text-neutral-900">{form.stock}</dd></div>
-                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Location</dt><dd className="text-neutral-900">{form.location}{form.is_negotiable ? ' · Negotiable' : ''}</dd></div>
-                  <div className="sm:col-span-2"><dt className="font-mono text-[10px] uppercase text-neutral-400">Description</dt><dd className="text-neutral-900 whitespace-pre-wrap">{form.description}</dd></div>
+                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Tên sản phẩm</dt><dd className="text-neutral-900">{form.name}</dd></div>
+                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Danh mục</dt><dd className="text-neutral-900">{leafCategories.find((c) => c.slug === form.category_slug)?.name || form.category_slug}</dd></div>
+                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Thương hiệu</dt><dd className="text-neutral-900">{displayBrand}</dd></div>
+                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Tình trạng</dt><dd className="text-neutral-900">{formatCondition(form.condition)}</dd></div>
+                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Kích thước</dt><dd className="text-neutral-900">{sizeOptions.find((s) => s.value === form.size)?.label || form.size}</dd></div>
+                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Giá bán</dt><dd className="text-neutral-900">{Number(form.price).toLocaleString('vi-VN')}đ{form.sale_price ? ` (giảm còn: ${Number(form.sale_price).toLocaleString('vi-VN')}đ)` : ''}</dd></div>
+                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Số lượng</dt><dd className="text-neutral-900">{form.stock}</dd></div>
+                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Tỉnh/Thành phố</dt><dd className="text-neutral-900">{form.location}{form.is_negotiable ? ' · Có thể thương lượng' : ''}</dd></div>
+                  <div className="sm:col-span-2"><dt className="font-mono text-[10px] uppercase text-neutral-400">Mô tả</dt><dd className="text-neutral-900 whitespace-pre-wrap">{form.description}</dd></div>
                 </dl>
                 <div>
-                  <p className="font-mono text-[10px] uppercase text-neutral-400 mb-2">Photos ({images.length})</p>
+                  <p className="font-mono text-[10px] uppercase text-neutral-400 mb-2">Hình ảnh ({images.length})</p>
                   <ul className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                     {images.map((img, i) => (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <li key={img.previewUrl}><img src={img.previewUrl} alt={`Listing photo ${i + 1}`} className="aspect-square w-full object-cover border border-neutral-200" /></li>
+                      <li key={img.previewUrl}><img src={img.previewUrl} alt={`Ảnh sản phẩm ${i + 1}`} className="aspect-square w-full object-cover border border-neutral-200" /></li>
                     ))}
                   </ul>
                 </div>
@@ -680,19 +708,19 @@ export const SellListingClient = () => {
               <div>
                 {step > 1 && (
                   <Button data-testid="sell-back" variant="outline" type="button" onClick={goBack} disabled={isSubmitting} className="font-mono text-xs uppercase tracking-wider">
-                    &larr; Back
+                    &larr; Quay lại
                   </Button>
                 )}
               </div>
               <div className="flex gap-3">
                 {step === 1 && (
                   <Button data-testid="sell-clear-draft" variant="outline" type="button" onClick={clearDraft} disabled={isSubmitting} className="font-mono text-xs uppercase tracking-wider text-neutral-500">
-                    Clear draft
+                    Xóa bản nháp
                   </Button>
                 )}
                 {step < 6 && (
                   <Button data-testid="sell-next" type="button" onClick={goNext} className="font-mono text-xs uppercase tracking-wider bg-neutral-900 text-white">
-                    Next &rarr;
+                    Tiếp tục &rarr;
                   </Button>
                 )}
                 {step === 6 && (
@@ -702,7 +730,7 @@ export const SellListingClient = () => {
                     aria-busy={isSubmitting}
                     className="font-mono text-xs uppercase tracking-wider bg-neutral-900 text-white"
                   >
-                    {isSubmitting ? 'Publishing…' : 'Publish listing'}
+                    {isSubmitting ? 'Đang đăng…' : 'Đăng sản phẩm'}
                   </Button>
                 )}
               </div>
@@ -713,25 +741,25 @@ export const SellListingClient = () => {
         {/* Right: Preview & Tips */}
         <div className="lg:col-span-4 flex flex-col gap-8">
           <div className="sticky top-24">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-400 mb-3">Live preview</h3>
+            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-400 mb-3">Xem trước</h3>
             <div className="pointer-events-none">
               <ProductCard product={previewProduct} />
             </div>
 
             <div className="mt-8 border border-neutral-200 bg-neutral-50 p-6">
-              <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-900 font-bold mb-4">Seller tips</h3>
+              <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-900 font-bold mb-4">Mẹo cho người bán</h3>
               <ul className="text-xs text-neutral-600 leading-relaxed space-y-3 list-disc list-inside">
-                <li>Use clear photos in natural light.</li>
-                <li>Mention the condition honestly.</li>
-                <li>Add sizing details and measurements.</li>
-                <li>Set a fair market price in VNĐ.</li>
-                <li>Choose safe pickup or shipping.</li>
+                <li>Chụp ảnh rõ nét dưới ánh sáng tự nhiên.</li>
+                <li>Mô tả tình trạng sản phẩm trung thực.</li>
+                <li>Ghi rõ số đo và thông tin kích thước.</li>
+                <li>Đặt giá hợp lý theo thị trường, tính bằng VNĐ.</li>
+                <li>Chọn hình thức giao nhận an toàn.</li>
               </ul>
             </div>
 
             <div className="mt-6 flex flex-col gap-2">
               <Link href={ROUTES.PROFILE} className="text-xs font-mono uppercase tracking-wider text-neutral-500 hover:text-neutral-900 text-center block py-2 border border-transparent hover:border-neutral-200">
-                &larr; Back to Profile
+                &larr; Quay lại trang cá nhân
               </Link>
             </div>
           </div>

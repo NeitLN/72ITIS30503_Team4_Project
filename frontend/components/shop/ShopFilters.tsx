@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { Category } from '../../types/category';
+import { formatCondition } from '../../lib/format';
 
 interface ShopFiltersProps {
   categories: Category[];
@@ -29,9 +30,9 @@ const BRANDS = [
 ];
 
 const CONDITIONS = [
-  { slug: 'new', name: 'Brand New' },
-  { slug: 'like_new', name: 'Like New' },
-  { slug: 'used', name: 'Used' },
+  { slug: 'new', name: formatCondition('new') },
+  { slug: 'like_new', name: formatCondition('like_new') },
+  { slug: 'used', name: formatCondition('used') },
 ];
 
 export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) => {
@@ -109,13 +110,13 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
         {/* Search Input Form */}
         <form onSubmit={handleSearchSubmit} className="flex-1 max-w-lg">
           <label htmlFor="search" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">
-            Search Keyword
+            Từ khóa tìm kiếm
           </label>
           <div className="flex">
             <input
               type="text"
               id="search"
-              placeholder="Search local brands, hoodies, AF1..."
+              placeholder="Tìm thương hiệu, hoodie, AF1..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 border border-neutral-300 border-r-0 px-4 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-0 bg-white"
@@ -125,7 +126,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
               disabled={isPending}
               className="border border-neutral-900 bg-neutral-900 px-6 py-2 font-mono text-xs uppercase tracking-wider text-white hover:bg-neutral-800 transition-colors disabled:opacity-50"
             >
-              Search
+              Tìm kiếm
             </button>
           </div>
         </form>
@@ -135,7 +136,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
           {/* Category Dropdown */}
           <div className="flex-1 sm:min-w-[140px]">
             <label htmlFor="category-select" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">
-              Category
+              Danh mục
             </label>
             <select
               id="category-select"
@@ -143,7 +144,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
               onChange={(e) => handleSelectChange('category', e.target.value)}
               className="w-full border border-neutral-300 bg-white px-3 py-2 text-xs font-mono text-neutral-800 uppercase tracking-wide focus:border-neutral-900 focus:outline-none"
             >
-              <option value="">All Categories</option>
+              <option value="">Tất cả danh mục</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.slug}>
                   {cat.name}
@@ -155,7 +156,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
           {/* Brand Dropdown */}
           <div className="flex-1 sm:min-w-[140px]">
             <label htmlFor="brand-select" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">
-              Brand
+              Thương hiệu
             </label>
             <select
               id="brand-select"
@@ -163,7 +164,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
               onChange={(e) => handleSelectChange('brand', e.target.value)}
               className="w-full border border-neutral-300 bg-white px-3 py-2 text-xs font-mono text-neutral-800 uppercase tracking-wide focus:border-neutral-900 focus:outline-none"
             >
-              <option value="">All Brands</option>
+              <option value="">Tất cả thương hiệu</option>
               {BRANDS.map((brand) => (
                 <option key={brand.slug} value={brand.slug}>
                   {brand.name}
@@ -175,7 +176,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
           {/* Condition Dropdown */}
           <div className="flex-1 sm:min-w-[140px]">
             <label htmlFor="condition-select" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">
-              Condition
+              Tình trạng
             </label>
             <select
               id="condition-select"
@@ -183,7 +184,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
               onChange={(e) => handleSelectChange('condition', e.target.value)}
               className="w-full border border-neutral-300 bg-white px-3 py-2 text-xs font-mono text-neutral-800 uppercase tracking-wide focus:border-neutral-900 focus:outline-none"
             >
-              <option value="">All Conditions</option>
+              <option value="">Tất cả tình trạng</option>
               {CONDITIONS.map((cond) => (
                 <option key={cond.slug} value={cond.slug}>
                   {cond.name}
@@ -197,7 +198,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
       {/* Loading state indicator */}
       {isPending && (
         <p className="mt-3 font-mono text-[10px] text-neutral-400 uppercase tracking-widest animate-pulse">
-          Updating listings...
+          Đang cập nhật tin đăng...
         </p>
       )}
 
@@ -205,17 +206,17 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
       {hasActiveFilters && (
         <div className="mt-6 flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-400">
-            Active filters:
+            Bộ lọc đang áp dụng:
           </span>
 
           {initialFilters.search && (
             <span className="inline-flex items-center gap-1.5 border border-neutral-900 bg-white px-2.5 py-1 font-mono text-[10px] text-neutral-900">
-              Search: &quot;{initialFilters.search}&quot;
+              Tìm kiếm: &quot;{initialFilters.search}&quot;
               <button
                 type="button"
                 onClick={() => handleClearSingle('search')}
                 className="hover:text-red-600 font-bold ml-1 cursor-pointer"
-                aria-label="Remove search filter"
+                aria-label="Xóa bộ lọc tìm kiếm"
               >
                 ✕
               </button>
@@ -224,12 +225,12 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
 
           {initialFilters.category && (
             <span className="inline-flex items-center gap-1.5 border border-neutral-900 bg-white px-2.5 py-1 font-mono text-[10px] text-neutral-900">
-              Category: {selectedCategoryName || initialFilters.category}
+              Danh mục: {selectedCategoryName || initialFilters.category}
               <button
                 type="button"
                 onClick={() => handleClearSingle('category')}
                 className="hover:text-red-600 font-bold ml-1 cursor-pointer"
-                aria-label="Remove category filter"
+                aria-label="Xóa bộ lọc danh mục"
               >
                 ✕
               </button>
@@ -238,12 +239,12 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
 
           {initialFilters.brand && (
             <span className="inline-flex items-center gap-1.5 border border-neutral-900 bg-white px-2.5 py-1 font-mono text-[10px] text-neutral-900">
-              Brand: {selectedBrandName || initialFilters.brand}
+              Thương hiệu: {selectedBrandName || initialFilters.brand}
               <button
                 type="button"
                 onClick={() => handleClearSingle('brand')}
                 className="hover:text-red-600 font-bold ml-1 cursor-pointer"
-                aria-label="Remove brand filter"
+                aria-label="Xóa bộ lọc thương hiệu"
               >
                 ✕
               </button>
@@ -252,12 +253,12 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
 
           {initialFilters.condition && (
             <span className="inline-flex items-center gap-1.5 border border-neutral-900 bg-white px-2.5 py-1 font-mono text-[10px] text-neutral-900">
-              Condition: {selectedConditionName || initialFilters.condition}
+              Tình trạng: {selectedConditionName || initialFilters.condition}
               <button
                 type="button"
                 onClick={() => handleClearSingle('condition')}
                 className="hover:text-red-600 font-bold ml-1 cursor-pointer"
-                aria-label="Remove condition filter"
+                aria-label="Xóa bộ lọc tình trạng"
               >
                 ✕
               </button>
@@ -269,7 +270,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
             onClick={handleClearAll}
             className="font-mono text-[10px] uppercase tracking-wider text-red-800 hover:text-red-500 underline ml-2 cursor-pointer"
           >
-            Clear All
+            Xóa tất cả
           </button>
         </div>
       )}

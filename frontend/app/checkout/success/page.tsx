@@ -7,8 +7,8 @@ import { ROUTES } from '../../../constants/routes';
 import { vi } from '../../../lib/i18n';
 
 export const metadata: Metadata = {
-  title: 'Order Confirmed',
-  description: 'Your StyleHub order has been placed successfully.',
+  title: 'Đặt hàng thành công',
+  description: 'Đơn hàng của bạn trên StyleHub đã được đặt thành công.',
 };
 
 function SuccessContent({ searchParams }: { searchParams: { orderCode?: string } }) {

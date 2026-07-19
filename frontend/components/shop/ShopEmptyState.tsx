@@ -10,14 +10,14 @@ interface ShopEmptyStateProps {
 
 const copy = {
   empty: {
-    label: 'Nothing on the rack',
-    title: 'No listings found.',
-    body: 'Try checking another category or coming back later.',
+    label: 'Kệ hàng trống trơn',
+    title: 'Không tìm thấy tin đăng.',
+    body: 'Hãy thử danh mục khác hoặc quay lại sau.',
   },
   error: {
-    label: 'Connection issue',
-    title: 'We could not load marketplace listings right now.',
-    body: 'Make sure the backend server is running.',
+    label: 'Lỗi kết nối',
+    title: 'Không thể tải tin đăng trên chợ vào lúc này.',
+    body: 'Vui lòng kiểm tra máy chủ backend có đang hoạt động không.',
   },
 };
 

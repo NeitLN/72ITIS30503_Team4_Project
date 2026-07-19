@@ -26,14 +26,14 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     
     if (!category) {
       return {
-        title: `${fallbackName} Listings`,
-        description: `Browse C2C marketplace listings for ${fallbackName.toLowerCase()} and local fashion pieces on StyleHub.`,
+        title: `Tin đăng ${fallbackName}`,
+        description: `Duyệt tin đăng C2C cho ${fallbackName.toLowerCase()} và các sản phẩm thời trang địa phương trên StyleHub.`,
       };
     }
 
     // Raw name here: the root layout's title template already appends " — StyleHub".
-    const title = `${category.name} Listings`;
-    const description = category.description || `Browse C2C marketplace listings for ${category.name.toLowerCase()} and local fashion pieces on StyleHub.`;
+    const title = `Tin đăng ${category.name}`;
+    const description = category.description || `Duyệt tin đăng C2C cho ${category.name.toLowerCase()} và các sản phẩm thời trang địa phương trên StyleHub.`;
 
     return {
       title,
@@ -47,8 +47,8 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     };
   } catch {
     return {
-      title: 'Category Listings',
-      description: 'Browse C2C marketplace listings for local fashion pieces on StyleHub.',
+      title: 'Danh mục tin đăng',
+      description: 'Duyệt tin đăng C2C cho các sản phẩm thời trang địa phương trên StyleHub.',
     };
   }
 }
@@ -91,16 +91,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       {/* Curated collection header */}
       <section className="border-b border-neutral-200 bg-neutral-50">
         <Container className="py-12 sm:py-16">
-          <nav aria-label="Breadcrumb" className="mb-5">
+          <nav aria-label="Đường dẫn điều hướng" className="mb-5">
             <Link
               href={ROUTES.SHOP}
               className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500 transition-colors hover:text-neutral-900"
             >
-              ← All listings
+              ← Tất cả tin đăng
             </Link>
           </nav>
           <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-500">
-            Curated collection
+            Bộ sưu tập chọn lọc
           </p>
           <h1 className="font-display text-4xl font-black uppercase tracking-tight text-neutral-900 sm:text-6xl">
             {categoryName}
@@ -110,7 +110,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           )}
           {count != null && count > 0 && (
             <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-400">
-              {count} {count === 1 ? 'listing' : 'listings'} from the community
+              {count} tin đăng từ cộng đồng
             </p>
           )}
         </Container>
@@ -128,12 +128,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             </div>
             {meta?.count != null && (
               <p className="mt-10 text-center font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-400">
-                Showing {products.length} of {meta.count} listings
+                Hiển thị {products.length} trong {meta.count} tin đăng
               </p>
             )}
           </>
         ) : (
-          <ShopEmptyState variant="empty" title={`No listings in ${categoryName} yet.`} body="Be the first to list an item in this category." actionText="Browse all listings" actionHref={ROUTES.SHOP} />
+          <ShopEmptyState variant="empty" title={`Chưa có tin đăng nào trong ${categoryName}.`} body="Hãy là người đầu tiên đăng bán trong danh mục này." actionText="Xem tất cả tin đăng" actionHref={ROUTES.SHOP} />
         )}
       </Container>
     </>

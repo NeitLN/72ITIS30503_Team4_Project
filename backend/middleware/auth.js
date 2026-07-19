@@ -20,18 +20,18 @@ const authenticateUser = async (req, res, next) => {
 
 const requireAuth = (req, res, next) => {
   if (!req.user) {
-    return error(res, 401, 'Authentication required');
+    return error(res, 401, 'Vui lòng đăng nhập để tiếp tục.');
   }
   next();
 };
 
 const requireAdmin = (req, res, next) => {
   if (!req.user) {
-    return error(res, 401, 'Authentication required');
+    return error(res, 401, 'Vui lòng đăng nhập để tiếp tục.');
   }
   
   if (req.user.role !== 'admin') {
-    return error(res, 403, 'Admin privileges required');
+    return error(res, 403, 'Yêu cầu quyền quản trị viên.');
   }
   
   next();

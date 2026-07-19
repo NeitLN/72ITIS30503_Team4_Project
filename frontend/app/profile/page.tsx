@@ -3,8 +3,8 @@ import { ProfileClient } from '../../components/profile/ProfileClient';
 
 
 export const metadata: Metadata = {
-  title: 'My Profile',
-  description: 'Manage your StyleHub profile: display name, username, bio, location, and avatar.',
+  title: 'Hồ sơ của tôi',
+  description: 'Quản lý hồ sơ StyleHub của bạn: tên hiển thị, tên người dùng, tiểu sử, tỉnh/thành phố và ảnh đại diện.',
 };
 
 export default function ProfilePage() {

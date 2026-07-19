@@ -43,7 +43,7 @@ export const RegisterForm = () => {
 
       <div>
         <label htmlFor="name" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">
-          Full Name
+          Họ và tên
         </label>
         <input
           type="text"
@@ -57,7 +57,7 @@ export const RegisterForm = () => {
 
       <div>
         <label htmlFor="email" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">
-          Email Address
+          Email
         </label>
         <input
           type="email"
@@ -71,7 +71,7 @@ export const RegisterForm = () => {
 
       <div>
         <label htmlFor="password" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">
-          Password
+          Mật khẩu
         </label>
         <input
           type="password"
@@ -82,12 +82,12 @@ export const RegisterForm = () => {
           onChange={(e) => setPassword(e.target.value)}
           className="block w-full border border-neutral-300 px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none"
         />
-        <p className="mt-1.5 text-[10px] text-neutral-400">Must be at least 6 characters.</p>
+        <p className="mt-1.5 text-[10px] text-neutral-400">Phải có ít nhất 6 ký tự.</p>
       </div>
 
       <div>
         <label htmlFor="role" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">
-          Account Type
+          Loại tài khoản
         </label>
         <select
           id="role"
@@ -95,16 +95,16 @@ export const RegisterForm = () => {
           onChange={(e) => setRole(e.target.value as 'customer' | 'seller' | 'admin')}
           className="block w-full border border-neutral-300 px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none bg-white appearance-none"
         >
-          <option value="customer">Shopper</option>
-          <option value="seller">Seller</option>
-          <option value="admin">Administrator</option>
+          <option value="customer">Người mua</option>
+          <option value="seller">Người bán</option>
+          <option value="admin">Quản trị viên</option>
         </select>
       </div>
 
       {role === 'admin' && (
         <div>
           <label htmlFor="adminCode" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">
-            Admin Registration Code
+            Mã đăng ký quản trị viên
           </label>
           <input
             type="password"
@@ -113,7 +113,7 @@ export const RegisterForm = () => {
             value={adminCode}
             onChange={(e) => setAdminCode(e.target.value)}
             className="block w-full border border-neutral-300 px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none"
-            placeholder="Required for admin accounts"
+            placeholder="Bắt buộc đối với tài khoản quản trị viên"
           />
         </div>
       )}
@@ -124,13 +124,13 @@ export const RegisterForm = () => {
         className="w-full mt-4"
         disabled={isLoading}
       >
-        {isLoading ? 'Creating account...' : 'Create Account'}
+        {isLoading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
       </Button>
 
       <div className="mt-6 text-center text-xs text-neutral-500 border-t border-neutral-100 pt-6">
-        Already have an account?{' '}
+        Bạn đã có tài khoản?{' '}
         <Link href={ROUTES.LOGIN} className="font-semibold text-neutral-900 hover:underline">
-          Log in
+          Đăng nhập
         </Link>
       </div>
     </form>

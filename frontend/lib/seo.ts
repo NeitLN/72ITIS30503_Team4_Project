@@ -1,8 +1,8 @@
 export const SITE_NAME = 'StyleHub';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
-export const DEFAULT_TITLE = 'StyleHub — C2C Fashion Marketplace';
-export const DEFAULT_DESCRIPTION = 'Buy and sell local streetwear, sneakers, archive pieces, accessories, and pre-loved fashion through a premium C2C marketplace demo.';
+export const DEFAULT_TITLE = 'StyleHub — Chợ thời trang C2C';
+export const DEFAULT_DESCRIPTION = 'Mua và bán streetwear, sneaker, đồ archive, phụ kiện và thời trang đã qua sử dụng của các thương hiệu địa phương qua một chợ C2C cao cấp dạng demo.';
 
 export function buildTitle(title?: string) {
   if (!title) return DEFAULT_TITLE;

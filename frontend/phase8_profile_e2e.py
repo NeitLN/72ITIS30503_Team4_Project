@@ -33,7 +33,11 @@ if not QA_PASSWORD:
 RUN_USERNAME = f"phase8-qa-{int(time.time()) % 100000}"
 DISPLAY_NAME = "Phase 8 QA Seller"
 BIO = "Phase 8 QA account verifying real profile persistence and the public storefront."
-LOCATION = "Da Nang"
+# Phase 8.1: the location field is now a searchable Vietnamese combobox.
+# Typing an unaccented alias ("Da Nang") must resolve to the canonical
+# Vietnamese name ("Đà Nẵng"), which is what actually gets stored/displayed.
+LOCATION_SEARCH = "Da Nang"
+LOCATION_DISPLAY = "Đà Nẵng"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 AVATAR1 = os.path.join(HERE, "public", "images", "products", "nike-air-max-90-black.jpg")
@@ -113,7 +117,7 @@ with sync_playwright() as p:
 
     # 1a. Logged-out gate
     page.goto(f"{BASE}/profile", wait_until="load")
-    expect(page.get_by_text("Sign in to view your profile")).to_be_visible(timeout=10000)
+    expect(page.get_by_text("Đăng nhập để xem hồ sơ")).to_be_visible(timeout=10000)
     check("Logged-out /profile shows sign-in gate", True)
     page.click("a[href*='redirect=/profile']")
     expect(page).to_have_url(f"{BASE}/login?redirect=/profile", timeout=10000)
@@ -129,7 +133,7 @@ with sync_playwright() as p:
     # 1c. Real profile data loaded (not hardcoded mock)
     expect(page.locator("h1")).not_to_have_text("Võ Việt Tiến", timeout=10000)
     check("Profile is NOT the old hardcoded mock user", True)
-    expect(page.get_by_text("Member since")).to_be_visible(timeout=10000)
+    expect(page.get_by_text("Tham gia từ")).to_be_visible(timeout=10000)
     check("Real profile loaded (Member since real created_at)", True)
 
     # 1d. Enter edit mode, validation
@@ -146,13 +150,20 @@ with sync_playwright() as p:
     page.fill("#profile-username", taken_username)
     page.click("[data-testid=profile-save]")
     expect(page.locator("#profile-username-error")).to_be_visible(timeout=10000)
-    check("Taken username shows a conflict error", "already taken" in page.locator("#profile-username-error").inner_text().lower())
+    check("Taken username shows a conflict error", "đã được sử dụng" in page.locator("#profile-username-error").inner_text().lower())
 
     # 1f. Successful save with a unique username
     page.fill("#profile-display_name", DISPLAY_NAME)
     page.fill("#profile-username", RUN_USERNAME)
     page.fill("#profile-bio", BIO)
-    page.select_option("#profile-location", LOCATION)
+    # Location is now a searchable combobox (Phase 8.1) — type an alias and
+    # pick the resolved canonical Vietnamese option from the listbox.
+    page.click("#profile-location")
+    page.fill("#profile-location", LOCATION_SEARCH)
+    location_option = page.locator("#profile-location-listbox li[role=option]").filter(has_text=LOCATION_DISPLAY).first
+    expect(location_option).to_be_visible(timeout=5000)
+    location_option.click()
+    expect(page.locator("#profile-location")).to_have_value(LOCATION_DISPLAY, timeout=5000)
     page.click("[data-testid=profile-save]")
     expect(page.locator("h1")).to_contain_text(DISPLAY_NAME, timeout=10000)
     check("Save succeeds and exits edit mode with new display name shown", True)
@@ -161,13 +172,13 @@ with sync_playwright() as p:
 
     # 1g. Avatar upload
     page.set_input_files("#avatar-input", [AVATAR1])
-    expect(page.locator("img[alt*=\"avatar\"]")).to_be_visible(timeout=10000)
-    first_avatar_src = page.locator("img[alt*='avatar']").first.get_attribute("src")
+    expect(page.locator("img[alt*='Ảnh đại diện']")).to_be_visible(timeout=10000)
+    first_avatar_src = page.locator("img[alt*='Ảnh đại diện']").first.get_attribute("src")
     check("Avatar preview appears after upload", bool(first_avatar_src))
 
     # 1h. Avatar replacement
     page.set_input_files("#avatar-input", [AVATAR2])
-    expect(page.locator("img[alt*='avatar']")).not_to_have_attribute("src", first_avatar_src, timeout=10000)
+    expect(page.locator("img[alt*='Ảnh đại diện']")).not_to_have_attribute("src", first_avatar_src, timeout=10000)
     check("Avatar replacement updates to a new object URL", True)
 
     # 1i. Persistence after reload
@@ -178,8 +189,8 @@ with sync_playwright() as p:
     check("Username persists after reload", True)
     expect(page.get_by_text(BIO)).to_be_visible(timeout=5000)
     check("Bio persists after reload", True)
-    expect(page.get_by_text(LOCATION)).to_be_visible(timeout=5000)
-    check("Location persists after reload", True)
+    expect(page.get_by_text(LOCATION_DISPLAY).first).to_be_visible(timeout=5000)
+    check("Location persists after reload as the canonical Vietnamese name", True)
 
     # 1j. Link to public storefront
     storefront_link = page.locator("[data-testid=profile-view-storefront]")
@@ -203,31 +214,31 @@ with sync_playwright() as p:
     check("Title format is correct", page2.title().startswith(f"{DISPLAY_NAME} (@{RUN_USERNAME})"), page2.title())
 
     body_text = page2.locator("body").inner_text()
-    check("No fake/mock rating text on a zero-listing storefront", "No ratings yet" not in body_text or True)
+    check("Honest 'no ratings yet' state shown in Vietnamese (not fabricated)", "Chưa có đánh giá" in body_text)
 
     # ========== 3. Known seed seller with real listings ==========
     # The Phase 7 QA account's own username was just changed to RUN_USERNAME
     # above (same account, same product) — its retained Phase 7 listing must
     # still appear under the new username.
     page2.goto(f"{BASE}/seller/{RUN_USERNAME}", wait_until="load")
-    expect(page2.get_by_text("Nike Air Max 90 Black")).to_be_visible(timeout=10000)
+    expect(page2.get_by_text("Nike Air Max 90 Black").first).to_be_visible(timeout=10000)
     check("Retained Phase 7 listing appears on the (renamed) storefront", True)
 
     # ========== 3b. Empty seller storefront (a real account with 0 listings) ==========
     page2.goto(f"{BASE}/seller/demo-customer", wait_until="load")
-    expect(page2.get_by_text("No active listings")).to_be_visible(timeout=10000)
+    expect(page2.get_by_text("Chưa có tin đang bán")).to_be_visible(timeout=10000)
     check("A real account with 0 listings shows the honest empty state (not fabricated products)", True)
 
     # ========== 4. Unknown seller -> real 404 ==========
     resp = page2.goto(f"{BASE}/seller/totally-made-up-username-xyz123", wait_until="load")
     check("Unknown seller page returns HTTP 404", resp.status == 404, str(resp.status))
-    check("Unknown seller page shows a not-found state (no fabricated profile)", page2.get_by_text("404").count() > 0 or page2.get_by_text("not").count() > 0 or True)
+    check("Unknown seller page shows a not-found state (no fabricated profile)", page2.get_by_text("Không tìm thấy trang").count() > 0 or page2.get_by_text("404").count() > 0)
 
     # ========== 5. Seed seller compatibility (real seed seller storefront) ==========
     page2.goto(f"{BASE}/seller/minh-tran", wait_until="load")
     expect(page2.locator("h1")).to_contain_text("Minh Tran", timeout=10000)
     check("Seed seller (Minh Tran) storefront loads with real data", True)
-    expect(page2.locator("body")).to_contain_text("Active Listings", timeout=5000)
+    expect(page2.locator("body")).to_contain_text("Tin đang bán", timeout=5000)
     check("Seed seller storefront shows real listing grid", True)
 
     # ========== 6. Product Detail seller link ==========

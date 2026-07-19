@@ -26,32 +26,32 @@ const generateOrderCode = async () => {
   }
   
   if (!isUnique) {
-    throw new Error('Failed to generate a unique order code. Please try again.');
+    throw new Error('Không thể tạo mã đơn hàng duy nhất. Vui lòng thử lại.');
   }
-  
+
   return code;
 };
 
 const validateOrderPayload = (payload) => {
   const { customer, paymentMethod, items } = payload;
-  
-  if (!customer || !customer.name || !customer.name.trim()) throw new Error('Customer name is required.');
-  if (!customer.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email.trim())) throw new Error('Valid customer email is required.');
-  if (!customer.phone || !/^0[0-9]{9}$/.test(customer.phone.trim())) throw new Error('Invalid Vietnamese phone number.');
-  if (!customer.address || !customer.address.trim()) throw new Error('Customer address is required.');
-  
+
+  if (!customer || !customer.name || !customer.name.trim()) throw new Error('Vui lòng nhập họ và tên.');
+  if (!customer.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email.trim())) throw new Error('Vui lòng nhập email hợp lệ.');
+  if (!customer.phone || !/^0[0-9]{9}$/.test(customer.phone.trim())) throw new Error('Số điện thoại Việt Nam không hợp lệ.');
+  if (!customer.address || !customer.address.trim()) throw new Error('Vui lòng nhập địa chỉ giao hàng.');
+
   if (!paymentMethod || !['cod', 'bank_transfer'].includes(paymentMethod)) {
-    throw new Error('Invalid payment method.');
+    throw new Error('Phương thức thanh toán không hợp lệ.');
   }
-  
+
   if (!items || !Array.isArray(items) || items.length === 0) {
-    throw new Error('Order items cannot be empty.');
+    throw new Error('Đơn hàng phải có ít nhất một sản phẩm.');
   }
-  
+
   items.forEach(item => {
-    if (!item.productName) throw new Error('Product name is required for all items.');
-    if (!item.quantity || item.quantity <= 0) throw new Error('Item quantity must be greater than 0.');
-    if (typeof item.unitPrice !== 'number' || item.unitPrice < 0) throw new Error('Item unit price must be 0 or greater.');
+    if (!item.productName) throw new Error('Thiếu tên sản phẩm cho một hoặc nhiều mục.');
+    if (!item.quantity || item.quantity <= 0) throw new Error('Số lượng sản phẩm phải lớn hơn 0.');
+    if (typeof item.unitPrice !== 'number' || item.unitPrice < 0) throw new Error('Đơn giá sản phẩm phải từ 0 trở lên.');
   });
 };
 
@@ -94,7 +94,7 @@ const isAllowedStatusTransition = (currentStatus, nextStatus) => {
 
 const validateCouponCode = async (code, subtotal) => {
   if (!code || !code.trim()) {
-    throw { status: 400, message: 'Coupon code is missing.' };
+    throw { status: 400, message: 'Vui lòng nhập mã giảm giá.' };
   }
 
   const normalizedCode = code.trim().toUpperCase();
@@ -106,24 +106,24 @@ const validateCouponCode = async (code, subtotal) => {
     .single();
 
   if (error || !coupon) {
-    throw { status: 404, message: 'Invalid coupon code.' };
+    throw { status: 404, message: 'Mã giảm giá không hợp lệ.' };
   }
 
   if (!coupon.is_active) {
-    throw { status: 400, message: 'This coupon is no longer active.' };
+    throw { status: 400, message: 'Mã giảm giá này không còn hoạt động.' };
   }
 
   const now = new Date();
   if (coupon.starts_at && new Date(coupon.starts_at) > now) {
-    throw { status: 400, message: 'This coupon is not yet valid.' };
+    throw { status: 400, message: 'Mã giảm giá này chưa có hiệu lực.' };
   }
 
   if (coupon.expires_at && new Date(coupon.expires_at) < now) {
-    throw { status: 400, message: 'This coupon has expired.' };
+    throw { status: 400, message: 'Mã giảm giá đã hết hạn.' };
   }
 
   if (coupon.minimum_order_amount && subtotal < coupon.minimum_order_amount) {
-    throw { status: 400, message: `Minimum order amount of ${coupon.minimum_order_amount} required.` };
+    throw { status: 400, message: `Đơn hàng cần tối thiểu ${coupon.minimum_order_amount.toLocaleString('vi-VN')}đ để áp dụng mã này.` };
   }
 
   return coupon;
@@ -184,7 +184,9 @@ const createOrder = async (user, payload) => {
       hint: orderError?.hint,
       code: orderError?.code,
     });
-    throw new Error(orderError?.message || 'Database error while saving the order record.');
+    // Never propagate the raw Postgres error message to the client — it may
+    // contain internal schema/constraint details. It's already logged above.
+    throw new Error('Không thể lưu đơn hàng. Vui lòng thử lại.');
   }
 
   // 1b. Insert into order_coupons if applicable
@@ -230,7 +232,7 @@ const createOrder = async (user, payload) => {
     // Since Supabase REST doesn't natively support full transactions via single HTTP call easily, 
     // we attempt a manual rollback if child inserts fail.
     await supabase.from('orders').delete().eq('id', order.id);
-    throw new Error('Database error while saving order items. Order creation aborted.');
+    throw new Error('Không thể lưu chi tiết đơn hàng. Đơn hàng đã được hủy tạo.');
   }
   
   // 4. Return full completed order with items attached
@@ -248,7 +250,7 @@ const listMyOrders = async (userId) => {
     
   if (error) {
     console.error('Error fetching user orders:', error);
-    throw new Error('Failed to retrieve your orders.');
+    throw new Error('Không thể tải danh sách đơn hàng của bạn.');
   }
   
   return data;
@@ -264,7 +266,7 @@ const listAllOrders = async () => {
     
   if (error) {
     console.error('Error fetching all orders:', error);
-    throw new Error('Failed to retrieve orders list.');
+    throw new Error('Không thể tải danh sách đơn hàng.');
   }
   
   return data;
@@ -281,12 +283,12 @@ const getOrderById = async (orderId, user) => {
     .single();
     
   if (orderError || !order) {
-    throw { status: 404, message: 'Order not found' };
+    throw { status: 404, message: 'Không tìm thấy đơn hàng.' };
   }
   
   // Authorization check
   if (user.role !== 'admin' && order.user_id !== user.id) {
-    throw { status: 403, message: 'Access denied. You can only view your own orders.' };
+    throw { status: 403, message: 'Bạn chỉ có thể xem đơn hàng của chính mình.' };
   }
   
   // 2. Fetch items
@@ -314,14 +316,14 @@ const updateOrderStatus = async (orderId, nextStatus) => {
     .single();
     
   if (fetchError || !currentOrder) {
-    throw { status: 404, message: 'Order not found' };
+    throw { status: 404, message: 'Không tìm thấy đơn hàng.' };
   }
   
   // 2. Validate transition
   if (!isAllowedStatusTransition(currentOrder.status, nextStatus)) {
-    throw { status: 400, message: `Cannot transition order status from '${currentOrder.status}' to '${nextStatus}'.` };
+    throw { status: 400, message: `Không thể chuyển trạng thái đơn hàng từ '${currentOrder.status}' sang '${nextStatus}'.` };
   }
-  
+
   // 3. Perform update
   const { data: updatedOrder, error: updateError } = await supabase
     .from('orders')
@@ -329,10 +331,10 @@ const updateOrderStatus = async (orderId, nextStatus) => {
     .eq('id', orderId)
     .select('id, order_code, status')
     .single();
-    
+
   if (updateError) {
     console.error('Error updating order status:', updateError);
-    throw new Error('Failed to update order status in the database.');
+    throw new Error('Không thể cập nhật trạng thái đơn hàng.');
   }
   
   return updatedOrder;

@@ -11,8 +11,8 @@ import { Metadata } from 'next';
 export const revalidate = 60; // Revalidate cache every 60 seconds
 
 export const metadata: Metadata = {
-  title: 'Shop Local Fashion Listings',
-  description: 'Browse C2C fashion listings by category, brand, condition, and keyword. Shop independent local sellers on StyleHub.',
+  title: 'Cửa Hàng Thời Trang Địa Phương',
+  description: 'Duyệt tin đăng thời trang C2C theo danh mục, thương hiệu, tình trạng và từ khóa. Mua sắm từ người bán độc lập trên StyleHub.',
 };
 
 interface ShopPageProps {
@@ -68,7 +68,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             {count != null && products.length > 0 && (
               <div className="mb-6 flex justify-between items-baseline border-b border-neutral-100 pb-3">
                 <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-400">
-                  Showing {products.length} of {count} listings
+                  Hiển thị {products.length} trong {count} tin đăng
                 </p>
               </div>
             )}

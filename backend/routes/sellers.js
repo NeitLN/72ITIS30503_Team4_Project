@@ -10,16 +10,16 @@ router.get('/:username', async (req, res) => {
     const seller = await sellerService.getSellerByUsername(req.params.username);
     
     if (!seller) {
-      return error(res, 404, 'Seller not found');
+      return error(res, 404, 'Không tìm thấy người bán.');
     }
     
     return success(res, seller);
   } catch (err) {
     if (err.message === 'DATABASE_NOT_CONFIGURED') {
-      return error(res, 503, 'Service Unavailable: Database not configured');
+      return error(res, 503, 'Dịch vụ tạm thời không khả dụng: hệ thống chưa được cấu hình.');
     }
     console.error(`Error fetching seller profile ${req.params.username}:`, err);
-    return error(res, 500, 'Internal Server Error', err.message);
+    return error(res, 500, 'Đã xảy ra lỗi hệ thống.', err.message);
   }
 });
 
@@ -29,7 +29,7 @@ router.get('/:username/products', async (req, res) => {
     // Verify seller exists first
     const seller = await sellerService.getSellerByUsername(req.params.username);
     if (!seller) {
-      return error(res, 404, 'Seller not found');
+      return error(res, 404, 'Không tìm thấy người bán.');
     }
 
     const { data, meta } = await productService.getProducts({
@@ -40,10 +40,10 @@ router.get('/:username/products', async (req, res) => {
     return success(res, data, meta);
   } catch (err) {
     if (err.message === 'DATABASE_NOT_CONFIGURED') {
-      return error(res, 503, 'Service Unavailable: Database not configured');
+      return error(res, 503, 'Dịch vụ tạm thời không khả dụng: hệ thống chưa được cấu hình.');
     }
     console.error(`Error fetching products for seller ${req.params.username}:`, err);
-    return error(res, 500, 'Internal Server Error', err.message);
+    return error(res, 500, 'Đã xảy ra lỗi hệ thống.', err.message);
   }
 });
 

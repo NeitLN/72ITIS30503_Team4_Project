@@ -14,7 +14,7 @@ export const Header = async () => {
       <div className="border-b border-neutral-200 bg-neutral-900 py-1.5">
         <Container>
           <p className="truncate text-center font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-300">
-            Hà Nội → Sài Gòn · Pre-loved · Local brands · Streetwear · Peer to peer
+            Hà Nội → Sài Gòn · Đồ đã qua sử dụng · Thương hiệu địa phương · Streetwear · Kết nối ngang hàng
           </p>
         </Container>
       </div>
@@ -28,16 +28,16 @@ export const Header = async () => {
             StyleHub
           </Link>
 
-          <nav aria-label="Main navigation" className="flex min-w-0 items-center gap-4 overflow-x-auto sm:gap-5">
+          <nav aria-label="Điều hướng chính" className="flex min-w-0 items-center gap-4 overflow-x-auto sm:gap-5">
             <ShopMegaMenu />
             <Link href={ROUTES.ABOUT} className="hidden text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 md:block whitespace-nowrap">
-              About
+              Giới thiệu
             </Link>
             <Link
               href={ROUTES.CONTACT}
               className="hidden text-neutral-900 transition-colors hover:text-neutral-500 md:block"
-              title="Contact Us"
-              aria-label="Contact Us"
+              title="Liên hệ"
+              aria-label="Liên hệ"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -64,7 +64,7 @@ export const Header = async () => {
               href={ROUTES.SELL}
               className="bg-neutral-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-neutral-700 rounded-sm"
             >
-              Sell
+              Đăng bán
             </Link>
           </nav>
         </div>

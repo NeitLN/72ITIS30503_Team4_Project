@@ -399,7 +399,7 @@ export const CheckoutClient = () => {
                     <div className="flex-1 min-w-0">
                       <h4 className="text-xs font-semibold text-neutral-900 truncate">{item.name}</h4>
                       <p className="font-mono text-[10px] text-neutral-500 mt-0.5">
-                        Qty {item.quantity} · Size {item.size}
+                        SL {item.quantity} · Cỡ {item.size}
                       </p>
                       <p className="text-[10px] text-neutral-400 mt-0.5">Người bán: {item.sellerHandle}</p>
                     </div>

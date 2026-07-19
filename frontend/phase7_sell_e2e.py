@@ -87,7 +87,7 @@ with sync_playwright() as p:
     page = ctx.new_page()
     attach_console(page, console_errors)
     page.goto(f"{BASE}/sell", wait_until="load")
-    expect(page.get_by_text("Sign in to sell")).to_be_visible(timeout=10000)
+    expect(page.get_by_text("Đăng nhập để đăng bán")).to_be_visible(timeout=10000)
     check("Logged-out /sell shows sign-in gate", True)
     page.click("a[href*='redirect=/sell']")
     expect(page).to_have_url(f"{BASE}/login?redirect=/sell", timeout=10000)
@@ -109,7 +109,7 @@ with sync_playwright() as p:
     page.fill("#name", LISTING_NAME)
     page.fill("#description", "Personal pair, worn a handful of times indoors only. No creasing, original box included. Selling because they run slightly small for me.")
     page.click("[data-testid=sell-next]")
-    expect(page.get_by_text("Step 2")).to_be_visible(timeout=5000)
+    expect(page.get_by_text("Bước 2")).to_be_visible(timeout=5000)
     check("Step 1 -> Step 2 advanced", True)
 
     # ---------- 4. Step 2 — real category/brand data ----------
@@ -121,12 +121,21 @@ with sync_playwright() as p:
     cat_options = page.locator("#category_slug option").all_inner_texts()
     check("Category options loaded from real API (>5 options)", len(cat_options) > 5, str(len(cat_options)))
     page.select_option("#category_slug", "shoes")
-    expect(page.locator("select#brand_slug")).to_be_enabled(timeout=10000)
-    brand_options = page.locator("select#brand_slug option").all_inner_texts()
-    check("Brand options loaded from real API (>5 options)", len(brand_options) > 5, str(len(brand_options)))
-    page.select_option("select#brand_slug", "nike")
+
+    # Brand is now a free-text combobox (Phase 8.1), not a fixed <select> —
+    # focusing it opens the suggestion listbox populated from /api/brands.
+    expect(page.locator("#brand")).to_be_enabled(timeout=10000)
+    page.click("#brand")
+    brand_option_count = page.locator("#brand-listbox li[role=option]").count()
+    check("Brand suggestions loaded from real API (>5 options)", brand_option_count > 5, str(brand_option_count))
+    page.fill("#brand", "Nike")
+    nike_option = page.locator("#brand-listbox li[role=option]").filter(has_text="Nike").first
+    expect(nike_option).to_be_visible(timeout=5000)
+    nike_option.click()
+    expect(page.locator("#brand")).to_have_value("Nike", timeout=5000)
+    check("Existing brand selected via combobox suggestion", True)
     page.click("[data-testid=sell-next]")
-    expect(page.get_by_text("Step 3")).to_be_visible(timeout=5000)
+    expect(page.get_by_text("Bước 3")).to_be_visible(timeout=5000)
     check("Step 2 -> Step 3 advanced", True)
 
     # ---------- 5. Step 3 — condition/size (shoe-size relationship) ----------
@@ -135,7 +144,7 @@ with sync_playwright() as p:
     page.select_option("#condition", "good")
     page.select_option("#size", "EU 42")
     page.click("[data-testid=sell-next]")
-    expect(page.get_by_text("Step 4")).to_be_visible(timeout=5000)
+    expect(page.get_by_text("Bước 4")).to_be_visible(timeout=5000)
     check("Step 3 -> Step 4 advanced", True)
 
     # ---------- 6. Step 4 — pricing validation ----------
@@ -153,26 +162,26 @@ with sync_playwright() as p:
     page.fill("#stock", "1")
     page.check("input[type=checkbox]")
     page.click("[data-testid=sell-next]")
-    expect(page.get_by_text("Step 5")).to_be_visible(timeout=5000)
+    expect(page.get_by_text("Bước 5")).to_be_visible(timeout=5000)
     check("Step 4 -> Step 5 advanced", True)
 
     # ---------- 7. Step 5 — images ----------
     page.click("[data-testid=sell-next]")
-    check("No images blocks advance", page.get_by_text("Add at least one photo").count() > 0)
+    check("No images blocks advance", page.get_by_text("Vui lòng thêm ít nhất một ảnh").count() > 0)
     page.set_input_files("#images", [IMG1])
     expect(page.locator("li img")).to_have_count(1, timeout=5000)
     check("Image preview appears after selecting 1 file", True)
     page.set_input_files("#images", [IMG2])
     expect(page.locator("li img")).to_have_count(2, timeout=5000)
     check("Second image preview added (order preserved, 2 total)", True)
-    page.click("button[aria-label='Remove photo 1']")
+    page.click("button[aria-label='Xóa ảnh 1']")
     expect(page.locator("li img")).to_have_count(1, timeout=5000)
     check("Remove image works (back to 1)", True)
     page.set_input_files("#images", [IMG1])
     expect(page.locator("li img")).to_have_count(2, timeout=5000)
     check("Re-add image works (2 again)", True)
     page.click("[data-testid=sell-next]")
-    expect(page.get_by_text("Step 6")).to_be_visible(timeout=5000)
+    expect(page.get_by_text("Bước 6")).to_be_visible(timeout=5000)
     check("Step 5 -> Step 6 advanced", True)
 
     # ---------- 8. Step 6 — review accuracy ----------

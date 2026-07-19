@@ -48,14 +48,14 @@ export const AdminOrdersClient = () => {
             if (res.success && Array.isArray(res.data)) {
               setOrders(res.data);
             } else {
-              setErrorMsg(res.error?.message || 'Failed to load admin orders.');
+              setErrorMsg(res.error?.message || 'Không thể tải danh sách đơn hàng.');
             }
           }
         })
         .catch((err) => {
           if (active) {
             const e = err as Error;
-            setErrorMsg(e?.message || 'An unexpected network error occurred.');
+            setErrorMsg(e?.message || 'Đã xảy ra lỗi kết nối không mong muốn.');
           }
         })
         .finally(() => {
@@ -82,11 +82,11 @@ export const AdminOrdersClient = () => {
       if (res.success && Array.isArray(res.data)) {
         setOrders(res.data);
       } else {
-        setErrorMsg(res.error?.message || 'Failed to load admin orders.');
+        setErrorMsg(res.error?.message || 'Không thể tải danh sách đơn hàng.');
       }
     } catch (err) {
       const e = err as Error;
-      setErrorMsg(e?.message || 'An unexpected network error occurred.');
+      setErrorMsg(e?.message || 'Đã xảy ra lỗi kết nối không mong muốn.');
     } finally {
       setIsLoading(false);
     }
@@ -98,15 +98,15 @@ export const AdminOrdersClient = () => {
     try {
       const res = await updateOrderStatus(orderId, newStatus);
       if (res.success) {
-        setOrders(prev => prev.map(order => 
+        setOrders(prev => prev.map(order =>
           order.id === orderId ? { ...order, status: newStatus as AdminOrder['status'] } : order
         ));
       } else {
-        setErrorMsg(res.error?.message || 'Failed to update order status.');
+        setErrorMsg(res.error?.message || 'Không thể cập nhật trạng thái đơn hàng.');
       }
     } catch (err) {
       const e = err as Error;
-      setErrorMsg(e?.message || 'An unexpected network error occurred while updating status.');
+      setErrorMsg(e?.message || 'Đã xảy ra lỗi kết nối không mong muốn khi cập nhật trạng thái.');
     } finally {
       setUpdatingId(null);
     }
@@ -127,16 +127,16 @@ export const AdminOrdersClient = () => {
             disabled={!!updatingId}
             className="text-[10px] font-mono uppercase bg-neutral-900 text-white px-2 py-1 hover:bg-neutral-700 disabled:opacity-50"
           >
-            Mark Processing
+            Chuyển sang xử lý
           </button>
-          <button 
+          <button
             onClick={() => {
-              if(window.confirm('Cancel this order?')) handleStatusChange(order.id, 'cancelled');
+              if(window.confirm('Hủy đơn hàng này?')) handleStatusChange(order.id, 'cancelled');
             }}
             disabled={!!updatingId}
             className="text-[10px] font-mono uppercase border border-red-200 text-red-600 bg-red-50 px-2 py-1 hover:bg-red-100 disabled:opacity-50"
           >
-            Cancel
+            Hủy
           </button>
         </div>
       );
@@ -145,28 +145,28 @@ export const AdminOrdersClient = () => {
     if (order.status === 'processing') {
       return (
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => handleStatusChange(order.id, 'completed')}
             disabled={!!updatingId}
             className="text-[10px] font-mono uppercase bg-green-700 text-white px-2 py-1 hover:bg-green-600 disabled:opacity-50"
           >
-            Mark Completed
+            Đánh dấu hoàn tất
           </button>
-          <button 
+          <button
             onClick={() => {
-              if(window.confirm('Cancel this order?')) handleStatusChange(order.id, 'cancelled');
+              if(window.confirm('Hủy đơn hàng này?')) handleStatusChange(order.id, 'cancelled');
             }}
             disabled={!!updatingId}
             className="text-[10px] font-mono uppercase border border-red-200 text-red-600 bg-red-50 px-2 py-1 hover:bg-red-100 disabled:opacity-50"
           >
-            Cancel
+            Hủy
           </button>
         </div>
       );
     }
 
     if (order.status === 'completed') {
-      return <span className="font-mono text-[10px] text-neutral-500 italic">Finalized</span>;
+      return <span className="font-mono text-[10px] text-neutral-500 italic">Đã hoàn tất</span>;
     }
 
     if (order.status === 'cancelled') {
@@ -268,7 +268,7 @@ export const AdminOrdersClient = () => {
       <div className="border-b border-neutral-200 pb-5 mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
         <div>
           <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-neutral-500">
-            Control Room
+            Trung tâm điều hành
           </span>
           <h1 className="font-display text-3xl font-black uppercase tracking-tight text-neutral-900 mt-1.5">
             {vi.adminOrders.title}
@@ -309,10 +309,10 @@ export const AdminOrdersClient = () => {
         <div className="mt-12 text-center border border-dashed border-neutral-300 py-16 px-4 bg-white">
           <span className="text-3xl" aria-hidden="true">📭</span>
           <h2 className="mt-4 font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
-            No orders found
+            Không tìm thấy đơn hàng
           </h2>
           <p className="mt-2 text-sm text-neutral-500">
-            The database currently has no order records.
+            Hiện chưa có đơn hàng nào trong hệ thống.
           </p>
         </div>
       ) : (
@@ -337,7 +337,7 @@ export const AdminOrdersClient = () => {
                       {order.order_code}
                     </td>
                     <td className="px-5 py-5">
-                      <p className="font-semibold text-neutral-900">{order.customer_name || `User: ${order.user_id}`}</p>
+                      <p className="font-semibold text-neutral-900">{order.customer_name || `Người dùng: ${order.user_id}`}</p>
                       {order.customer_email && <p className="text-xs text-neutral-500">{order.customer_email}</p>}
                       {order.customer_phone && <p className="text-xs text-neutral-500">{order.customer_phone}</p>}
                     </td>
@@ -346,7 +346,7 @@ export const AdminOrdersClient = () => {
                     </td>
                     <td className="px-5 py-5 font-mono font-bold text-neutral-900">
                       {formatVND(Number(order.total_amount))}
-                      {order.shipping_fee > 0 && <p className="text-[10px] text-neutral-400 font-normal mt-0.5">+ {formatVND(Number(order.shipping_fee))} ship</p>}
+                      {order.shipping_fee > 0 && <p className="text-[10px] text-neutral-400 font-normal mt-0.5">+ {formatVND(Number(order.shipping_fee))} vận chuyển</p>}
                     </td>
                     <td className="px-5 py-5 font-mono text-[10px] uppercase text-neutral-500">
                       {formatPaymentMethod(order.payment_method)}

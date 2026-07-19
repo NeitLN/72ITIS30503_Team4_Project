@@ -17,7 +17,7 @@ router.post('/', requireAuth, async (req, res) => {
     if (err.status) {
       return error(res, err.status, err.message);
     }
-    return error(res, 400, err.message || 'Failed to create order');
+    return error(res, 400, err.message || 'Không thể tạo đơn hàng.');
   }
 });
 
@@ -28,7 +28,7 @@ router.get('/my', requireAuth, async (req, res) => {
     return success(res, orders);
   } catch (err) {
     console.error('List my orders error:', err);
-    return error(res, 500, err.message || 'Failed to list orders');
+    return error(res, 500, err.message || 'Không thể tải danh sách đơn hàng.');
   }
 });
 
@@ -39,7 +39,7 @@ router.get('/', requireAdmin, async (req, res) => {
     return success(res, orders);
   } catch (err) {
     console.error('List all orders error:', err);
-    return error(res, 500, err.message || 'Failed to retrieve orders list');
+    return error(res, 500, err.message || 'Không thể tải danh sách đơn hàng.');
   }
 });
 
@@ -53,7 +53,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       return error(res, err.status, err.message);
     }
     console.error(`Get order ${req.params.id} error:`, err);
-    return error(res, 500, 'Failed to fetch order details');
+    return error(res, 500, 'Không thể tải chi tiết đơn hàng.');
   }
 });
 
@@ -61,11 +61,11 @@ router.get('/:id', requireAuth, async (req, res) => {
 router.patch('/:id/status', requireAdmin, async (req, res) => {
   try {
     const { status } = req.body;
-    
+
     if (!status) {
-      return error(res, 400, 'Status field is required');
+      return error(res, 400, 'Vui lòng cung cấp trạng thái đơn hàng.');
     }
-    
+
     const updatedOrder = await orderService.updateOrderStatus(req.params.id, status);
     return success(res, updatedOrder);
   } catch (err) {
@@ -73,7 +73,7 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
       return error(res, err.status, err.message);
     }
     console.error(`Update order status ${req.params.id} error:`, err);
-    return error(res, 500, err.message || 'Failed to update status');
+    return error(res, 500, err.message || 'Không thể cập nhật trạng thái đơn hàng.');
   }
 });
 
@@ -81,12 +81,12 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
 router.post('/validate-coupon', requireAuth, async (req, res) => {
   try {
     const { code, items } = req.body;
-    
+
     if (!code || !code.trim()) {
-      return error(res, 400, 'Coupon code is required');
+      return error(res, 400, 'Vui lòng nhập mã giảm giá.');
     }
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return error(res, 400, 'Cart items are required to validate coupon');
+      return error(res, 400, 'Cần có sản phẩm trong giỏ hàng để áp dụng mã giảm giá.');
     }
 
     const rawSubtotal = items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
@@ -105,14 +105,14 @@ router.post('/validate-coupon', requireAuth, async (req, res) => {
         discount_amount: totals.discount_amount,
         total_amount: totals.total_amount
       },
-      message: 'Coupon applied successfully.'
+      message: 'Áp dụng mã giảm giá thành công.'
     });
   } catch (err) {
     if (err.status) {
       return error(res, err.status, err.message);
     }
     console.error('Coupon validation error:', err);
-    return error(res, 500, 'Failed to validate coupon');
+    return error(res, 500, 'Không thể áp dụng mã giảm giá.');
   }
 });
 

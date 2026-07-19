@@ -40,7 +40,7 @@ export const LoginForm = () => {
 
       <div>
         <label htmlFor="email" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">
-          Email Address
+          Email
         </label>
         <input
           type="email"
@@ -54,7 +54,7 @@ export const LoginForm = () => {
 
       <div>
         <label htmlFor="password" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">
-          Password
+          Mật khẩu
         </label>
         <input
           type="password"
@@ -72,13 +72,13 @@ export const LoginForm = () => {
         className="w-full mt-4"
         disabled={isLoading}
       >
-        {isLoading ? 'Logging in...' : 'Log in'}
+        {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
       </Button>
 
       <div className="mt-6 text-center text-xs text-neutral-500 border-t border-neutral-100 pt-6">
-        Don&apos;t have an account?{' '}
+        Bạn chưa có tài khoản?{' '}
         <Link href={ROUTES.REGISTER} className="font-semibold text-neutral-900 hover:underline">
-          Register now
+          Đăng ký ngay
         </Link>
       </div>
     </form>

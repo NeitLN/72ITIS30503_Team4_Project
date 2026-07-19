@@ -21,10 +21,10 @@ export const metadata: Metadata = {
     template: `%s — ${siteConfig.name}`,
   },
   description: DEFAULT_DESCRIPTION,
-  keywords: ['StyleHub', 'C2C fashion marketplace', 'Vietnamese streetwear', 'local fashion', 'pre-loved fashion', 'sneakers', 'archive clothing', 'seller marketplace'],
+  keywords: ['StyleHub', 'chợ thời trang C2C', 'streetwear Việt Nam', 'thời trang địa phương', 'đồ đã qua sử dụng', 'giày sneaker', 'thời trang archive', 'chợ bán hàng cá nhân'],
   openGraph: {
     type: 'website',
-    locale: 'en_VN',
+    locale: 'vi_VN',
     url: SITE_URL,
     title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
@@ -47,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="vi">
       <head>
         <script
           type="application/ld+json"

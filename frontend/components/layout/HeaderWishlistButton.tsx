@@ -10,8 +10,8 @@ export const HeaderWishlistButton = () => {
     <Link
       href="/wishlist"
       className="group relative flex items-center gap-1.5 text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500"
-      aria-label={`Wishlist, ${isHydrated ? wishlistCount : 0} saved items`}
-      title="My Wishlist"
+      aria-label={`Danh sách yêu thích, ${isHydrated ? wishlistCount : 0} sản phẩm đã lưu`}
+      title="Danh sách yêu thích"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

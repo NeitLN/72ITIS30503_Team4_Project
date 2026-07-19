@@ -6,6 +6,8 @@ import { ProductCard } from '../../../components/product/ProductCard';
 import { Button } from '../../../components/ui/Button';
 import { getSellerByUsername, getProductsBySeller } from '../../../lib/catalog';
 import { Product } from '../../../types/product';
+import { formatVietnamDate } from '../../../lib/format';
+import { displayVnLocation } from '../../../lib/vnLocations';
 
 interface SellerPageProps {
   params: Promise<{
@@ -20,13 +22,13 @@ export async function generateMetadata({ params }: SellerPageProps): Promise<Met
   try {
     const { data: seller } = await getSellerByUsername(username);
     if (!seller) {
-      return { title: 'Seller Not Found', description: 'This StyleHub seller storefront could not be found.' };
+      return { title: 'Không tìm thấy người bán', description: 'Không tìm thấy gian hàng người bán này trên StyleHub.' };
     }
     // Raw title here: the root layout's title template already appends " — StyleHub".
     const title = `${seller.full_name} (@${seller.username})`;
     const description = seller.bio
-      ? `${seller.bio} — Browse ${seller.full_name}'s active listings on StyleHub.`
-      : `Browse ${seller.full_name}'s active C2C fashion listings on StyleHub.`;
+      ? `${seller.bio} — Xem các tin đăng đang bán của ${seller.full_name} trên StyleHub.`
+      : `Xem các tin đăng thời trang C2C đang bán của ${seller.full_name} trên StyleHub.`;
 
     return {
       title,
@@ -36,11 +38,11 @@ export async function generateMetadata({ params }: SellerPageProps): Promise<Met
         description,
         type: 'profile',
         url: `${SITE_URL}/seller/${seller.username}`,
-        images: seller.avatar_url ? [{ url: seller.avatar_url, alt: `${seller.full_name}'s avatar` }] : undefined,
+        images: seller.avatar_url ? [{ url: seller.avatar_url, alt: `Ảnh đại diện của ${seller.full_name}` }] : undefined,
       },
     };
   } catch {
-    return { title: 'Seller Not Found', description: 'This StyleHub seller storefront could not be found.' };
+    return { title: 'Không tìm thấy người bán', description: 'Không tìm thấy gian hàng người bán này trên StyleHub.' };
   }
 }
 
@@ -72,7 +74,7 @@ export default async function SellerPage({ params }: SellerPageProps) {
   }
 
   const initial = (seller.full_name || seller.username || 'S').charAt(0).toUpperCase();
-  const joined = new Date(seller.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+  const joined = formatVietnamDate(seller.created_at);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -97,7 +99,7 @@ export default async function SellerPage({ params }: SellerPageProps) {
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={seller.avatar_url}
-                alt={`${seller.full_name}'s avatar`}
+                alt={`Ảnh đại diện của ${seller.full_name}`}
                 className="h-24 w-24 shrink-0 border-2 border-neutral-950 object-cover sm:h-28 sm:w-28 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
               />
             ) : (
@@ -116,7 +118,7 @@ export default async function SellerPage({ params }: SellerPageProps) {
                 </span>
                 {seller.is_verified_seller && (
                   <span className="inline-flex items-center gap-1 border border-neutral-950 bg-neutral-950 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-white">
-                    Verified Seller
+                    Người bán đã xác minh
                   </span>
                 )}
               </div>
@@ -130,28 +132,28 @@ export default async function SellerPage({ params }: SellerPageProps) {
               <div className="mt-6 flex flex-wrap gap-4 text-xs font-mono text-neutral-500 border-t border-neutral-100 pt-4">
                 <span className="flex items-center gap-1.5">
                   ⭐ <strong className="text-neutral-900 font-semibold">
-                    {seller.seller_rating != null ? `${seller.seller_rating} / 5.0 (${seller.review_count})` : 'No ratings yet'}
+                    {seller.seller_rating != null ? `${seller.seller_rating} / 5.0 (${seller.review_count})` : 'Chưa có đánh giá'}
                   </strong>
                 </span>
                 <span className="hidden sm:inline text-neutral-300">|</span>
                 <span className="flex items-center gap-1.5">
-                  🛍️ <strong className="text-neutral-900 font-semibold">{seller.sold_count} Sold</strong>
+                  🛍️ <strong className="text-neutral-900 font-semibold">Đã bán {seller.sold_count}</strong>
                 </span>
                 <span className="hidden sm:inline text-neutral-300">|</span>
                 <span className="flex items-center gap-1.5">
-                  📦 <strong className="text-neutral-900 font-semibold">{seller.active_listing_count} Active listings</strong>
+                  📦 <strong className="text-neutral-900 font-semibold">{seller.active_listing_count} tin đang bán</strong>
                 </span>
                 {seller.location && (
                   <>
                     <span className="hidden sm:inline text-neutral-300">|</span>
                     <span className="flex items-center gap-1.5">
-                      📍 <strong className="text-neutral-900 font-semibold">{seller.location}</strong>
+                      📍 <strong className="text-neutral-900 font-semibold">{displayVnLocation(seller.location)}</strong>
                     </span>
                   </>
                 )}
                 <span className="hidden sm:inline text-neutral-300">|</span>
                 <span className="flex items-center gap-1.5 text-neutral-500">
-                  Joined {joined}
+                  Tham gia {joined}
                 </span>
               </div>
             </div>
@@ -161,22 +163,22 @@ export default async function SellerPage({ params }: SellerPageProps) {
 
       <Container className="mt-10 sm:mt-14">
         <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 mb-6">
-          Active Listings ({products.length})
+          Tin đang bán ({products.length})
         </h2>
 
         {products.length === 0 ? (
           <div className="text-center border border-dashed border-neutral-300 py-16 px-4 bg-white">
             <span className="text-3xl">📭</span>
             <h3 className="mt-4 font-display text-base font-bold uppercase tracking-tight text-neutral-900">
-              No active listings
+              Chưa có tin đang bán
             </h3>
             <p className="mt-2 text-sm text-neutral-500 max-w-sm mx-auto">
-              This seller hasn&apos;t listed any streetwear items or fashion pieces for sale yet.
+              Người bán này chưa đăng bán món đồ thời trang đường phố hay thời trang nào.
             </p>
             <div className="mt-8">
               <Link href="/shop">
                 <Button variant="outline" className="font-mono text-xs uppercase tracking-wider">
-                  Explore other sellers
+                  Khám phá người bán khác
                 </Button>
               </Link>
             </div>

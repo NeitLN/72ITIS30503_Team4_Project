@@ -33,7 +33,7 @@ export const ProductImageGallery = ({ images, fallbackUrl, alt }: ProductImageGa
               key={`${url}-${i}`}
               type="button"
               onClick={() => setSelected(i)}
-              aria-label={`View photo ${i + 1} of ${urls.length}`}
+              aria-label={`Xem ảnh ${i + 1} trong ${urls.length}`}
               aria-current={i === selected}
               className={`aspect-square overflow-hidden border bg-neutral-100 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 ${
                 i === selected ? 'border-neutral-900' : 'border-neutral-200 hover:border-neutral-400'

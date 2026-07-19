@@ -7,6 +7,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { Button } from '../ui/Button';
 import { ListingImage } from '../marketplace/ListingImage';
 import { formatVND } from '../../lib/format';
+import { vi } from '../../lib/i18n';
 
 export const WishlistClient = () => {
   const { wishlist, removeFromWishlist, isHydrated } = useWishlist();
@@ -15,7 +16,7 @@ export const WishlistClient = () => {
     return (
       <Container className="py-16 text-center">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 animate-pulse">
-          Loading your wishlist...
+          Đang tải danh sách yêu thích...
         </p>
       </Container>
     );
@@ -24,24 +25,24 @@ export const WishlistClient = () => {
   return (
     <Container className="py-10 sm:py-16">
       <PageHeader
-        eyebrow="Favorites"
-        title="My Wishlist"
-        lede="Keep track of unique streetwear and pre-loved items you love."
+        eyebrow="Yêu thích"
+        title="Sản phẩm yêu thích"
+        lede="Lưu lại những món đồ thời trang đường phố và đã qua sử dụng độc đáo mà bạn yêu thích."
       />
 
       {wishlist.length === 0 ? (
         <div className="mt-12 text-center border border-dashed border-neutral-300 py-16 px-4 bg-white">
           <span className="text-3xl">🖤</span>
           <h2 className="mt-4 font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
-            Your wishlist is empty
+            Chưa có sản phẩm yêu thích
           </h2>
           <p className="mt-2 text-sm text-neutral-500 max-w-sm mx-auto">
-            Find streetwear grails, local brands, and unique pieces you want to save.
+            Tìm kiếm những món đồ hiếm, thương hiệu nội địa và các sản phẩm độc đáo bạn muốn lưu lại.
           </p>
           <div className="mt-8">
             <Link href="/shop">
               <Button size="lg" className="font-mono text-xs uppercase tracking-wider">
-                Browse Marketplace
+                Khám phá chợ thời trang
               </Button>
             </Link>
           </div>
@@ -68,8 +69,8 @@ export const WishlistClient = () => {
                       type="button"
                       onClick={() => removeFromWishlist(item.id)}
                       className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm hover:border-red-600 hover:text-red-600 transition-colors cursor-pointer"
-                      title="Remove from wishlist"
-                      aria-label="Remove from wishlist"
+                      title="Xóa khỏi danh sách yêu thích"
+                      aria-label="Xóa khỏi danh sách yêu thích"
                     >
                       ✕
                     </button>
@@ -86,7 +87,7 @@ export const WishlistClient = () => {
                       <Link href={`/products/${item.slug}`}>{item.name}</Link>
                     </h3>
                     <p className="mt-1 font-mono text-xs text-neutral-600">
-                      Size {item.size} · {item.condition}
+                      Cỡ {item.size} · {item.condition}
                     </p>
 
                     <p className="mt-3 font-mono text-sm font-bold text-neutral-900">
@@ -99,14 +100,14 @@ export const WishlistClient = () => {
                     </p>
 
                     <p className="mt-1 text-[10px] text-neutral-400">
-                      Seller: <span className="font-mono text-neutral-600 font-medium">{item.sellerHandle}</span>
+                      Người bán: <span className="font-mono text-neutral-600 font-medium">{item.sellerHandle}</span>
                     </p>
 
                     {/* Action buttons */}
                     <div className="mt-auto pt-4 flex gap-2">
                       <Link href={`/products/${item.slug}`} className="flex-1">
                         <Button variant="outline" className="w-full py-1.5 text-[10px] font-mono uppercase tracking-wider">
-                          View Detail
+                          {vi.common.viewDetails}
                         </Button>
                       </Link>
                       <button
@@ -114,7 +115,7 @@ export const WishlistClient = () => {
                         onClick={() => removeFromWishlist(item.id)}
                         className="font-mono text-[10px] uppercase tracking-wider text-red-800 hover:text-red-500 underline py-1.5 cursor-pointer"
                       >
-                        Remove
+                        {vi.cart.remove}
                       </button>
                     </div>
                   </div>
@@ -122,10 +123,10 @@ export const WishlistClient = () => {
               );
             })}
           </div>
-          
+
           <div className="mt-12 text-center">
             <Link href="/shop" className="font-mono text-xs uppercase tracking-wider text-neutral-600 hover:text-neutral-900 underline">
-              ← Continue Shopping
+              ← {vi.common.continueShopping}
             </Link>
           </div>
         </div>

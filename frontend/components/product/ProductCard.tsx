@@ -24,8 +24,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           className={`h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] ${listing.isSoldOut ? 'opacity-60 grayscale' : ''}`}
         />
         <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
-          {listing.isSoldOut && <ListingBadge variant="sold">Sold</ListingBadge>}
-          {!listing.isSoldOut && product.is_featured && <ListingBadge variant="inverse">Featured</ListingBadge>}
+          {listing.isSoldOut && <ListingBadge variant="sold">Đã bán</ListingBadge>}
+          {!listing.isSoldOut && product.is_featured && <ListingBadge variant="inverse">Nổi bật</ListingBadge>}
         </div>
       </div>
 
@@ -37,7 +37,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         )}
         <h3 className="line-clamp-1 font-medium text-neutral-900">{listing.name}</h3>
         <p className="mt-1 font-mono text-xs text-neutral-600">
-          Size {listing.size} · {listing.condition}
+          Kích thước {listing.size} · {listing.condition}
         </p>
 
         <p className="mt-3 font-mono text-base font-bold text-neutral-900">
@@ -53,7 +53,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <p className="flex items-center gap-1.5 truncate text-xs text-neutral-600">
             <span className="truncate font-medium">{listing.sellerHandle}</span>
             {listing.isVerifiedSeller && (
-              <span aria-label="Verified seller" title="Verified seller" className="text-neutral-900">
+              <span aria-label="Người bán đã xác thực" title="Người bán đã xác thực" className="text-neutral-900">
                 ✓
               </span>
             )}

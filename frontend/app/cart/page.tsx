@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import { CartClient } from '../../components/cart/CartClient';
 
 export const metadata: Metadata = {
-  title: 'Shopping Bag',
-  description: 'Review your selected items in your StyleHub shopping bag.',
+  title: 'Giỏ hàng',
+  description: 'Xem lại các sản phẩm bạn đã chọn trong giỏ hàng StyleHub.',
 };
 
 export default function CartPage() {

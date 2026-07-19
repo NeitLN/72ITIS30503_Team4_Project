@@ -5,26 +5,26 @@ import { ROUTES } from '../../constants/routes';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About',
+  title: 'Giới thiệu',
   description:
-    'Learn about StyleHub, the C2C fashion marketplace for streetwear, local brands, and pre-loved items in Vietnam.',
+    'Tìm hiểu về StyleHub, chợ thời trang C2C dành cho streetwear, thương hiệu địa phương và đồ đã qua sử dụng tại Việt Nam.',
 };
 
 const principles = [
   {
-    title: 'Condition transparency',
+    title: 'Minh bạch tình trạng sản phẩm',
     description:
-      'Every listing carries a clear condition label, so you know exactly what you are buying before it arrives.',
+      'Mỗi tin đăng đều có nhãn tình trạng rõ ràng, giúp bạn biết chính xác mình đang mua gì trước khi nhận hàng.',
   },
   {
-    title: 'Seller identity',
+    title: 'Danh tính người bán',
     description:
-      'Ratings, sold counts, and verified badges keep trust between buyers and sellers visible on every listing.',
+      'Đánh giá, số lượng đã bán và huy hiệu xác thực giúp thể hiện rõ sự tin cậy giữa người mua và người bán trên mỗi tin đăng.',
   },
   {
-    title: 'Local focus',
+    title: 'Tập trung vào thị trường trong nước',
     description:
-      'Built for the Vietnamese market — VNĐ pricing, local seller locations, and domestic delivery expectations.',
+      'Được xây dựng cho thị trường Việt Nam — giá niêm yết bằng VNĐ, vị trí người bán trong nước và kỳ vọng giao hàng nội địa.',
   },
 ];
 
@@ -32,25 +32,25 @@ export default function AboutPage() {
   return (
     <>
       <PageHeader
-        eyebrow="The marketplace"
-        title="About StyleHub"
-        lede="A community-driven fashion marketplace connecting buyers and sellers across Vietnam — streetwear, local brands, and curated pre-loved pieces."
+        eyebrow="Chợ trực tuyến"
+        title="Giới thiệu StyleHub"
+        lede="Chợ thời trang do cộng đồng dẫn dắt, kết nối người mua và người bán trên khắp Việt Nam — streetwear, thương hiệu địa phương và các sản phẩm đã qua sử dụng được chọn lọc."
       />
 
       <Container className="max-w-4xl py-14 sm:py-16">
         <section className="mb-14">
-          <h2 className="mb-4 font-display text-2xl font-black uppercase tracking-tight">Why StyleHub</h2>
+          <h2 className="mb-4 font-display text-2xl font-black uppercase tracking-tight">Vì sao chọn StyleHub</h2>
           <p className="leading-relaxed text-neutral-600">
-            We believe fashion should be circular, accessible, and community-focused. Whether
-            you&apos;re hunting for a sold-out release from a local Vietnamese brand or clearing
-            your closet to make room for new styles, StyleHub gives you a place to do it safely and
-            simply — seller to buyer, no middle rack.
+            Chúng tôi tin rằng thời trang nên mang tính tuần hoàn, dễ tiếp cận và hướng đến cộng
+            đồng. Dù bạn đang tìm một sản phẩm đã hết hàng từ thương hiệu Việt Nam địa phương, hay
+            đang dọn tủ đồ để có chỗ cho những phong cách mới, StyleHub mang đến một nơi để làm điều
+            đó an toàn và đơn giản — từ người bán đến người mua, không qua trung gian.
           </p>
         </section>
 
         <section className="mb-14">
           <h2 className="mb-8 font-display text-2xl font-black uppercase tracking-tight">
-            Marketplace principles
+            Nguyên tắc hoạt động của chợ
           </h2>
           <ul className="space-y-6">
             {principles.map((item) => (
@@ -69,13 +69,13 @@ export default function AboutPage() {
             href={ROUTES.SHOP}
             className="inline-flex items-center justify-center bg-neutral-900 px-7 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-neutral-700"
           >
-            Shop the marketplace
+            Mua sắm ngay
           </Link>
           <Link
             href={ROUTES.SELL}
             className="inline-flex items-center justify-center border border-neutral-900 px-7 py-3.5 text-sm font-semibold uppercase tracking-wide text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
           >
-            Start selling
+            Bắt đầu đăng bán
           </Link>
         </div>
       </Container>

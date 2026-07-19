@@ -10,6 +10,7 @@
  */
 const crypto = require('crypto');
 const { supabaseAdmin, isSupabaseAdminConfigured } = require('../lib/supabase');
+const { isKnownLocation } = require('../constants/vnLocations');
 
 const AVATAR_BUCKET = 'avatars';
 const ALLOWED_AVATAR_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -43,7 +44,7 @@ class ProfileValidationError extends Error {
 
 function checkDb() {
   if (!isSupabaseAdminConfigured()) {
-    const e = new Error('Database is not configured');
+    const e = new Error('Hệ thống chưa được cấu hình.');
     e.status = 503;
     throw e;
   }
@@ -72,11 +73,11 @@ function isValidUsernameFormat(u) {
 // Bad input here must be rejected, not silently "fixed".
 function validateUsername(raw) {
   const value = String(raw || '').trim().toLowerCase();
-  if (!value) return { error: 'Username is required.' };
-  if (value.length < USERNAME_MIN) return { error: `Username must be at least ${USERNAME_MIN} characters.` };
-  if (value.length > USERNAME_MAX) return { error: `Username must be at most ${USERNAME_MAX} characters.` };
-  if (!USERNAME_RE.test(value)) return { error: 'Username may only contain lowercase letters, numbers, underscores, and hyphens.' };
-  if (RESERVED_USERNAMES.has(value)) return { error: 'This username is reserved.' };
+  if (!value) return { error: 'Vui lòng nhập tên người dùng.' };
+  if (value.length < USERNAME_MIN) return { error: `Tên người dùng phải có ít nhất ${USERNAME_MIN} ký tự.` };
+  if (value.length > USERNAME_MAX) return { error: `Tên người dùng tối đa ${USERNAME_MAX} ký tự.` };
+  if (!USERNAME_RE.test(value)) return { error: 'Tên người dùng chỉ được chứa chữ thường, số, gạch dưới và gạch ngang.' };
+  if (RESERVED_USERNAMES.has(value)) return { error: 'Tên người dùng này đã được hệ thống dùng riêng.' };
   return { value };
 }
 
@@ -93,7 +94,7 @@ async function getMyProfile(userId) {
   const { data, error } = await supabaseAdmin.from('users').select('*').eq('id', userId).maybeSingle();
   if (error) throw error;
   if (!data) {
-    const e = new Error('User not found');
+    const e = new Error('Không tìm thấy người dùng.');
     e.status = 404;
     throw e;
   }
@@ -110,9 +111,9 @@ async function updateMyProfile(userId, rawFields) {
   // read into `updates`.
   if (rawFields.display_name !== undefined) {
     const name = String(rawFields.display_name || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F<>]/g, '').trim();
-    if (!name || name.length < DISPLAY_NAME_MIN) errors.display_name = `Display name must be at least ${DISPLAY_NAME_MIN} characters.`;
-    else if (name.length > DISPLAY_NAME_MAX) errors.display_name = `Display name must be under ${DISPLAY_NAME_MAX} characters.`;
-    else if (!/[a-zA-Z0-9À-ỹ]/.test(name)) errors.display_name = 'Display name must contain more than just symbols.';
+    if (!name || name.length < DISPLAY_NAME_MIN) errors.display_name = `Tên hiển thị phải có ít nhất ${DISPLAY_NAME_MIN} ký tự.`;
+    else if (name.length > DISPLAY_NAME_MAX) errors.display_name = `Tên hiển thị tối đa ${DISPLAY_NAME_MAX} ký tự.`;
+    else if (!/[a-zA-Z0-9À-ỹ]/.test(name)) errors.display_name = 'Tên hiển thị phải chứa chữ hoặc số, không chỉ có ký hiệu.';
     else updates.full_name = name;
   }
 
@@ -125,26 +126,27 @@ async function updateMyProfile(userId, rawFields) {
 
   if (rawFields.bio !== undefined) {
     const bio = String(rawFields.bio || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F<>]/g, '').trim();
-    if (bio.length > BIO_MAX) errors.bio = `Bio must be under ${BIO_MAX} characters.`;
+    if (bio.length > BIO_MAX) errors.bio = `Tiểu sử tối đa ${BIO_MAX} ký tự.`;
     else updates.bio = bio || null;
   }
 
   if (rawFields.location !== undefined) {
     const location = String(rawFields.location || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F<>]/g, '').trim();
-    if (location.length > LOCATION_MAX) errors.location = `Location must be under ${LOCATION_MAX} characters.`;
+    if (location.length > LOCATION_MAX) errors.location = `Tỉnh/thành phố tối đa ${LOCATION_MAX} ký tự.`;
+    else if (location && !isKnownLocation(location)) errors.location = 'Vui lòng chọn một tỉnh/thành phố hợp lệ trong danh sách.';
     else updates.location = location || null;
   }
 
-  if (Object.keys(errors).length) throw new ProfileValidationError('Profile validation failed', errors);
+  if (Object.keys(errors).length) throw new ProfileValidationError('Vui lòng kiểm tra lại thông tin hồ sơ.', errors);
 
   if (normalizedUsername) {
     const { data: conflict, error: cErr } = await supabaseAdmin
       .from('users').select('id').eq('username', normalizedUsername).neq('id', userId).maybeSingle();
     if (cErr) throw cErr;
     if (conflict) {
-      const e = new Error('Username is already taken.');
+      const e = new Error('Tên người dùng đã được sử dụng.');
       e.status = 409;
-      e.fieldErrors = { username: 'This username is already taken.' };
+      e.fieldErrors = { username: 'Tên người dùng này đã được sử dụng.' };
       throw e;
     }
     updates.username = normalizedUsername;
@@ -153,9 +155,9 @@ async function updateMyProfile(userId, rawFields) {
   const { data, error } = await supabaseAdmin.from('users').update(updates).eq('id', userId).select().maybeSingle();
   if (error) {
     if (error.code === '23505') {
-      const e = new Error('Username is already taken.');
+      const e = new Error('Tên người dùng đã được sử dụng.');
       e.status = 409;
-      e.fieldErrors = { username: 'This username is already taken.' };
+      e.fieldErrors = { username: 'Tên người dùng này đã được sử dụng.' };
       throw e;
     }
     throw error;
@@ -172,23 +174,23 @@ function extFromMime(mimetype) {
 async function uploadAvatar(userId, file) {
   checkDb();
   if (!file) {
-    const e = new Error('An image file is required.');
-    e.status = 422; e.fieldErrors = { avatar: 'An image file is required.' };
+    const e = new Error('Vui lòng chọn một ảnh đại diện.');
+    e.status = 422; e.fieldErrors = { avatar: 'Vui lòng chọn một ảnh đại diện.' };
     throw e;
   }
   if (!ALLOWED_AVATAR_MIME.has(file.mimetype)) {
-    const e = new Error('Unsupported file type.');
-    e.status = 422; e.fieldErrors = { avatar: 'Only JPEG, PNG, and WebP images are allowed.' };
+    const e = new Error('Định dạng ảnh không được hỗ trợ.');
+    e.status = 422; e.fieldErrors = { avatar: 'Chỉ chấp nhận ảnh JPEG, PNG hoặc WebP.' };
     throw e;
   }
   if (!file.buffer || file.buffer.length === 0) {
-    const e = new Error('Empty file.');
-    e.status = 422; e.fieldErrors = { avatar: 'The uploaded file is empty or corrupt.' };
+    const e = new Error('Ảnh bị trống hoặc lỗi.');
+    e.status = 422; e.fieldErrors = { avatar: 'Ảnh bị trống hoặc lỗi.' };
     throw e;
   }
   if (file.size > MAX_AVATAR_BYTES) {
-    const e = new Error('File too large.');
-    e.status = 422; e.fieldErrors = { avatar: 'Image exceeds the 5MB limit.' };
+    const e = new Error('Ảnh quá lớn.');
+    e.status = 422; e.fieldErrors = { avatar: 'Ảnh vượt quá giới hạn 5MB.' };
     throw e;
   }
 
@@ -201,7 +203,9 @@ async function uploadAvatar(userId, file) {
     .from(AVATAR_BUCKET)
     .upload(objectPath, file.buffer, { contentType: file.mimetype, upsert: false });
   if (upErr) {
-    const e = new Error('Avatar upload failed: ' + upErr.message);
+    // Never propagate the raw Storage error message to the client.
+    console.error('Avatar upload failed:', upErr.message);
+    const e = new Error('Không thể tải lên ảnh đại diện. Vui lòng thử lại.');
     e.status = 500;
     throw e;
   }

@@ -1,4 +1,5 @@
 import { Product, ProductImage, Seller } from '../types/product';
+import { displayVnLocation } from './vnLocations';
 
 /** Formats a price using native Intl API for Vietnamese Locale */
 export function formatVND(value: number | string | null | undefined): string {
@@ -50,21 +51,21 @@ export function formatVietnamDateTime(value: string | Date | null | undefined): 
 }
 
 const CONDITION_LABELS: Record<string, string> = {
-  new: 'Brand new',
-  new_with_tags: 'New with tags',
-  new_without_tags: 'New without tags',
-  like_new: 'Like new',
-  excellent: 'Excellent',
-  very_good: 'Very good',
-  good: 'Good',
-  fair: 'Fair',
-  used: 'Used',
-  used_good: 'Used · Good',
-  used_fair: 'Used · Fair',
+  new: 'Mới',
+  new_with_tags: 'Mới, còn tag',
+  new_without_tags: 'Mới, không tag',
+  like_new: 'Như mới',
+  excellent: 'Rất tốt',
+  very_good: 'Rất tốt',
+  good: 'Tốt',
+  fair: 'Tạm được',
+  used: 'Đã sử dụng',
+  used_good: 'Đã sử dụng · Tốt',
+  used_fair: 'Đã sử dụng · Tạm được',
 };
 
 export function formatCondition(condition?: string | null): string {
-  if (!condition) return 'Condition not listed';
+  if (!condition) return 'Chưa rõ tình trạng';
   const label = CONDITION_LABELS[condition];
   if (label) return label;
   const readable = condition.replace(/_/g, ' ');
@@ -115,10 +116,10 @@ export function getListingView(product: Product): ListingView {
 
   const username = seller.username || product.sellerUsername;
   const sellerName =
-    username || product.seller_name || product.sellerName || seller.full_name || 'Independent seller';
+    username || product.seller_name || product.sellerName || seller.full_name || 'Người bán độc lập';
 
   return {
-    name: product.name || product.title || 'Untitled listing',
+    name: product.name || product.title || 'Tin đăng chưa có tên',
     price: product.price,
     salePrice: product.sale_price ?? null,
     imageUrl:
@@ -130,16 +131,16 @@ export function getListingView(product: Product): ListingView {
       primaryImage?.image_url ||
             ((primaryImage as unknown as Record<string, unknown>)?.url as string) ||
       null,
-    imageAlt: primaryImage?.alt_text || product.name || product.title || 'Listing photo',
+    imageAlt: primaryImage?.alt_text || product.name || product.title || 'Ảnh sản phẩm',
     condition: formatCondition(product.condition),
-    size: product.size || 'One size',
+    size: product.size || 'Một cỡ',
     brandName: product.brand?.name ?? null,
     categoryName: product.category?.name ?? prettifySlug(product.category_slug) ?? null,
     sellerName,
     sellerHandle: username ? `@${username}` : sellerName,
     sellerUsername: username || null,
     sellerRating: seller.seller_rating != null ? String(seller.seller_rating) : null,
-    sellerLocation: product.location || seller.location || 'Vietnam',
+    sellerLocation: displayVnLocation(product.location || seller.location || 'Việt Nam'),
     isVerifiedSeller: Boolean(seller.is_verified_seller),
     soldCount: seller.sold_count ?? null,
     isSoldOut,

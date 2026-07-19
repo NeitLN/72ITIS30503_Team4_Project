@@ -25,15 +25,15 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     
     if (!product) {
       return {
-        title: 'Fashion Listing',
-        description: 'View a C2C fashion marketplace listing on StyleHub.',
+        title: 'Tin Đăng Thời Trang',
+        description: 'Xem tin đăng thời trang C2C trên StyleHub.',
       };
     }
 
     const listing = getListingView(product);
     // Raw name here: the root layout's title template already appends " — StyleHub".
     const title = listing.name;
-    const description = `View this C2C fashion listing on StyleHub. ${listing.condition}, size ${listing.size}. Listed by ${listing.sellerHandle} in ${listing.sellerLocation}.`;
+    const description = `Xem tin đăng thời trang C2C này trên StyleHub. ${listing.condition}, kích thước ${listing.size}. Được đăng bởi ${listing.sellerHandle} tại ${listing.sellerLocation}.`;
 
     return {
       title,
@@ -48,8 +48,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     };
   } catch {
     return {
-      title: 'Fashion Listing',
-      description: 'View a C2C fashion marketplace listing on StyleHub.',
+      title: 'Tin Đăng Thời Trang',
+      description: 'Xem tin đăng thời trang C2C trên StyleHub.',
     };
   }
 }
@@ -72,24 +72,24 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const listing = getListingView(product);
 
   const detailRows: Array<{ label: string; value: string }> = [
-    { label: 'Condition', value: listing.condition },
-    { label: 'Size', value: listing.size },
-    { label: 'Brand', value: listing.brandName ?? 'Independent / no brand' },
-    { label: 'Category', value: listing.categoryName ?? 'Uncategorised' },
-    { label: 'Ships from', value: listing.sellerLocation },
+    { label: 'Tình trạng', value: listing.condition },
+    { label: 'Kích thước', value: listing.size },
+    { label: 'Thương hiệu', value: listing.brandName ?? 'Độc lập / không thương hiệu' },
+    { label: 'Danh mục', value: listing.categoryName ?? 'Chưa phân loại' },
+    { label: 'Gửi từ', value: listing.sellerLocation },
     ...(product.sku ? [{ label: 'SKU', value: product.sku }] : []),
-    { label: 'Status', value: listing.isSoldOut ? 'Sold' : 'Available' },
+    { label: 'Trạng thái', value: listing.isSoldOut ? 'Đã bán' : 'Còn hàng' },
   ];
 
   return (
     <Container className="py-8 sm:py-12">
       {/* Breadcrumb back to the marketplace */}
-      <nav aria-label="Breadcrumb" className="mb-6">
+      <nav aria-label="Đường dẫn điều hướng" className="mb-6">
         <Link
           href={ROUTES.SHOP}
           className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500 transition-colors hover:text-neutral-900"
         >
-          ← Marketplace
+          ← Chợ
         </Link>
       </nav>
 
@@ -107,9 +107,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <ConditionBadge condition={product.condition} />
-            {listing.isSoldOut && <ListingBadge variant="sold">Sold</ListingBadge>}
-            {product.brand?.is_local && <ListingBadge variant="inverse">Local brand</ListingBadge>}
-            {product.is_negotiable && !listing.isSoldOut && <ListingBadge>Negotiable</ListingBadge>}
+            {listing.isSoldOut && <ListingBadge variant="sold">Đã bán</ListingBadge>}
+            {product.brand?.is_local && <ListingBadge variant="inverse">Thương hiệu địa phương</ListingBadge>}
+            {product.is_negotiable && !listing.isSoldOut && <ListingBadge>Có thể trả giá</ListingBadge>}
           </div>
 
           {listing.brandName && (
@@ -121,7 +121,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {listing.name}
           </h1>
           <p className="mt-2 font-mono text-xs text-neutral-600">
-            Size {listing.size} · {listing.condition} · {listing.sellerLocation}
+            Kích thước {listing.size} · {listing.condition} · {listing.sellerLocation}
           </p>
 
           <p className="mt-6 font-mono text-3xl font-bold text-neutral-900">
@@ -137,10 +137,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <ProductActions product={product} />
 
           {/* Item details — hang-tag table */}
-          <section aria-label="Item details" className="mt-10 border border-neutral-200">
+          <section aria-label="Chi tiết sản phẩm" className="mt-10 border border-neutral-200">
             <div className="border-b border-neutral-200 px-4 py-2">
               <h2 className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
-                Item details
+                Thông tin sản phẩm
               </h2>
             </div>
             <dl>
@@ -163,18 +163,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {/* Safe marketplace note */}
           <aside className="mt-6 border border-neutral-200 bg-neutral-50 px-4 py-3">
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
-              Trade safely
+              Giao dịch an toàn
             </p>
             <p className="mt-1.5 text-xs leading-relaxed text-neutral-600">
-              Check the seller&apos;s rating and the condition label before you buy. Keep all
-              communication on StyleHub, and prefer public places for local pickups.
+              Kiểm tra đánh giá của người bán và nhãn tình trạng trước khi mua. Giữ mọi trao đổi
+              trên StyleHub, và ưu tiên gặp ở nơi công cộng khi nhận hàng trực tiếp.
             </p>
           </aside>
 
           {product.description && (
-            <section aria-label="Description" className="mt-10">
+            <section aria-label="Mô tả sản phẩm" className="mt-10">
               <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
-                Seller&apos;s description
+                Mô tả từ người bán
               </h2>
               <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-700">
                 {product.description}

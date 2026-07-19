@@ -108,7 +108,7 @@ const registerUser = async (payload) => {
 
   if (error) {
     if (error.code === '23505') { // unique violation
-      throw { status: 409, message: 'Email already exists' };
+      throw { status: 409, message: 'Email này đã được sử dụng.' };
     }
     console.error('Error inserting user payload details:', JSON.stringify(error, null, 2));
     throw new Error('Database error during registration');
@@ -129,11 +129,11 @@ const loginUser = async ({ email, password }) => {
     .single();
 
   if (error || !user) {
-    throw { status: 401, message: 'Invalid credentials' };
+    throw { status: 401, message: 'Email hoặc mật khẩu không đúng.' };
   }
 
   if (!verifyPassword(password, user.password_hash)) {
-    throw { status: 401, message: 'Invalid credentials' };
+    throw { status: 401, message: 'Email hoặc mật khẩu không đúng.' };
   }
 
   return sanitizeUser(user);

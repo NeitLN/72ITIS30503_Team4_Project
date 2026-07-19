@@ -3,40 +3,40 @@ import { ROUTES } from '../../constants/routes';
 
 const shopMenuGroups = [
   {
-    title: "Tops",
+    title: "Áo",
     items: [
-      { label: "T-shirts & Polo Shirts", href: "/category/t-shirts" },
-      { label: "Jerseys", href: "/category/jerseys" },
-      { label: "Shirts", href: "/category/shirts" },
-      { label: "Sweaters & Cardigans", href: "/category/sweaters-cardigans" },
-      { label: "Sweatshirts & Hoodies", href: "/category/hoodies" },
-      { label: "Outerwear", href: "/category/outerwear" }
+      { label: "Áo thun & Áo polo", href: "/category/t-shirts" },
+      { label: "Áo jersey", href: "/category/jerseys" },
+      { label: "Áo sơ mi", href: "/category/shirts" },
+      { label: "Áo len & Cardigan", href: "/category/sweaters-cardigans" },
+      { label: "Áo sweatshirt & Hoodie", href: "/category/hoodies" },
+      { label: "Áo khoác ngoài", href: "/category/outerwear" }
     ]
   },
   {
-    title: "Bottoms",
+    title: "Quần",
     items: [
-      { label: "Pants", href: "/category/pants" },
-      { label: "Shorts", href: "/category/shorts" }
+      { label: "Quần dài", href: "/category/pants" },
+      { label: "Quần short", href: "/category/shorts" }
     ]
   },
   {
-    title: "Accessories",
+    title: "Phụ kiện",
     items: [
-      { label: "Other accessories", href: "/category/accessories" },
-      { label: "Caps/Hats", href: "/category/caps-hats" },
-      { label: "Slides", href: "/category/slides" },
-      { label: "Phone cases", href: "/category/phone-cases" },
-      { label: "Wallets", href: "/category/wallets" },
-      { label: "Underwear", href: "/category/underwear" }
+      { label: "Phụ kiện khác", href: "/category/accessories" },
+      { label: "Nón/Mũ", href: "/category/caps-hats" },
+      { label: "Dép", href: "/category/slides" },
+      { label: "Ốp điện thoại", href: "/category/phone-cases" },
+      { label: "Ví", href: "/category/wallets" },
+      { label: "Đồ lót", href: "/category/underwear" }
     ]
   },
   {
-    title: "Bags",
+    title: "Túi",
     items: [
-      { label: "Backpacks", href: "/category/backpacks" },
-      { label: "Crossbody bags", href: "/category/crossbody-bags" },
-      { label: "Bowler bags", href: "/category/bowler-bags" }
+      { label: "Balo", href: "/category/backpacks" },
+      { label: "Túi đeo chéo", href: "/category/crossbody-bags" },
+      { label: "Túi bowler", href: "/category/bowler-bags" }
     ]
   }
 ];
@@ -49,7 +49,7 @@ export const ShopMegaMenu = () => {
           href={ROUTES.SHOP} 
           className="text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500 whitespace-nowrap"
         >
-          Shop
+          Cửa hàng
         </Link>
       </div>
 
@@ -81,7 +81,7 @@ export const ShopMegaMenu = () => {
               href={ROUTES.SHOP}
               className="inline-flex items-center text-xs font-semibold uppercase tracking-wider text-neutral-900 hover:text-neutral-500 transition-colors"
             >
-              View all listings &rarr;
+              Xem tất cả sản phẩm &rarr;
             </Link>
           </div>
         </div>

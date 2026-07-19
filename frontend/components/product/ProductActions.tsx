@@ -50,7 +50,7 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
     return (
       v.variant_attribute_values?.map((vav) => vav.attribute_value?.value).filter(Boolean).join(' / ') ||
       v.sku ||
-      'Variant'
+      'Phân loại'
     );
   };
 
@@ -132,7 +132,7 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
       {isVariableProduct && (
         <div className="border border-neutral-200 p-4 bg-white">
           <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 mb-3">
-            Select Size / Variation
+            Chọn kích thước / phân loại
           </p>
           <div className="flex flex-wrap gap-2">
             {variants.map((v) => {
@@ -165,21 +165,21 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
       {/* 2. Live Metadata Display (SKU / Stock / Price) */}
       <div className="border border-neutral-200 p-4 bg-neutral-50 grid grid-cols-2 gap-y-2 text-xs">
         <div>
-          <span className="text-neutral-400 font-mono text-[9px] uppercase block">Item SKU</span>
-          <span className="font-mono font-bold text-neutral-900 select-all">{activeSKU || 'N/A'}</span>
+          <span className="text-neutral-400 font-mono text-[9px] uppercase block">Mã SKU</span>
+          <span className="font-mono font-bold text-neutral-900 select-all">{activeSKU || 'Không có'}</span>
         </div>
         <div>
-          <span className="text-neutral-400 font-mono text-[9px] uppercase block">Fulfillment</span>
+          <span className="text-neutral-400 font-mono text-[9px] uppercase block">Tình trạng hàng</span>
           {isOutOfStock ? (
-            <span className="text-red-800 font-bold font-mono">🔴 OUT OF STOCK</span>
+            <span className="text-red-800 font-bold font-mono">🔴 HẾT HÀNG</span>
           ) : (
-            <span className="text-green-800 font-bold font-mono">🟢 {activeStock} IN STOCK</span>
+            <span className="text-green-800 font-bold font-mono">🟢 CÒN {activeStock}</span>
           )}
         </div>
-        
+
         {isVariableProduct && (
           <div className="col-span-2 border-t border-neutral-200 pt-3 mt-1 flex justify-between items-baseline">
-            <span className="text-neutral-500 font-mono text-[10px] uppercase">Selected Variant Price</span>
+            <span className="text-neutral-500 font-mono text-[10px] uppercase">Giá phân loại đã chọn</span>
             <span className="font-mono text-lg font-black text-neutral-900">
               {formatVND(currentPrice)}
               {originalPrice != null && (
@@ -201,7 +201,7 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
             disabled={isOutOfStock}
             onClick={handleBuyNow}
           >
-            {isOutOfStock ? 'Sold out' : 'Buy now'}
+            {isOutOfStock ? 'Hết hàng' : 'Mua ngay'}
           </Button>
           <Button
             size="lg"
@@ -210,23 +210,23 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
             disabled={isOutOfStock}
             onClick={handleAddToCart}
           >
-            {added ? '✓ Added to Bag' : 'Add to Cart'}
+            {added ? '✓ Đã thêm vào giỏ' : 'Thêm vào giỏ hàng'}
           </Button>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button
             variant="outline"
             className="w-full text-xs"
-            onClick={() => alert('Chat functionality is coming soon in Phase 19! This is a demo placeholder.')}
+            onClick={() => alert('Chức năng chat sẽ có trong Phase 19! Đây là phần giữ chỗ minh họa.')}
           >
-            Chat with seller
+            Chat với người bán
           </Button>
           <Button
             variant={isFavorite ? 'secondary' : 'outline'}
             className="w-full text-xs"
             onClick={handleToggleWishlist}
           >
-            {isFavorite ? '♥ In Wishlist' : '♡ Add to wishlist'}
+            {isFavorite ? '♥ Đã yêu thích' : '♡ Thêm vào yêu thích'}
           </Button>
         </div>
       </div>

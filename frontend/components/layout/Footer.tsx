@@ -4,24 +4,24 @@ import { ROUTES } from '../../constants/routes';
 
 const linkGroups = [
   {
-    heading: 'Marketplace',
+    heading: 'Chợ trực tuyến',
     links: [
-      { label: 'Shop all listings', href: ROUTES.SHOP },
-      { label: 'Start selling', href: ROUTES.SELL },
+      { label: 'Xem tất cả sản phẩm', href: ROUTES.SHOP },
+      { label: 'Bắt đầu đăng bán', href: ROUTES.SELL },
     ],
   },
   {
-    heading: 'Company',
+    heading: 'Công ty',
     links: [
-      { label: 'About StyleHub', href: ROUTES.ABOUT },
-      { label: 'Contact us', href: ROUTES.CONTACT },
+      { label: 'Giới thiệu StyleHub', href: ROUTES.ABOUT },
+      { label: 'Liên hệ', href: ROUTES.CONTACT },
     ],
   },
   {
-    heading: 'Terms',
+    heading: 'Điều khoản',
     links: [
-      { label: 'Privacy policy', href: ROUTES.PRIVACY_POLICY },
-      { label: 'Delivery terms', href: ROUTES.DELIVERY_TERMS },
+      { label: 'Chính sách bảo mật', href: ROUTES.PRIVACY_POLICY },
+      { label: 'Điều khoản vận chuyển', href: ROUTES.DELIVERY_TERMS },
     ],
   },
 ];
@@ -34,8 +34,8 @@ export const Footer = () => {
           <div>
             <p className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900">StyleHub</p>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-neutral-500">
-              A C2C fashion marketplace for local brands, pre-loved pieces, and streetwear — sold by
-              people, not warehouses.
+              Chợ thời trang C2C cho thương hiệu địa phương, đồ đã qua sử dụng và streetwear — bán bởi
+              con người, không phải nhà kho.
             </p>
           </div>
           {linkGroups.map((group) => (
@@ -61,7 +61,7 @@ export const Footer = () => {
             Hà Nội · Sài Gòn · Đà Nẵng
           </p>
           <p className="text-xs text-neutral-400">
-            &copy; {new Date().getFullYear()} StyleHub — a student demo project. All rights reserved.
+            &copy; {new Date().getFullYear()} StyleHub — dự án demo của sinh viên. Đã đăng ký bản quyền.
           </p>
         </div>
       </Container>

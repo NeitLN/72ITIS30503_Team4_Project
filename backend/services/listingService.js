@@ -19,6 +19,8 @@
  */
 const crypto = require('crypto');
 const { supabaseAdmin, isSupabaseAdminConfigured } = require('../lib/supabase');
+const brandService = require('./brandService');
+const { isKnownLocation } = require('../constants/vnLocations');
 
 const BUCKET = 'product-images';
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -42,7 +44,7 @@ class ListingValidationError extends Error {
 
 const checkDb = () => {
   if (!isSupabaseAdminConfigured()) {
-    const e = new Error('Database is not configured for listing creation');
+    const e = new Error('Hệ thống chưa được cấu hình để tạo tin đăng.');
     e.status = 503;
     throw e;
   }
@@ -94,45 +96,49 @@ function validateFields(raw, sellerName) {
   const isNegotiable = raw.is_negotiable === true || raw.is_negotiable === 'true' || raw.is_negotiable === '1';
 
   if (!name || name.length < MIN_NAME_LEN || name.length > MAX_NAME_LEN) {
-    errors.name = `Name is required (${MIN_NAME_LEN}-${MAX_NAME_LEN} characters).`;
+    errors.name = `Tên sản phẩm phải có từ ${MIN_NAME_LEN} đến ${MAX_NAME_LEN} ký tự.`;
   } else if (!/[a-zA-Z0-9À-ỹ]/.test(name)) {
-    errors.name = 'Name must contain more than just symbols.';
+    errors.name = 'Tên sản phẩm phải chứa chữ hoặc số, không chỉ có ký hiệu.';
   }
 
   if (!description || description.length < MIN_DESC_LEN || description.length > MAX_DESC_LEN) {
-    errors.description = `Description is required (${MIN_DESC_LEN}-${MAX_DESC_LEN} characters).`;
+    errors.description = `Mô tả phải có từ ${MIN_DESC_LEN} đến ${MAX_DESC_LEN} ký tự.`;
   }
 
-  if (!category_slug) errors.category_slug = 'Category is required.';
+  if (!category_slug) errors.category_slug = 'Vui lòng chọn danh mục.';
 
   if (!condition || !ALLOWED_CONDITIONS.has(condition)) {
-    errors.condition = `Condition must be one of: ${[...ALLOWED_CONDITIONS].join(', ')}.`;
+    errors.condition = 'Vui lòng chọn tình trạng sản phẩm hợp lệ.';
   }
 
-  if (!size || size.length > 40) errors.size = 'Size is required (max 40 characters).';
+  if (!size || size.length > 40) errors.size = 'Vui lòng nhập kích thước (tối đa 40 ký tự).';
 
   if (!Number.isFinite(priceNum) || priceNum <= 0) {
-    errors.price = 'Price must be a number greater than 0.';
+    errors.price = 'Giá bán phải là một số lớn hơn 0.';
   } else if (priceNum > MAX_PRICE) {
-    errors.price = `Price exceeds the maximum allowed (${MAX_PRICE.toLocaleString('vi-VN')} VNĐ).`;
+    errors.price = `Giá bán vượt quá mức cho phép (${MAX_PRICE.toLocaleString('vi-VN')} VNĐ).`;
   }
 
   if (salePriceNum != null) {
     if (!Number.isFinite(salePriceNum) || salePriceNum <= 0) {
-      errors.sale_price = 'Sale price must be greater than 0, or omitted.';
+      errors.sale_price = 'Giá giảm phải lớn hơn 0, hoặc để trống.';
     } else if (Number.isFinite(priceNum) && !(salePriceNum < priceNum)) {
-      errors.sale_price = 'Sale price must be less than the regular price.';
+      errors.sale_price = 'Giá giảm phải thấp hơn giá gốc.';
     }
   }
 
   if (!Number.isInteger(stockNum) || stockNum < 1) {
-    errors.stock = 'Stock must be an integer of at least 1.';
+    errors.stock = 'Số lượng phải là số nguyên và ít nhất là 1.';
   } else if (stockNum > MAX_STOCK) {
-    errors.stock = `Stock exceeds the maximum allowed (${MAX_STOCK}).`;
+    errors.stock = `Số lượng vượt quá mức cho phép (${MAX_STOCK}).`;
   }
 
-  if (!location || location.length > 100) {
-    errors.location = 'Location is required (max 100 characters).';
+  if (!location) {
+    errors.location = 'Vui lòng chọn tỉnh/thành phố.';
+  } else if (location.length > 100) {
+    errors.location = 'Tỉnh/thành phố tối đa 100 ký tự.';
+  } else if (!isKnownLocation(location)) {
+    errors.location = 'Vui lòng chọn một tỉnh/thành phố hợp lệ trong danh sách.';
   }
 
   // Lightweight category/size compatibility: shoe-like categories need a
@@ -144,12 +150,12 @@ function validateFields(raw, sellerName) {
     const shoeLike = SHOE_LIKE.has(category_slug);
     const looksLikeShoeSize = /^EU\s?\d{2}$/i.test(size) || /^one\s?size$/i.test(size);
     if (shoeLike && !looksLikeShoeSize) {
-      errors.size = 'Choose an EU shoe size (e.g. "EU 42") or One Size for footwear categories.';
+      errors.size = 'Chọn kích thước giày theo chuẩn EU (ví dụ "EU 42") hoặc Một cỡ cho danh mục giày dép.';
     }
   }
 
   if (Object.keys(errors).length) {
-    throw new ListingValidationError('Listing validation failed', errors);
+    throw new ListingValidationError('Vui lòng kiểm tra lại thông tin sản phẩm.', errors);
   }
 
   return {
@@ -170,31 +176,31 @@ function validateFields(raw, sellerName) {
 
 function validateFiles(files) {
   if (!files || files.length === 0) {
-    throw new ListingValidationError('At least one photo is required.', { images: 'At least one photo is required.' });
+    throw new ListingValidationError('Vui lòng thêm ít nhất một ảnh.', { images: 'Vui lòng thêm ít nhất một ảnh.' });
   }
   if (files.length > MAX_IMAGES) {
-    throw new ListingValidationError(`A maximum of ${MAX_IMAGES} photos is allowed.`, { images: `A maximum of ${MAX_IMAGES} photos is allowed.` });
+    throw new ListingValidationError(`Chỉ được đăng tối đa ${MAX_IMAGES} ảnh.`, { images: `Chỉ được đăng tối đa ${MAX_IMAGES} ảnh.` });
   }
   const seen = new Set();
   for (const f of files) {
     if (!ALLOWED_MIME.has(f.mimetype)) {
       throw new ListingValidationError(
-        `Unsupported file type: ${f.mimetype}. Only JPEG, PNG, and WebP are allowed.`,
-        { images: 'Only JPEG, PNG, and WebP images are allowed.' },
+        `Định dạng ảnh không được hỗ trợ: ${f.mimetype}. Chỉ chấp nhận JPEG, PNG hoặc WebP.`,
+        { images: 'Chỉ chấp nhận ảnh JPEG, PNG hoặc WebP.' },
       );
     }
     if (!f.buffer || f.buffer.length === 0) {
-      throw new ListingValidationError('One of the uploaded files is empty or corrupt.', { images: 'One of the uploaded files is empty or corrupt.' });
+      throw new ListingValidationError('Một trong các ảnh bị trống hoặc lỗi.', { images: 'Một trong các ảnh bị trống hoặc lỗi.' });
     }
     if (f.size > MAX_IMAGE_BYTES) {
       throw new ListingValidationError(
-        `"${f.originalname}" exceeds the 5MB limit.`,
-        { images: `"${f.originalname}" exceeds the 5MB limit.` },
+        `"${f.originalname}" vượt quá giới hạn 5MB.`,
+        { images: `"${f.originalname}" vượt quá giới hạn 5MB.` },
       );
     }
     const dupKey = `${f.originalname}:${f.size}`;
     if (seen.has(dupKey)) {
-      throw new ListingValidationError(`Duplicate file selected: "${f.originalname}".`, { images: `Duplicate file selected: "${f.originalname}".` });
+      throw new ListingValidationError(`Ảnh bị trùng lặp: "${f.originalname}".`, { images: `Ảnh bị trùng lặp: "${f.originalname}".` });
     }
     seen.add(dupKey);
   }
@@ -229,11 +235,11 @@ async function createListing(user, rawFields, files) {
     .maybeSingle();
   if (userErr) throw userErr;
   if (!userRow) {
-    const e = new Error('Authenticated user profile not found');
+    const e = new Error('Không tìm thấy hồ sơ người dùng đã xác thực.');
     e.status = 401;
     throw e;
   }
-  const sellerName = userRow.full_name || userRow.name || user.email || 'StyleHub seller';
+  const sellerName = userRow.full_name || userRow.name || user.email || 'Người bán StyleHub';
 
   const fields = validateFields(rawFields, sellerName);
   validateFiles(files);
@@ -245,24 +251,13 @@ async function createListing(user, rawFields, files) {
     .maybeSingle();
   if (catErr) throw catErr;
   if (!category || category.is_active === false) {
-    throw new ListingValidationError('Invalid category.', { category_slug: 'Selected category does not exist.' });
+    throw new ListingValidationError('Danh mục không hợp lệ.', { category_slug: 'Danh mục đã chọn không tồn tại.' });
   }
 
-  let brandId = null;
-  let brandName = 'No Brand';
-  if (fields.brand_slug) {
-    const { data: brand, error: brandErr } = await supabaseAdmin
-      .from('brands')
-      .select('id, name, is_active')
-      .eq('slug', fields.brand_slug)
-      .maybeSingle();
-    if (brandErr) throw brandErr;
-    if (!brand || brand.is_active === false) {
-      throw new ListingValidationError('Invalid brand.', { brand_slug: 'Selected brand does not exist.' });
-    }
-    brandId = brand.id;
-    brandName = brand.name;
-  }
+  // Phase 8.1: brand is free text, resolved/created race-safely by name
+  // (case-insensitive) rather than required to match an existing slug —
+  // sellers may type a brand StyleHub doesn't have yet.
+  const { brandId, brandName } = await brandService.resolveOrCreateBrand(fields.brand_slug);
 
   // De-dupe: identical, already-fully-validated listing from the same user
   // within a short window returns the already-created product instead of

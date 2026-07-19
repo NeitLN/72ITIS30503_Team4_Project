@@ -18,7 +18,7 @@ export const ProductRow = ({
   description,
   products,
   viewAllHref,
-  emptyMessage = 'No products found.',
+  emptyMessage = 'Không tìm thấy sản phẩm phù hợp.',
 }: ProductRowProps) => {
   return (
     <section className="py-20 sm:py-24">
@@ -44,7 +44,7 @@ export const ProductRow = ({
               href={viewAllHref}
               className="hidden whitespace-nowrap border-b border-neutral-900 pb-0.5 text-sm font-semibold text-neutral-900 transition-colors hover:text-neutral-500 sm:block"
             >
-              View all listings
+              Xem tất cả tin đăng
             </Link>
           )}
         </div>
@@ -58,7 +58,7 @@ export const ProductRow = ({
         ) : (
           <div className="border border-neutral-200 bg-neutral-50 px-6 py-16 text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500">
-              No listings yet
+              Chưa có tin đăng nào
             </p>
             <p className="mt-2 text-sm text-neutral-500">
               {emptyMessage}
@@ -69,7 +69,7 @@ export const ProductRow = ({
         {viewAllHref && (
           <div className="mt-8 text-center sm:hidden">
             <Link href={viewAllHref} className="border-b border-neutral-900 pb-0.5 text-sm font-semibold">
-              View all listings
+              Xem tất cả tin đăng
             </Link>
           </div>
         )}

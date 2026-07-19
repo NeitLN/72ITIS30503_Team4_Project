@@ -13,21 +13,21 @@ export const ShopToolbar = ({ count, categories = [] }: ShopToolbarProps) => {
     <div className="mb-8 flex flex-col gap-4 border-b border-neutral-200 pb-6 md:flex-row md:items-center md:justify-between">
       <div className="flex items-baseline gap-3">
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-900">
-          Latest listings
+          Tin đăng mới nhất
         </p>
         {count != null && (
           <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-neutral-400">
-            {count} {count === 1 ? 'item' : 'items'}
+            {count} sản phẩm
           </p>
         )}
       </div>
 
       {categories.length > 0 && (
-        <nav aria-label="Filter by category" className="-mx-1 overflow-x-auto">
+        <nav aria-label="Lọc theo danh mục" className="-mx-1 overflow-x-auto">
           <ul className="flex items-center gap-2 px-1">
             <li>
               <span className="inline-block whitespace-nowrap border border-neutral-900 bg-neutral-900 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-white">
-                All
+                Tất cả
               </span>
             </li>
             {categories.slice(0, 5).map((cat) => (

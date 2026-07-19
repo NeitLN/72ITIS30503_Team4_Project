@@ -33,7 +33,7 @@ export const CartItemRow = ({ item, onUpdateQuantity, onRemove }: CartItemRowPro
             <Link href={`/products/${item.slug}`}>{item.name}</Link>
           </h3>
           <p className="mt-1 font-mono text-xs text-neutral-500">
-            Size {item.size} · {item.condition}
+            Cỡ {item.size} · {item.condition}
           </p>
           <p className="mt-1 text-xs text-neutral-400">
             Người bán: <span className="font-medium text-neutral-600">{item.sellerHandle}</span>
@@ -48,7 +48,7 @@ export const CartItemRow = ({ item, onUpdateQuantity, onRemove }: CartItemRowPro
           <button
             onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
             className="flex h-8 w-8 items-center justify-center font-mono text-sm text-neutral-600 hover:bg-neutral-100 focus:outline-none"
-            aria-label="Decrease quantity"
+            aria-label="Giảm số lượng"
           >
             -
           </button>
@@ -58,7 +58,7 @@ export const CartItemRow = ({ item, onUpdateQuantity, onRemove }: CartItemRowPro
           <button
             onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
             className="flex h-8 w-8 items-center justify-center font-mono text-sm text-neutral-600 hover:bg-neutral-100 focus:outline-none"
-            aria-label="Increase quantity"
+            aria-label="Tăng số lượng"
           >
             +
           </button>

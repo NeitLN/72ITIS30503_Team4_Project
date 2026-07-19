@@ -26,7 +26,7 @@ router.get('/me', requireAuth, async (req, res) => {
   } catch (err) {
     if (err.status) return error(res, err.status, err.message);
     console.error('Get my profile error:', err);
-    return error(res, 500, 'Failed to load profile.');
+    return error(res, 500, 'Không thể tải hồ sơ.');
   }
 });
 
@@ -43,7 +43,7 @@ router.patch('/me', requireAuth, async (req, res) => {
     }
     if (err.status) return error(res, err.status, err.message, err.fieldErrors);
     console.error('Update my profile error:', err);
-    return error(res, 500, 'Failed to update profile.');
+    return error(res, 500, 'Không thể cập nhật hồ sơ.');
   }
 });
 
@@ -52,16 +52,16 @@ router.post('/me/avatar', requireAuth, (req, res) => {
   upload.single('avatar')(req, res, async (uploadErr) => {
     if (uploadErr) {
       if (uploadErr.message === 'UNSUPPORTED_FILE_TYPE') {
-        return error(res, 422, 'Unsupported file type. Only JPEG, PNG, and WebP are allowed.', { avatar: 'Unsupported file type.' });
+        return error(res, 422, 'Chỉ chấp nhận ảnh JPEG, PNG hoặc WebP.', { avatar: 'Định dạng ảnh không được hỗ trợ.' });
       }
       if (uploadErr.code === 'LIMIT_FILE_SIZE') {
-        return error(res, 422, 'Image exceeds the 5MB limit.', { avatar: 'File too large.' });
+        return error(res, 422, 'Ảnh vượt quá giới hạn 5MB.', { avatar: 'Ảnh quá lớn.' });
       }
       if (uploadErr.code === 'LIMIT_UNEXPECTED_FILE' || uploadErr.code === 'LIMIT_FILE_COUNT') {
-        return error(res, 422, 'Only one avatar file is allowed.', { avatar: 'Only one file is allowed.' });
+        return error(res, 422, 'Chỉ được chọn một ảnh đại diện.', { avatar: 'Chỉ được chọn một ảnh.' });
       }
       console.error('Avatar upload middleware error:', uploadErr);
-      return error(res, 400, 'Failed to process the uploaded file.');
+      return error(res, 400, 'Không thể xử lý tệp đã tải lên.');
     }
 
     try {
@@ -70,7 +70,7 @@ router.post('/me/avatar', requireAuth, (req, res) => {
     } catch (err) {
       if (err.status) return error(res, err.status, err.message, err.fieldErrors);
       console.error('Avatar upload error:', err);
-      return error(res, 500, 'Failed to upload avatar.');
+      return error(res, 500, 'Không thể tải lên ảnh đại diện.');
     }
   });
 });

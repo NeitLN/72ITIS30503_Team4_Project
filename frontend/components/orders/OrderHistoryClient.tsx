@@ -41,14 +41,14 @@ export const OrderHistoryClient = () => {
             if (res.success && Array.isArray(res.data)) {
               setOrders(res.data);
             } else {
-              setErrorMsg(res.error?.message || 'Failed to load orders.');
+              setErrorMsg(res.error?.message || 'Không thể tải đơn hàng.');
             }
           }
         })
         .catch((err) => {
           if (active) {
             const e = err as Error;
-            setErrorMsg(e?.message || 'An unexpected network error occurred.');
+            setErrorMsg(e?.message || 'Đã xảy ra lỗi kết nối không mong muốn.');
           }
         })
         .finally(() => {
@@ -76,11 +76,11 @@ export const OrderHistoryClient = () => {
       if (res.success && Array.isArray(res.data)) {
         setOrders(res.data);
       } else {
-        setErrorMsg(res.error?.message || 'Failed to load orders.');
+        setErrorMsg(res.error?.message || 'Không thể tải đơn hàng.');
       }
     } catch (err) {
       const e = err as Error;
-      setErrorMsg(e?.message || 'An unexpected network error occurred.');
+      setErrorMsg(e?.message || 'Đã xảy ra lỗi kết nối không mong muốn.');
     } finally {
       setIsLoading(false);
     }

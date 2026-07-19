@@ -12,10 +12,10 @@ router.get('/', async (req, res) => {
     return success(res, data);
   } catch (err) {
     if (err.message === 'DATABASE_NOT_CONFIGURED') {
-      return error(res, 503, 'Service Unavailable: Database not configured');
+      return error(res, 503, 'Dịch vụ tạm thời không khả dụng: hệ thống chưa được cấu hình.');
     }
     console.error('Error fetching brands:', err);
-    return error(res, 500, 'Internal Server Error');
+    return error(res, 500, 'Đã xảy ra lỗi hệ thống.');
   }
 });
 

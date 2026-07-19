@@ -10,8 +10,8 @@ export const HeaderCartButton = () => {
     <Link
       href="/cart"
       className="group relative flex items-center gap-1.5 text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-500"
-      aria-label={`Shopping Cart, ${isHydrated ? cartCount : 0} items`}
-      title="Shopping Bag"
+      aria-label={`Giỏ hàng, ${isHydrated ? cartCount : 0} sản phẩm`}
+      title="Giỏ hàng"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

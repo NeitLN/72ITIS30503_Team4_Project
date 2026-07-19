@@ -24,16 +24,16 @@ router.post('/', authenticateUser, requireAuth, (req, res) => {
   upload.array('images', listingService.MAX_IMAGES)(req, res, async (uploadErr) => {
     if (uploadErr) {
       if (uploadErr.message === 'UNSUPPORTED_FILE_TYPE') {
-        return error(res, 422, 'Unsupported file type. Only JPEG, PNG, and WebP are allowed.', { images: 'Unsupported file type.' });
+        return error(res, 422, 'Chỉ chấp nhận ảnh JPEG, PNG hoặc WebP.', { images: 'Định dạng ảnh không được hỗ trợ.' });
       }
       if (uploadErr.code === 'LIMIT_FILE_SIZE') {
-        return error(res, 422, 'One or more images exceed the 5MB limit.', { images: 'File too large.' });
+        return error(res, 422, 'Một hoặc nhiều ảnh vượt quá giới hạn 5MB.', { images: 'Ảnh quá lớn.' });
       }
       if (uploadErr.code === 'LIMIT_FILE_COUNT' || uploadErr.code === 'LIMIT_UNEXPECTED_FILE') {
-        return error(res, 422, `A maximum of ${listingService.MAX_IMAGES} photos is allowed.`, { images: 'Too many files.' });
+        return error(res, 422, `Chỉ được đăng tối đa ${listingService.MAX_IMAGES} ảnh.`, { images: 'Quá nhiều ảnh.' });
       }
       console.error('Upload middleware error:', uploadErr);
-      return error(res, 400, 'Failed to process uploaded files.');
+      return error(res, 400, 'Không thể xử lý tệp đã tải lên.');
     }
 
     try {
@@ -49,14 +49,11 @@ router.post('/', authenticateUser, requireAuth, (req, res) => {
         },
       });
     } catch (err) {
-      if (err instanceof listingService.ListingValidationError) {
+      if (err.status) {
         return error(res, err.status, err.message, err.fieldErrors);
       }
-      if (err.status) {
-        return error(res, err.status, err.message);
-      }
       console.error('Create listing error:', err);
-      return error(res, 500, 'Failed to create listing.');
+      return error(res, 500, 'Không thể tạo tin đăng. Vui lòng thử lại.');
     }
   });
 });
@@ -67,10 +64,10 @@ router.get('/', async (req, res) => {
     return success(res, data, meta);
   } catch (err) {
     if (err.message === 'DATABASE_NOT_CONFIGURED') {
-      return error(res, 503, 'Service Unavailable: Database not configured');
+      return error(res, 503, 'Dịch vụ tạm thời không khả dụng: hệ thống chưa được cấu hình.');
     }
     console.error('Error fetching products:', err);
-    return error(res, 500, 'Internal Server Error', err.message);
+    return error(res, 500, 'Đã xảy ra lỗi hệ thống.', err.message);
   }
 });
 
@@ -80,10 +77,10 @@ router.get('/featured', async (req, res) => {
     return success(res, data, meta);
   } catch (err) {
     if (err.message === 'DATABASE_NOT_CONFIGURED') {
-      return error(res, 503, 'Service Unavailable: Database not configured');
+      return error(res, 503, 'Dịch vụ tạm thời không khả dụng: hệ thống chưa được cấu hình.');
     }
     console.error('Error fetching featured products:', err);
-    return error(res, 500, 'Internal Server Error', err.message);
+    return error(res, 500, 'Đã xảy ra lỗi hệ thống.', err.message);
   }
 });
 
@@ -92,7 +89,7 @@ router.get('/:slug', async (req, res) => {
     const product = await productService.getProductBySlug(req.params.slug);
     
     if (!product) {
-      return error(res, 404, 'Product not found');
+      return error(res, 404, 'Không tìm thấy sản phẩm.');
     }
     
     // If it's a variable product, fetch variants
@@ -104,10 +101,10 @@ router.get('/:slug', async (req, res) => {
     return success(res, product);
   } catch (err) {
     if (err.message === 'DATABASE_NOT_CONFIGURED') {
-      return error(res, 503, 'Service Unavailable: Database not configured');
+      return error(res, 503, 'Dịch vụ tạm thời không khả dụng: hệ thống chưa được cấu hình.');
     }
     console.error(`Error fetching product ${req.params.slug}:`, err);
-    return error(res, 500, 'Internal Server Error', err.message);
+    return error(res, 500, 'Đã xảy ra lỗi hệ thống.', err.message);
   }
 });
 

@@ -3,47 +3,47 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description: 'Privacy Policy and data collection information for StyleHub.',
+  title: 'Chính sách bảo mật',
+  description: 'Chính sách bảo mật và thông tin thu thập dữ liệu của StyleHub.',
 };
 
 const sections = [
   {
-    title: 'Information we collect',
-    body: 'When you register as a buyer or seller on StyleHub, we collect basic profile information including your username, email address, full name, and optional location data. For sellers, we also store product listings, images, prices, and marketplace interactions.',
+    title: 'Thông tin chúng tôi thu thập',
+    body: 'Khi bạn đăng ký làm người mua hoặc người bán trên StyleHub, chúng tôi thu thập thông tin hồ sơ cơ bản bao gồm tên đăng nhập, địa chỉ email, họ và tên, và dữ liệu vị trí (không bắt buộc). Đối với người bán, chúng tôi cũng lưu trữ tin đăng sản phẩm, hình ảnh, giá bán và các hoạt động tương tác trên chợ.',
   },
   {
-    title: 'How we use information',
-    body: 'We use this information to run the C2C marketplace experience: rendering your public profile, connecting buyers with sellers, displaying your listings, and maintaining a trustworthy environment through ratings and reviews.',
+    title: 'Cách chúng tôi sử dụng thông tin',
+    body: 'Chúng tôi sử dụng thông tin này để vận hành trải nghiệm chợ C2C: hiển thị hồ sơ công khai của bạn, kết nối người mua với người bán, hiển thị tin đăng của bạn và duy trì một môi trường đáng tin cậy thông qua đánh giá và nhận xét.',
   },
   {
-    title: 'Marketplace visibility',
-    body: 'As a C2C platform, your seller username, location, and rating are public by design. When you list an item, the photos and descriptions you upload are visible to all visitors. Direct messages about an order remain private between buyer and seller.',
+    title: 'Khả năng hiển thị trên chợ',
+    body: 'Là một nền tảng C2C, tên đăng nhập, vị trí và điểm đánh giá của người bán được công khai theo thiết kế. Khi bạn đăng một sản phẩm, hình ảnh và mô tả bạn tải lên sẽ hiển thị với tất cả khách truy cập. Tin nhắn trực tiếp về đơn hàng vẫn được giữ riêng tư giữa người mua và người bán.',
   },
   {
-    title: 'Data security',
-    body: 'We rely on Supabase as our backend infrastructure provider, which handles secure authentication and database storage. Passwords are encrypted by the authentication provider, and Row Level Security ensures users can only modify their own listings.',
+    title: 'Bảo mật dữ liệu',
+    body: 'Chúng tôi sử dụng Supabase làm nhà cung cấp hạ tầng backend, chịu trách nhiệm xác thực an toàn và lưu trữ cơ sở dữ liệu. Mật khẩu được mã hóa bởi nhà cung cấp xác thực, và Row Level Security đảm bảo người dùng chỉ có thể chỉnh sửa tin đăng của chính mình.',
   },
   {
-    title: 'Contact',
-    body: 'If you have questions about this policy or wish to have your demo account deleted, please use the Contact page or email support@stylehub.local.',
+    title: 'Liên hệ',
+    body: 'Nếu bạn có câu hỏi về chính sách này hoặc muốn xóa tài khoản demo của mình, vui lòng sử dụng trang Liên hệ hoặc gửi email đến support@stylehub.local.',
   },
 ];
 
 export default function PrivacyPolicyPage() {
   return (
     <>
-      <PageHeader eyebrow="Terms" title="Privacy policy" />
+      <PageHeader eyebrow="Điều khoản" title="Chính sách bảo mật" />
 
       <Container className="max-w-3xl py-14 sm:py-16">
         <aside className="mb-12 border border-neutral-200 bg-neutral-50 px-4 py-3">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
-            Demo project notice
+            Lưu ý về dự án demo
           </p>
           <p className="mt-1.5 text-xs leading-relaxed text-neutral-600">
-            StyleHub is a university project demonstration. We do not process real payments or
-            harvest personal data for commercial purposes. Data stored in our infrastructure exists
-            solely to demonstrate marketplace functionality.
+            StyleHub là một dự án minh họa của trường đại học. Chúng tôi không xử lý thanh toán
+            thật hoặc thu thập dữ liệu cá nhân cho mục đích thương mại. Dữ liệu lưu trữ trên hệ
+            thống của chúng tôi chỉ nhằm minh họa chức năng của chợ trực tuyến.
           </p>
         </aside>
 

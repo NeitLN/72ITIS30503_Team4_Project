@@ -5,27 +5,27 @@ import { ROUTES } from '../../constants/routes';
 const CATEGORY_GROUPS = [
   {
     id: 'tops',
-    name: 'Tops',
+    name: 'Áo',
     slug: 'tops',
-    description: 'T-shirts, hoodies, and jackets',
+    description: 'Áo thun, hoodie và áo khoác',
   },
   {
     id: 'bottoms',
-    name: 'Bottoms',
+    name: 'Quần',
     slug: 'bottoms',
-    description: 'Pants, shorts, and jeans',
+    description: 'Quần dài, quần short và quần jean',
   },
   {
     id: 'accessories',
-    name: 'Accessories',
+    name: 'Phụ kiện',
     slug: 'accessories-group',
-    description: 'Hats, wallets, and more',
+    description: 'Mũ, ví và nhiều hơn nữa',
   },
   {
     id: 'bags',
-    name: 'Bags',
+    name: 'Túi',
     slug: 'bags-group',
-    description: 'Backpacks and crossbody bags',
+    description: 'Túi balo và túi đeo chéo',
   },
 ];
 
@@ -36,10 +36,10 @@ export const CategorySpotlight = () => {
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
-              Browse the racks
+              Lướt qua các kệ hàng
             </p>
             <h2 className="font-display text-3xl font-black uppercase tracking-tight sm:text-4xl">
-              Shop by category
+              Mua theo danh mục
             </h2>
           </div>
         </div>
@@ -58,7 +58,7 @@ export const CategorySpotlight = () => {
                 {cat.description}
               </p>
               <div className="mt-6 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-900 transition-transform group-hover:translate-x-1">
-                Shop now <span aria-hidden="true">→</span>
+                Mua ngay <span aria-hidden="true">→</span>
               </div>
             </Link>
           ))}
