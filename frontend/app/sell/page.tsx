@@ -1,19 +1,20 @@
 import { PageHeader } from '../../components/ui/PageHeader';
 import { SellListingClient } from '../../components/sell/SellListingClient';
 import { Metadata } from 'next';
+import { EN } from '../../lib/i18n';
 
 export const metadata: Metadata = {
-  title: 'Đăng bán sản phẩm',
-  description: 'Đăng bán đồ streetwear, giày sneaker, phụ kiện và thời trang đã qua sử dụng trên StyleHub chỉ trong sáu bước.',
+  title: 'Sell',
+  description: 'List streetwear, sneakers, accessories, and pre-loved fashion for sale on StyleHub in six quick steps.',
 };
 
 export default function SellPage() {
   return (
     <main className="bg-neutral-50 min-h-screen">
       <PageHeader
-        eyebrow="Trung tâm người bán"
-        title="Đăng lại món đồ của bạn. Tìm cho nó một chủ nhân mới."
-        lede="Đăng sản phẩm thật lên StyleHub chỉ trong sáu bước — sản phẩm sẽ xuất hiện ngay trên toàn bộ chợ thời trang."
+        eyebrow={EN.sell.hubEyebrow}
+        title={EN.sell.hubHeading}
+        lede="Publish a real StyleHub listing in six quick steps — it goes live across the marketplace immediately."
       />
       <SellListingClient />
     </main>

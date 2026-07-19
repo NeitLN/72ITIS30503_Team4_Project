@@ -86,7 +86,8 @@ const BRANDS = [
 // ---------------------------------------------------------------------------
 const CANONICAL_CATEGORIES = [
   't-shirts', 'jerseys', 'shirts', 'sweaters-cardigans', 'hoodies', 'outerwear',
-  'pants', 'shorts', 'shoes', 'slides', 'caps-hats', 'accessories', 'wallets',
+  'pants', 'shorts', 'shoes', 'slides', 'boots', 'loafers', 'other-shoes',
+  'caps-hats', 'accessories', 'wallets',
   'underwear', 'bags', 'backpacks', 'crossbody-bags', 'bowler-bags',
 ];
 
@@ -168,7 +169,7 @@ const P = [
   { slug: 'shondo-retro-low-sneaker', name: 'Shondo Retro Low Sneaker', brand: 'shondo', cat: 'shoes', img: 'shondo-sneaker.jpg', price: 690000, cond: 'like_new', size: 'EU 42' },
   { slug: 'minimal-white-court-sneakers', name: 'Minimal White Court Sneakers', brand: null, cat: 'shoes', img: 'zara-chunky-sole-light-weight-sneaker.jpg', price: 420000, cond: 'good', size: 'EU 41' },
   { slug: 'retro-suede-runner-sneakers', name: 'Retro Suede Runner Sneakers', brand: null, cat: 'shoes', img: 'retro-sneakers.jpg', price: 380000, cond: 'good', size: 'EU 40' },
-  { slug: 'black-leather-derby-shoes', name: 'Black Leather Derby Shoes', brand: null, cat: 'shoes', img: 'black-boots.jpg', price: 550000, cond: 'excellent', size: 'EU 42' },
+  { slug: 'black-leather-derby-shoes', name: 'Black Leather Derby Shoes', brand: null, cat: 'loafers', img: 'black-boots.jpg', price: 550000, cond: 'excellent', size: 'EU 42' },
 
   // ---- FOOTWEAR: slides ----
   { slug: 'brown-leather-cross-strap-sandals', name: 'Brown Leather Cross-Strap Sandals', brand: null, cat: 'slides', img: 'leather-sandals.jpg', price: 350000, cond: 'like_new', size: 'EU 40' },
@@ -235,7 +236,7 @@ const P = [
   { slug: 'nike-air-force-1-low-white', name: 'Nike Air Force 1 Low White', brand: 'nike', cat: 'shoes', img: 'nike-air-force-1-white.jpg', price: 1350000, cond: 'like_new', size: 'EU 42' },
   { slug: 'new-balance-550-burgundy', name: 'New Balance 550 Burgundy', brand: 'new-balance', cat: 'shoes', img: 'new-balance-550-burgundy.jpg', price: 2450000, sale: 1990000, cond: 'new_with_tags', size: 'EU 41' },
   { slug: 'converse-chuck-taylor-leather-black', name: 'Converse Chuck Taylor All Star Leather', brand: 'converse', cat: 'shoes', img: 'converse-chuck-taylor-leather.jpg', price: 890000, sale: 690000, cond: 'like_new', size: 'EU 39' },
-  { slug: 'dr-martens-1460-oxblood-boots', name: 'Dr. Martens 1460 Oxblood Boots', brand: 'dr-martens', cat: 'shoes', img: 'dr-martens-1460-boots.jpg', price: 1950000, cond: 'good', size: 'EU 40', feat: true },
+  { slug: 'dr-martens-1460-oxblood-boots', name: 'Dr. Martens 1460 Oxblood Boots', brand: 'dr-martens', cat: 'boots', img: 'dr-martens-1460-boots.jpg', price: 1950000, cond: 'good', size: 'EU 40', feat: true },
   { slug: 'casio-gshock-gw-m5610u', name: 'Casio G-Shock GW-M5610U', brand: 'casio', cat: 'accessories', img: 'casio-gshock-gw-m5610u.jpg', price: 1650000, cond: 'like_new', size: 'One Size', feat: true },
   { slug: 'adidas-adilette-slides-navy', name: 'Adidas Adilette Slides', brand: 'adidas', cat: 'slides', img: 'adidas-adilette-slides.jpg', price: 450000, cond: 'good', size: 'EU 42' },
   { slug: 'jansport-classic-backpack-navy', name: 'JanSport Classic Backpack', brand: 'jansport', cat: 'backpacks', img: 'jansport-classic-backpack.jpg', price: 590000, sale: 450000, cond: 'like_new', size: 'One Size' },
@@ -329,7 +330,7 @@ function assertData() {
     if (!(p.price > 0)) throw new Error(`Invalid price on ${p.slug}`);
     if (p.sale != null && !(p.sale > 0 && p.sale < p.price)) throw new Error(`Invalid sale price on ${p.slug}`);
     if (p.brand && !BRANDS.find(b => b.slug === p.brand)) throw new Error(`Unknown brand '${p.brand}' on ${p.slug}`);
-    const shoeLike = p.cat === 'shoes' || p.cat === 'slides';
+    const shoeLike = ['shoes', 'slides', 'boots', 'loafers', 'other-shoes'].includes(p.cat);
     if (shoeLike && !/^EU \d{2}$/.test(p.size) && p.size !== 'One Size') throw new Error(`Non-shoe size on shoe-like product ${p.slug}: ${p.size}`);
     if (!shoeLike && /^EU \d{2}$/.test(p.size)) throw new Error(`Shoe size on non-shoe product ${p.slug}: ${p.size}`);
   }

@@ -44,7 +44,7 @@ export const ProductRow = ({
               href={viewAllHref}
               className="hidden whitespace-nowrap border-b border-neutral-900 pb-0.5 text-sm font-semibold text-neutral-900 transition-colors hover:text-neutral-500 sm:block"
             >
-              Xem tất cả tin đăng
+              View all listings
             </Link>
           )}
         </div>
@@ -69,7 +69,7 @@ export const ProductRow = ({
         {viewAllHref && (
           <div className="mt-8 text-center sm:hidden">
             <Link href={viewAllHref} className="border-b border-neutral-900 pb-0.5 text-sm font-semibold">
-              Xem tất cả tin đăng
+              View all listings
             </Link>
           </div>
         )}

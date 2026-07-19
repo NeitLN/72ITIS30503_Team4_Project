@@ -5,27 +5,33 @@ import { ROUTES } from '../../constants/routes';
 const CATEGORY_GROUPS = [
   {
     id: 'tops',
-    name: 'Áo',
+    name: 'Tops',
     slug: 'tops',
-    description: 'Áo thun, hoodie và áo khoác',
+    description: 'T-shirts, hoodies, and jackets',
   },
   {
     id: 'bottoms',
-    name: 'Quần',
+    name: 'Bottoms',
     slug: 'bottoms',
-    description: 'Quần dài, quần short và quần jean',
+    description: 'Pants, shorts, and jeans',
+  },
+  {
+    id: 'shoes',
+    name: 'Shoes',
+    slug: 'footwear',
+    description: 'Sneakers, boots, and sandals',
   },
   {
     id: 'accessories',
-    name: 'Phụ kiện',
+    name: 'Accessories',
     slug: 'accessories-group',
-    description: 'Mũ, ví và nhiều hơn nữa',
+    description: 'Hats, wallets, and more',
   },
   {
     id: 'bags',
-    name: 'Túi',
+    name: 'Bags',
     slug: 'bags-group',
-    description: 'Túi balo và túi đeo chéo',
+    description: 'Backpacks and crossbody bags',
   },
 ];
 
@@ -36,15 +42,15 @@ export const CategorySpotlight = () => {
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
-              Lướt qua các kệ hàng
+              Browse the racks
             </p>
             <h2 className="font-display text-3xl font-black uppercase tracking-tight sm:text-4xl">
-              Mua theo danh mục
+              Shop by category
             </h2>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
           {CATEGORY_GROUPS.map((cat) => (
             <Link
               key={cat.id}
@@ -58,7 +64,7 @@ export const CategorySpotlight = () => {
                 {cat.description}
               </p>
               <div className="mt-6 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-900 transition-transform group-hover:translate-x-1">
-                Mua ngay <span aria-hidden="true">→</span>
+                Shop now <span aria-hidden="true">→</span>
               </div>
             </Link>
           ))}

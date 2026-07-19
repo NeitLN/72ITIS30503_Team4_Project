@@ -145,7 +145,7 @@ function validateFields(raw, sellerName) {
   // shoe-shaped size (EU sizing or One Size); everything else must not use
   // shoe sizing. Mirrors the same rule already enforced by the Phase 6
   // manifest validator (backend/scripts/data/verifiedCatalog.js assertData).
-  const SHOE_LIKE = new Set(['shoes', 'slides']);
+  const SHOE_LIKE = new Set(['shoes', 'slides', 'boots', 'loafers', 'other-shoes']);
   if (!errors.size && !errors.category_slug) {
     const shoeLike = SHOE_LIKE.has(category_slug);
     const looksLikeShoeSize = /^EU\s?\d{2}$/i.test(size) || /^one\s?size$/i.test(size);

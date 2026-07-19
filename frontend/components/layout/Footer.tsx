@@ -4,17 +4,17 @@ import { ROUTES } from '../../constants/routes';
 
 const linkGroups = [
   {
-    heading: 'Chợ trực tuyến',
+    heading: 'Marketplace',
     links: [
-      { label: 'Xem tất cả sản phẩm', href: ROUTES.SHOP },
-      { label: 'Bắt đầu đăng bán', href: ROUTES.SELL },
+      { label: 'Shop all listings', href: ROUTES.SHOP },
+      { label: 'Start selling', href: ROUTES.SELL },
     ],
   },
   {
-    heading: 'Công ty',
+    heading: 'Company',
     links: [
-      { label: 'Giới thiệu StyleHub', href: ROUTES.ABOUT },
-      { label: 'Liên hệ', href: ROUTES.CONTACT },
+      { label: 'About StyleHub', href: ROUTES.ABOUT },
+      { label: 'Contact us', href: ROUTES.CONTACT },
     ],
   },
   {
@@ -34,8 +34,8 @@ export const Footer = () => {
           <div>
             <p className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900">StyleHub</p>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-neutral-500">
-              Chợ thời trang C2C cho thương hiệu địa phương, đồ đã qua sử dụng và streetwear — bán bởi
-              con người, không phải nhà kho.
+              A C2C fashion marketplace for local brands, pre-loved pieces, and streetwear — sold by
+              people, not warehouses.
             </p>
           </div>
           {linkGroups.map((group) => (
@@ -61,7 +61,7 @@ export const Footer = () => {
             Hà Nội · Sài Gòn · Đà Nẵng
           </p>
           <p className="text-xs text-neutral-400">
-            &copy; {new Date().getFullYear()} StyleHub — dự án demo của sinh viên. Đã đăng ký bản quyền.
+            &copy; {new Date().getFullYear()} StyleHub — a student demo project. All rights reserved.
           </p>
         </div>
       </Container>

@@ -63,19 +63,25 @@ const SHOE_SIZES = [
   ...['EU 36', 'EU 37', 'EU 38', 'EU 39', 'EU 40', 'EU 41', 'EU 42', 'EU 43', 'EU 44', 'EU 45'].map((v) => ({ value: v, label: v })),
   { value: 'One Size', label: 'Một cỡ' },
 ];
-const SHOE_LIKE_CATEGORIES = new Set(['shoes', 'slides']);
+const SHOE_LIKE_CATEGORIES = new Set(['shoes', 'slides', 'boots', 'loafers', 'other-shoes']);
 const MAX_IMAGES = 6;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const DRAFT_KEY = 'stylehub:sell-draft-v2';
 
+// Step nav + in-panel headings are deliberately English (compact wizard/
+// editorial style, consistent with the mega-menu taxonomy and the rest of
+// the marketplace's fashion voice) — see the hybrid-language rubric in
+// `lib/i18n.ts`. Form labels, helper text, and validation inside each step
+// stay Vietnamese since those are the parts a seller must get right to
+// complete the task.
 const STEP_LABELS = [
-  'Thông tin cơ bản',
-  'Danh mục & thương hiệu',
-  'Tình trạng & kích thước',
-  'Giá & vận chuyển',
-  'Hình ảnh',
-  'Xem lại & đăng bán',
+  'Basic Details',
+  'Category & Brand',
+  'Condition & Size',
+  'Price & Shipping',
+  'Photos',
+  'Review & Publish',
 ];
 
 type ImageEntry = { file: File; previewUrl: string };
@@ -462,7 +468,7 @@ export const SellListingClient = () => {
             {step === 1 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 1 — Thông tin cơ bản
+                  Bước 1 — Basic Details
                 </h2>
                 <div>
                   <label htmlFor="name" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Tên sản phẩm *</label>
@@ -493,7 +499,7 @@ export const SellListingClient = () => {
             {step === 2 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 2 — Danh mục & thương hiệu
+                  Bước 2 — Category & Brand
                 </h2>
                 {categoriesError && <p className="text-red-500 text-xs">{categoriesError}</p>}
                 <div>
@@ -533,7 +539,7 @@ export const SellListingClient = () => {
             {step === 3 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 3 — Tình trạng & kích thước
+                  Bước 3 — Condition & Size
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
@@ -571,7 +577,7 @@ export const SellListingClient = () => {
             {step === 4 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 4 — Giá & vận chuyển
+                  Bước 4 — Price & Shipping
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
@@ -635,7 +641,7 @@ export const SellListingClient = () => {
             {step === 5 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 5 — Hình ảnh
+                  Bước 5 — Photos
                 </h2>
                 <div>
                   <label htmlFor="images" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">
@@ -678,7 +684,7 @@ export const SellListingClient = () => {
             {step === 6 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 6 — Xem lại & đăng bán
+                  Bước 6 — Review & Publish
                 </h2>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Tên sản phẩm</dt><dd className="text-neutral-900">{form.name}</dd></div>
@@ -741,7 +747,7 @@ export const SellListingClient = () => {
         {/* Right: Preview & Tips */}
         <div className="lg:col-span-4 flex flex-col gap-8">
           <div className="sticky top-24">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-400 mb-3">Xem trước</h3>
+            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-400 mb-3">Live Preview</h3>
             <div className="pointer-events-none">
               <ProductCard product={previewProduct} />
             </div>

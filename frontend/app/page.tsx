@@ -6,9 +6,10 @@ import { SellerCTA } from '../components/home/SellerCTA';
 import { Metadata } from 'next';
 import { getProducts } from '../lib/catalog';
 import { ROUTES } from '../constants/routes';
+import { EN } from '../lib/i18n';
 
 export const metadata: Metadata = {
-  title: 'StyleHub — Săn Hàng Mới, Bán Đồ Độc',
+  title: `StyleHub — ${EN.brand.tagline}`,
   description: 'Khám phá đồ streetwear, sneaker, thời trang archive và các tin đăng đồ cũ từ người bán độc lập tại Việt Nam.',
 };
 
@@ -28,17 +29,17 @@ export default async function Home() {
       {/* Server Component Wrapper */}
       <CategorySpotlight />
       <ProductRow
-        eyebrow="Mới từ cộng đồng"
-        title="Sản phẩm mới"
-        description="những tin đăng mới nhất từ người bán trên StyleHub"
+        eyebrow="Fresh from the community"
+        title={EN.home.newArrivals}
+        description="Newest active listings from StyleHub sellers"
         products={newArrivals}
         viewAllHref={ROUTES.SHOP}
         emptyMessage="Hiện chưa có tin đăng nào. Quay lại sau — hoặc là người đầu tiên đăng bán."
       />
       <ProductRow
-        eyebrow="Giảm giá có hạn"
-        title="Đang giảm giá"
-        description="tin đăng đang được bán với giá thấp hơn giá gốc"
+        eyebrow="Limited price drops"
+        title={EN.home.onSale}
+        description="Active listings currently offered below their original price"
         products={onSale}
         viewAllHref={ROUTES.SHOP}
         emptyMessage="Hiện chưa có tin đăng giảm giá nào. Quay lại sau nhé."

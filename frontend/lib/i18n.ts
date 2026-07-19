@@ -1,3 +1,88 @@
+/**
+ * StyleHub hybrid-language content policy (Phase 8.1 correction).
+ *
+ * StyleHub is a Vietnamese C2C fashion marketplace, not a translated
+ * English site. Content is deliberately bilingual — English where fashion
+ * shoppers already think in English, Vietnamese where the user is doing a
+ * task and needs zero ambiguity. Blanket machine-style translation of every
+ * string (including brand slogans, taxonomy, and editorial headings) was
+ * tried in an earlier pass and reverted: it made the marketplace read as
+ * generic and mechanical, and weakened the streetwear/Grailed-Depop-style
+ * identity the brand is built on.
+ *
+ * DECISION RUBRIC — apply this to any new or edited string before writing it:
+ *   1. Would a Vietnamese fashion/streetwear shopper already understand
+ *      this English term without translation? (Most do for "Shop", "Sale",
+ *      "Sneakers", "Hoodie", "Drop", brand/collection names, sizing.)
+ *   2. Does translating it word-for-word sound stiff, overly formal, or
+ *      like a government notice rather than a fashion marketplace?
+ *   3. Is this editorial/branding copy (voice, identity, taxonomy) or is it
+ *      transactional copy (an instruction, a warning, a form field, a
+ *      status the user must act on correctly)?
+ *   4. Could a misunderstanding here cause a real user error — wrong
+ *      address, wrong payment, a lost order, a rejected upload?
+ *   5. Is the choice consistent with how the same concept is labeled
+ *      everywhere else on the site?
+ *   When genuinely unsure: default to English for branding/taxonomy/
+ *   editorial copy, default to Vietnamese for anything transactional,
+ *   instructional, or legal.
+ *
+ * ENGLISH — brand identity, campaign/editorial copy, primary fashion
+ *   taxonomy (category names), product/brand/collection names, size
+ *   terminology, short nav labels, other short labels that read more
+ *   naturally in English (e.g. "Live Preview", "New Arrivals").
+ *   See `EN` below for the canonical anchor strings — import from there
+ *   instead of re-typing them so the site can't drift out of sync again.
+ *
+ * VIETNAMESE — instructions needed to complete a task, form helper/
+ *   description text, validation and error messages, auth guidance, cart/
+ *   checkout/payment/shipping explanations, order-status explanations,
+ *   profile-editing instructions, empty states, destructive-action
+ *   confirmations, legal/support/privacy/delivery content, and any
+ *   accessibility text where Vietnamese is clearer for this audience.
+ *   See `vi` below (unchanged from the original Phase 8.1 pass — this
+ *   object was already scoped correctly to transactional copy).
+ *
+ * Stored enum/identifier values (order status, payment method, product
+ * condition, category/brand slugs) are NEVER translated at the data layer —
+ * only their *display* label changes, via `tStatus`/`tPaymentMethod`/
+ * `formatCondition` (see `lib/format.ts`). Never invent a second mapping.
+ *
+ * Third-party widget copy (e.g. the Tawk.to chat bubble) is configured in
+ * that vendor's own dashboard — it cannot be localized from this source
+ * tree, and this file makes no claim to control it.
+ */
+
+/** Canonical English brand/editorial/taxonomy anchors. Import these rather
+ * than re-typing the strings, so a future edit can't silently drift one
+ * occurrence out of sync with the rest of the site. */
+export const EN = {
+  common: {
+    noImage: 'No image',
+  },
+  brand: {
+    name: 'StyleHub',
+    tagline: 'Shop the drop. Sell the archive.',
+    howItWorks: 'How the marketplace works',
+  },
+  nav: {
+    shop: 'Shop',
+    about: 'About',
+    sell: 'Sell',
+  },
+  home: {
+    newArrivals: 'New Arrivals',
+    onSale: 'On Sale',
+    viewAllProducts: 'View All Products',
+  },
+  sell: {
+    hubEyebrow: 'Seller Hub',
+    hubHeading: 'List your archive. Find its next owner.',
+    categoryAndBrand: 'Category & Brand',
+    livePreview: 'Live Preview',
+  },
+} as const;
+
 export const VI_LOCALE = 'vi-VN';
 export const VI_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
