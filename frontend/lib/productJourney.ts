@@ -12,11 +12,11 @@ export type ClaimSource = 'seller_declared';
 
 export interface ProductSustainability {
   lifecycle_type: LifecycleType;
-  material: string | null;
-  repair_history: string | null;
-  upcycle_details: string | null;
-  product_story: string | null;
-  reuse_packaging: boolean;
+  material?: string | null;
+  repair_history?: string | null;
+  upcycle_details?: string | null;
+  product_story?: string | null;
+  reuse_packaging?: boolean;
   claim_source: ClaimSource | null;
 }
 
@@ -153,4 +153,8 @@ export function prepareProductJourney(value: ProductJourneyFormState) {
 
 export function getLifecycleOption(value: ProductJourneyFormState['lifecycle_type']) {
   return LIFECYCLE_OPTIONS.find((option) => option.value === value);
+}
+
+export function isSpecifiedLifecycle(value?: LifecycleType | null): value is Exclude<LifecycleType, 'not_specified'> {
+  return Boolean(value && value !== 'not_specified');
 }

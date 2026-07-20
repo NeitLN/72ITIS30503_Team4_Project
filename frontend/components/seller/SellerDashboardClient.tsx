@@ -15,6 +15,7 @@ import {
 } from '../../lib/sellerDashboard';
 import { ListingEditForm } from './ListingEditForm';
 import { ConfirmDialog } from './ConfirmDialog';
+import { LifecycleBadge } from '../sustainability/LifecycleBadge';
 
 type Tab = 'overview' | 'listings' | 'orders';
 
@@ -383,7 +384,10 @@ export const SellerDashboardClient = () => {
                               <div className="flex items-center gap-3">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={listing.thumbnail || listing.image_url || ''} alt={listing.name} className="h-12 w-12 object-cover border border-neutral-200 shrink-0" />
-                                <span className="font-medium text-neutral-900 line-clamp-2">{listing.name}</span>
+                                <div className="min-w-0">
+                                  <span className="block font-medium text-neutral-900 line-clamp-2">{listing.name}</span>
+                                  <LifecycleBadge lifecycle={listing.sustainability?.lifecycle_type} showNotSpecified testId="listing-lifecycle" className="mt-1" />
+                                </div>
                               </div>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">{formatVND(listing.sale_price ?? listing.price)}</td>
@@ -430,6 +434,7 @@ export const SellerDashboardClient = () => {
                           <div className="min-w-0">
                             <p className="font-medium text-neutral-900 line-clamp-2">{listing.name}</p>
                             <p className="text-sm text-neutral-600">{formatVND(listing.sale_price ?? listing.price)}</p>
+                            <LifecycleBadge lifecycle={listing.sustainability?.lifecycle_type} showNotSpecified testId="listing-lifecycle" className="mt-1" />
                             <span className="mt-1 inline-block font-mono text-[10px] uppercase tracking-wider border border-neutral-300 px-2 py-0.5" data-testid="listing-status">
                               {LISTING_STATUS_LABELS[listing.status] || listing.status}
                             </span>

@@ -61,6 +61,9 @@ router.get('/:slug/products', async (req, res) => {
       ...result.meta
     });
   } catch (err) {
+    if (err.status === 400) {
+      return error(res, 400, err.message, { lifecycle: err.code });
+    }
     if (err.message === 'DATABASE_NOT_CONFIGURED') {
       return error(res, 503, 'Dịch vụ tạm thời không khả dụng: hệ thống chưa được cấu hình.');
     }

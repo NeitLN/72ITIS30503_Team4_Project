@@ -7,6 +7,7 @@ import { getProducts, getCategories } from '../../lib/catalog';
 import { Product } from '../../types/product';
 import { Category } from '../../types/category';
 import { Metadata } from 'next';
+import Link from 'next/link';
 
 export const revalidate = 60; // Revalidate cache every 60 seconds
 
@@ -21,6 +22,9 @@ interface ShopPageProps {
     category?: string;
     condition?: string;
     brand?: string;
+    lifecycle?: string;
+    sort?: string;
+    page?: string;
   }>;
 }
 
@@ -33,9 +37,14 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   if (params.category) apiParams.category = params.category;
   if (params.condition) apiParams.condition = params.condition;
   if (params.brand) apiParams.brand = params.brand;
+  if (params.lifecycle) apiParams.lifecycle = params.lifecycle;
+  if (params.sort) apiParams.sort = params.sort;
+  if (params.page) apiParams.page = params.page;
 
   let products: Product[] = [];
   let count: number | null = null;
+  let page = Math.max(Number.parseInt(params.page || '1', 10) || 1, 1);
+  let limit = 20;
   let categories: Category[] = [];
   let hasError = false;
 
@@ -44,9 +53,22 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     products = res.data || [];
     const metaCount = res.meta?.count;
     count = typeof metaCount === 'number' ? metaCount : products.length;
+    page = typeof res.meta?.page === 'number' ? res.meta.page : page;
+    limit = typeof res.meta?.limit === 'number' ? res.meta.limit : limit;
   } catch {
     hasError = true;
   }
+
+  const totalPages = count == null ? 1 : Math.max(Math.ceil(count / limit), 1);
+  const pageHref = (nextPage: number) => {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value && key !== 'page') query.set(key, value);
+    });
+    if (nextPage > 1) query.set('page', String(nextPage));
+    const suffix = query.toString();
+    return suffix ? `/shop?${suffix}` : '/shop';
+  };
 
   try {
     const res = await getCategories();
@@ -74,11 +96,24 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             )}
 
             {products.length > 0 ? (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <nav aria-label="Phân trang tin đăng" className="mt-10 flex items-center justify-between border-t border-neutral-200 pt-5 font-mono text-xs">
+                    {page > 1 ? (
+                      <Link href={pageHref(page - 1)} className="border border-neutral-300 px-3 py-2 uppercase tracking-wider hover:border-neutral-900">← Trước</Link>
+                    ) : <span />}
+                    <span className="text-neutral-500">Trang {page} / {totalPages}</span>
+                    {page < totalPages ? (
+                      <Link href={pageHref(page + 1)} className="border border-neutral-300 px-3 py-2 uppercase tracking-wider hover:border-neutral-900">Sau →</Link>
+                    ) : <span />}
+                  </nav>
+                )}
+              </>
             ) : (
               <ShopEmptyState variant="empty" />
             )}

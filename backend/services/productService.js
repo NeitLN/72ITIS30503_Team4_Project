@@ -1,5 +1,15 @@
 const { supabase, supabaseAdmin, isSupabaseConfigured } = require('../lib/supabase');
-const { toPublicSustainability } = require('../constants/sustainability');
+const { LIFECYCLE_TYPES, toPublicSustainability } = require('../constants/sustainability');
+
+const LIFECYCLE_SET = new Set(LIFECYCLE_TYPES);
+
+class InvalidLifecycleFilterError extends Error {
+  constructor() {
+    super('Bộ lọc hành trình sản phẩm không hợp lệ.');
+    this.status = 400;
+    this.code = 'INVALID_LIFECYCLE_FILTER';
+  }
+}
 
 const checkDb = () => {
   if (!isSupabaseConfigured()) {
@@ -100,11 +110,47 @@ const attachRelations = async (products, { sustainabilityDetails = false } = {})
 
 const getProducts = async (options = {}) => {
   checkDb();
+
+  if (options.lifecycle !== undefined && (
+    typeof options.lifecycle !== 'string' || !LIFECYCLE_SET.has(options.lifecycle)
+  )) {
+    throw new InvalidLifecycleFilterError();
+  }
+
+  const page = Math.max(parseInt(options.page, 10) || 1, 1);
+  let limit = parseInt(options.limit, 10) || 20;
+  if (isNaN(limit) || limit < 1) limit = 20;
+  if (limit > 100) limit = 100;
   
   let query = supabase.from('products').select('*', { count: 'exact' });
 
   // Assume active status is required unless specified
   query = query.eq('status', 'active');
+
+  if (options.lifecycle) {
+    if (!supabaseAdmin) throw new Error('DATABASE_NOT_CONFIGURED');
+
+    if (options.lifecycle === 'not_specified') {
+      const { data: classifiedRows, error: lifecycleError } = await supabaseAdmin
+        .from('product_sustainability')
+        .select('product_id')
+        .neq('lifecycle_type', 'not_specified');
+      if (lifecycleError) throw lifecycleError;
+      const excludedIds = [...new Set((classifiedRows || []).map((row) => row.product_id).filter(Boolean))];
+      if (excludedIds.length) query = query.not('id', 'in', `(${excludedIds.join(',')})`);
+    } else {
+      const { data: lifecycleRows, error: lifecycleError } = await supabaseAdmin
+        .from('product_sustainability')
+        .select('product_id')
+        .eq('lifecycle_type', options.lifecycle);
+      if (lifecycleError) throw lifecycleError;
+      const matchingIds = [...new Set((lifecycleRows || []).map((row) => row.product_id).filter(Boolean))];
+      if (!matchingIds.length) {
+        return { data: [], meta: { page, limit, count: 0 } };
+      }
+      query = query.in('id', matchingIds);
+    }
+  }
 
   if (options.category) {
     try {
@@ -112,10 +158,10 @@ const getProducts = async (options = {}) => {
       if (catData) {
         query = query.eq('category_slug', options.category); // fallback to slug mapping if id throws
       } else {
-        return { data: [], meta: { page: options.page || 1, limit: options.limit || 20, count: 0 } };
+        return { data: [], meta: { page, limit, count: 0 } };
       }
     } catch (e) {
-      return { data: [], meta: { page: options.page || 1, limit: options.limit || 20, count: 0 } };
+      return { data: [], meta: { page, limit, count: 0 } };
     }
   }
 
@@ -125,10 +171,10 @@ const getProducts = async (options = {}) => {
       if (brandData) {
         query = query.eq('brand_id', brandData.id);
       } else {
-        return { data: [], meta: { page: options.page || 1, limit: options.limit || 20, count: 0 } };
+        return { data: [], meta: { page, limit, count: 0 } };
       }
     } catch (e) {
-      return { data: [], meta: { page: options.page || 1, limit: options.limit || 20, count: 0 } };
+      return { data: [], meta: { page, limit, count: 0 } };
     }
   }
 
@@ -171,17 +217,16 @@ const getProducts = async (options = {}) => {
     query = query.not('sale_price', 'is', null).gt('sale_price', 0);
   }
 
-  const page = parseInt(options.page) || 1;
-  let limit = parseInt(options.limit) || 20;
-  if (isNaN(limit) || limit < 1) limit = 20;
-  if (limit > 100) limit = 100;
-  
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
   query = query.range(from, to);
 
-  if (options.sort === 'latest' || options.filter === 'latest') {
+  if (options.sort === 'price_asc') {
+    query = query.order('price', { ascending: true }).order('created_at', { ascending: false });
+  } else if (options.sort === 'price_desc') {
+    query = query.order('price', { ascending: false }).order('created_at', { ascending: false });
+  } else if (options.sort === 'latest' || options.filter === 'latest') {
     query = query.order('created_at', { ascending: false });
   } else {
     // Default sorting
@@ -191,6 +236,15 @@ const getProducts = async (options = {}) => {
   const { data, error, count } = await query;
 
   if (error) {
+    // PostgREST reports an unsatisfiable range when the requested page is
+    // beyond the last result. That is a normal empty-page state, not a 500.
+    if (error.code === 'PGRST103') {
+      const match = String(error.details || '').match(/only\s+(\d+)\s+rows?/i);
+      return {
+        data: [],
+        meta: { page, limit, count: match ? Number(match[1]) : 0 },
+      };
+    }
     // Gracefully handle schemas missing the is_featured column instead of a 500
     if ((options.featured === 'true' || options.featured === true) &&
         (error.code === '42703' || error.message?.includes('is_featured'))) {
@@ -296,6 +350,7 @@ const getProductVariants = async (productId) => {
 };
 
 module.exports = {
+  InvalidLifecycleFilterError,
   getProducts,
   getProductBySlug,
   getFeaturedProducts,

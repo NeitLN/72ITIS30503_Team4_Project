@@ -4,6 +4,7 @@ import { ROUTES } from '../../constants/routes';
 import { formatVND, getListingView } from '../../lib/format';
 import { ListingBadge } from '../marketplace/ListingBadge';
 import { ListingImage } from '../marketplace/ListingImage';
+import { LifecycleBadge } from '../sustainability/LifecycleBadge';
 
 interface ProductCardProps {
   product: Product;
@@ -15,6 +16,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   return (
     <Link
       href={ROUTES.PRODUCT(product.slug)}
+      data-testid="product-card"
       className="group block border border-[var(--border)] bg-[var(--background)] rounded-[var(--radius-card)] overflow-hidden transition-colors hover:border-[var(--brand-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-accent)]"
     >
       <div className="relative aspect-square overflow-hidden border-b border-[var(--border)] bg-[var(--muted)]">
@@ -30,6 +32,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       </div>
 
       <div className="p-4">
+        <LifecycleBadge lifecycle={product.sustainability?.lifecycle_type} className="mb-2" />
         {listing.brandName && (
           <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
             {listing.brandName}

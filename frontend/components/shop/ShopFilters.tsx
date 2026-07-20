@@ -4,6 +4,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { Category } from '../../types/category';
 import { formatCondition } from '../../lib/format';
+import { LIFECYCLE_OPTIONS, getLifecycleOption, type LifecycleType } from '../../lib/productJourney';
 
 interface ShopFiltersProps {
   categories: Category[];
@@ -12,6 +13,9 @@ interface ShopFiltersProps {
     category?: string;
     condition?: string;
     brand?: string;
+    lifecycle?: string;
+    sort?: string;
+    page?: string;
   };
 }
 
@@ -97,11 +101,13 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
     Boolean(initialFilters.search) ||
     Boolean(initialFilters.category) ||
     Boolean(initialFilters.condition) ||
-    Boolean(initialFilters.brand);
+    Boolean(initialFilters.brand) ||
+    Boolean(initialFilters.lifecycle);
 
   const selectedCategoryName = categories.find((c) => c.slug === initialFilters.category)?.name;
   const selectedBrandName = BRANDS.find((b) => b.slug === initialFilters.brand)?.name;
   const selectedConditionName = CONDITIONS.find((c) => c.slug === initialFilters.condition)?.name;
+  const selectedLifecycleName = getLifecycleOption(initialFilters.lifecycle as LifecycleType)?.previewLabel;
 
   return (
     <div className="mb-8 border-b border-neutral-200 pb-6">
@@ -132,7 +138,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
         </form>
 
         {/* Dropdowns */}
-        <div className="grid grid-cols-3 gap-3 sm:flex sm:items-end">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:flex lg:items-end">
           {/* Category Dropdown */}
           <div className="flex-1 sm:min-w-[140px]">
             <label htmlFor="category-select" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">
@@ -150,6 +156,41 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
                   {cat.name}
                 </option>
               ))}
+            </select>
+          </div>
+
+          {/* Lifecycle Dropdown */}
+          <div className="flex-1 sm:min-w-[150px]">
+            <label htmlFor="lifecycle-select" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">
+              Hành trình sản phẩm
+            </label>
+            <select
+              id="lifecycle-select"
+              value={initialFilters.lifecycle || ''}
+              onChange={(e) => handleSelectChange('lifecycle', e.target.value)}
+              className="w-full border border-neutral-300 bg-white px-3 py-2 text-xs font-mono text-neutral-800 uppercase tracking-wide focus:border-neutral-900 focus:outline-none"
+            >
+              <option value="">Tất cả hành trình</option>
+              {LIFECYCLE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.previewLabel}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex-1 sm:min-w-[135px]">
+            <label htmlFor="sort-select" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">
+              Sắp xếp
+            </label>
+            <select
+              id="sort-select"
+              value={initialFilters.sort || 'latest'}
+              onChange={(e) => handleSelectChange('sort', e.target.value === 'latest' ? '' : e.target.value)}
+              className="w-full border border-neutral-300 bg-white px-3 py-2 text-xs font-mono text-neutral-800 uppercase tracking-wide focus:border-neutral-900 focus:outline-none"
+            >
+              <option value="latest">Mới nhất</option>
+              <option value="price_asc">Giá thấp đến cao</option>
+              <option value="price_desc">Giá cao đến thấp</option>
             </select>
           </div>
 
@@ -259,6 +300,20 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
                 onClick={() => handleClearSingle('condition')}
                 className="hover:text-red-600 font-bold ml-1 cursor-pointer"
                 aria-label="Xóa bộ lọc tình trạng"
+              >
+                ✕
+              </button>
+            </span>
+          )}
+
+          {initialFilters.lifecycle && (
+            <span data-testid="lifecycle-filter-chip" className="inline-flex items-center gap-1.5 border border-neutral-900 bg-white px-2.5 py-1 font-mono text-[10px] text-neutral-900">
+              Hành trình: {selectedLifecycleName || initialFilters.lifecycle}
+              <button
+                type="button"
+                onClick={() => handleClearSingle('lifecycle')}
+                className="hover:text-red-600 font-bold ml-1 cursor-pointer"
+                aria-label="Xóa bộ lọc hành trình sản phẩm"
               >
                 ✕
               </button>

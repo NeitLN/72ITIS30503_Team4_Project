@@ -5,6 +5,7 @@ import { SellerMiniCard } from '../../../components/marketplace/SellerMiniCard';
 import { ConditionBadge } from '../../../components/marketplace/ConditionBadge';
 import { ListingBadge } from '../../../components/marketplace/ListingBadge';
 import { ProductActions } from '../../../components/product/ProductActions';
+import { ProductJourneyDetails } from '../../../components/sustainability/ProductJourneyDetails';
 import { getProductBySlug } from '../../../lib/catalog';
 import { formatVND, getListingView } from '../../../lib/format';
 import { notFound } from 'next/navigation';
@@ -155,6 +156,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
               ))}
             </dl>
           </section>
+
+          <ProductJourneyDetails journey={product.sustainability} />
 
           <div className="mt-6">
             <SellerMiniCard listing={listing} />
