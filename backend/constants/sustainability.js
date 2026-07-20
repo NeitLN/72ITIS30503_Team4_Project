@@ -7,6 +7,13 @@ const LIFECYCLE_TYPES = Object.freeze([
   'not_specified',
 ]);
 
+const CIRCULAR_LIFECYCLE_TYPES = Object.freeze([
+  'deadstock',
+  'pre_loved',
+  'repaired',
+  'upcycled',
+]);
+
 const CLAIM_SOURCES = Object.freeze(['seller_declared']);
 
 const FIELD_LIMITS = Object.freeze({
@@ -228,6 +235,7 @@ function toPublicSustainability(row, { minimal = false } = {}) {
 
 module.exports = {
   LIFECYCLE_TYPES,
+  CIRCULAR_LIFECYCLE_TYPES,
   CLAIM_SOURCES,
   FIELD_LIMITS,
   MIN_MEANINGFUL_DETAIL_LENGTH,

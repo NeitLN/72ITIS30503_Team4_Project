@@ -8,6 +8,8 @@ export const ROUTES = {
   CONTACT: '/contact',
   PRIVACY_POLICY: '/privacy-policy',
   DELIVERY_TERMS: '/delivery-terms',
+  SUSTAINABILITY: '/sustainability',
+  SHOP_CIRCULAR: '/shop?lifecycle=deadstock%2Cpre_loved%2Crepaired%2Cupcycled',
   CART: '/cart',
   WISHLIST: '/wishlist',
   CHECKOUT: '/checkout',

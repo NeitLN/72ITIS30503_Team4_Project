@@ -8,6 +8,8 @@ import { getSellerByUsername, getProductsBySeller } from '../../../lib/catalog';
 import { Product } from '../../../types/product';
 import { formatVietnamDate } from '../../../lib/format';
 import { displayVnLocation } from '../../../lib/vnLocations';
+import { getPublicSellerImpact, PublicSellerImpact } from '../../../lib/impact';
+import { PublicSellerImpactCard } from '../../../components/sustainability/PublicSellerImpactCard';
 
 interface SellerPageProps {
   params: Promise<{
@@ -51,6 +53,7 @@ export default async function SellerPage({ params }: SellerPageProps) {
 
   let seller;
   let products: Product[] = [];
+  let impact: PublicSellerImpact | null = null;
 
   try {
     const sellerRes = await getSellerByUsername(username);
@@ -66,12 +69,12 @@ export default async function SellerPage({ params }: SellerPageProps) {
     notFound();
   }
 
-  try {
-    const productsRes = await getProductsBySeller(seller.username);
-    products = productsRes.data || [];
-  } catch {
-    products = [];
-  }
+  const [productsResult, impactResult] = await Promise.allSettled([
+    getProductsBySeller(seller.username),
+    getPublicSellerImpact(seller.username),
+  ]);
+  if (productsResult.status === 'fulfilled') products = productsResult.value.data || [];
+  if (impactResult.status === 'fulfilled') impact = impactResult.value;
 
   const initial = (seller.full_name || seller.username || 'S').charAt(0).toUpperCase();
   const joined = formatVietnamDate(seller.created_at);
@@ -162,6 +165,7 @@ export default async function SellerPage({ params }: SellerPageProps) {
       </section>
 
       <Container className="mt-10 sm:mt-14">
+        {impact ? <PublicSellerImpactCard impact={impact} /> : null}
         <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 mb-6">
           Tin đang bán ({products.length})
         </h2>

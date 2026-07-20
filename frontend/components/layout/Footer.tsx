@@ -14,6 +14,7 @@ const linkGroups = [
     heading: 'Company',
     links: [
       { label: 'About StyleHub', href: ROUTES.ABOUT },
+      { label: 'Circular impact', href: ROUTES.SUSTAINABILITY },
       { label: 'Contact us', href: ROUTES.CONTACT },
     ],
   },

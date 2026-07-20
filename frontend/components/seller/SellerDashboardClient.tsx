@@ -16,6 +16,8 @@ import {
 import { ListingEditForm } from './ListingEditForm';
 import { ConfirmDialog } from './ConfirmDialog';
 import { LifecycleBadge } from '../sustainability/LifecycleBadge';
+import { getMyImpact, ProfileImpact } from '../../lib/impact';
+import { PersonalImpactCard } from '../sustainability/PersonalImpactCard';
 
 type Tab = 'overview' | 'listings' | 'orders';
 
@@ -49,6 +51,7 @@ export const SellerDashboardClient = () => {
   // ---------- Overview ----------
   const [stats, setStats] = useState<SellerListingStats | null>(null);
   const [statsError, setStatsError] = useState<string | null>(null);
+  const [impact, setImpact] = useState<ProfileImpact | null>(null);
 
   const loadStats = useCallback(async () => {
     setStatsError(null);
@@ -104,7 +107,12 @@ export const SellerDashboardClient = () => {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    void (async () => { await loadStats(); })();
+    void (async () => {
+      await Promise.all([
+        loadStats(),
+        getMyImpact().then(setImpact).catch(() => undefined),
+      ]);
+    })();
   }, [isAuthenticated, loadStats]);
 
   useEffect(() => {
@@ -309,6 +317,7 @@ export const SellerDashboardClient = () => {
           <p className="mt-6 text-xs text-neutral-400 max-w-xl">
             Doanh thu gộp được tính từ các mục đơn hàng đã hoàn tất chứa sản phẩm của bạn, chưa trừ phí hoặc chi phí vận chuyển.
           </p>
+          {impact ? <PersonalImpactCard impact={impact} dashboard /> : null}
         </div>
       )}
 

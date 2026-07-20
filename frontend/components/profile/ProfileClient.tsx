@@ -9,10 +9,11 @@ import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
 import { ROUTES } from '../../constants/routes';
 import { getMyProfile, updateMyProfile, uploadAvatar, MyProfile } from '../../lib/profile';
-import { getProductsBySeller } from '../../lib/catalog';
 import { Combobox } from '../ui/Combobox';
 import { searchVnLocations, displayVnLocation } from '../../lib/vnLocations';
 import { EN } from '../../lib/i18n';
+import { getMyImpact, ProfileImpact } from '../../lib/impact';
+import { PersonalImpactCard } from '../sustainability/PersonalImpactCard';
 
 type FormState = {
   display_name: string;
@@ -50,7 +51,7 @@ export const ProfileClient = () => {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
-  const [activeListingCount, setActiveListingCount] = useState<number | null>(null);
+  const [impact, setImpact] = useState<ProfileImpact | null>(null);
 
   const isHydrated = isCartHydrated && isWishlistHydrated;
 
@@ -79,18 +80,11 @@ export const ProfileClient = () => {
   }, [isAuthHydrated, isAuthenticated]);
 
   useEffect(() => {
-    if (!profile?.username) return;
+    if (!isAuthHydrated || !isAuthenticated) return;
     let cancelled = false;
-    (async () => {
-      try {
-        const res = await getProductsBySeller(profile.username as string, { limit: '1' });
-        if (!cancelled) setActiveListingCount(Number(res.meta?.count ?? res.data?.length ?? 0));
-      } catch {
-        // Non-fatal — the count simply won't be shown.
-      }
-    })();
+    getMyImpact().then((data) => { if (!cancelled) setImpact(data); }).catch(() => undefined);
     return () => { cancelled = true; };
-  }, [profile?.username]);
+  }, [isAuthHydrated, isAuthenticated]);
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((prev) => (prev ? { ...prev, [field]: value } : prev));
@@ -310,7 +304,8 @@ export const ProfileClient = () => {
       </section>
 
       <Container className="mt-10 sm:mt-14">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        {impact ? <PersonalImpactCard impact={impact} /> : null}
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12">
           <div className="lg:col-span-8 flex flex-col gap-8">
             {isEditing ? (
               <section className="border border-neutral-200 bg-white p-6 sm:p-8">
@@ -386,7 +381,7 @@ export const ProfileClient = () => {
                   </div>
                   <div className="border border-neutral-200 bg-white p-4">
                     <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Tin đăng đang bán</p>
-                    <p className="font-display text-2xl font-bold">{activeListingCount ?? '-'}</p>
+                    <p className="font-display text-2xl font-bold">{impact?.metrics.activeUserListings ?? '-'}</p>
                   </div>
                 </div>
               </section>

@@ -3,6 +3,7 @@ import { TrustStrip } from '../components/home/TrustStrip';
 import { ProductRow } from '../components/home/ProductRow';
 import { CategorySpotlight } from '../components/home/CategorySpotlight';
 import { SellerCTA } from '../components/home/SellerCTA';
+import { CircularImpactSection } from '../components/home/CircularImpactSection';
 import { Metadata } from 'next';
 import { getProducts } from '../lib/catalog';
 import { ROUTES } from '../constants/routes';
@@ -28,6 +29,7 @@ export default async function Home() {
       <TrustStrip />
       {/* Server Component Wrapper */}
       <CategorySpotlight />
+      <CircularImpactSection />
       <ProductRow
         eyebrow="Fresh from the community"
         title={EN.home.newArrivals}

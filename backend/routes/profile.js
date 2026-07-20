@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const profileService = require('../services/profileService');
+const impactService = require('../services/impactService');
 const { authenticateUser, requireAuth } = require('../middleware/auth');
 const { success, error } = require('../utils/apiResponse');
 
@@ -17,6 +18,18 @@ const upload = multer({
 });
 
 router.use(authenticateUser);
+
+// Identity is taken exclusively from the verified token. Query/body user IDs
+// are intentionally ignored so this private aggregate cannot be spoofed.
+router.get('/me/impact', requireAuth, async (req, res) => {
+  try {
+    return success(res, await impactService.getProfileImpact(req.user.id));
+  } catch (err) {
+    if (err.message === 'DATABASE_NOT_CONFIGURED') return error(res, 503, 'Hệ thống chưa được cấu hình.');
+    console.error('Get my circular impact error:', err);
+    return error(res, 500, 'Không thể tải dữ liệu tác động của bạn.');
+  }
+});
 
 // GET /api/profile/me — the authenticated user's own editable profile.
 router.get('/me', requireAuth, async (req, res) => {

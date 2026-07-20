@@ -14,6 +14,7 @@ const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
 const sellerListingRoutes = require('./routes/sellerListings');
 const sellerOrderRoutes = require('./routes/sellerOrders');
+const sustainabilityRoutes = require('./routes/sustainability');
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/sellers', sellerRoutes);
 app.use('/api/seller/listings', sellerListingRoutes);
 app.use('/api/seller/orders', sellerOrderRoutes);
+app.use('/api/sustainability', sustainabilityRoutes);
 
 // 404 Handler
 app.use((req, res) => {
