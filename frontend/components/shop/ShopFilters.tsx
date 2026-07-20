@@ -112,7 +112,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
   return (
     <div className="mb-8 border-b border-neutral-200 pb-6">
       {/* Search & Filter Selectors */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         {/* Search Input Form */}
         <form onSubmit={handleSearchSubmit} className="flex-1 max-w-lg">
           <label htmlFor="search" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">
@@ -138,7 +138,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
         </form>
 
         {/* Dropdowns */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:flex lg:items-end">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:flex xl:items-end">
           {/* Category Dropdown */}
           <div className="flex-1 sm:min-w-[140px]">
             <label htmlFor="category-select" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">

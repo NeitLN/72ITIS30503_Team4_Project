@@ -96,6 +96,17 @@ function normalizeText(value, field, limit, errors) {
   return normalized || null;
 }
 
+function normalizeBoolean(value, field, errors) {
+  if (value == null || value === '' || value === false || value === 0 || value === 'false' || value === '0') {
+    return false;
+  }
+  if (value === true || value === 1 || value === 'true' || value === '1') {
+    return true;
+  }
+  errors[field] = 'Giá trị phải là true hoặc false.';
+  return false;
+}
+
 function parseSustainabilityEnvelope(raw) {
   if (!raw || typeof raw !== 'object') return { provided: false, value: null };
 
@@ -159,6 +170,7 @@ function validateSustainability(raw, { requireExplicit = false } = {}) {
   const repairHistory = normalizeText(input.repair_history, 'repair_history', FIELD_LIMITS.repair_history, errors);
   const upcycleDetails = normalizeText(input.upcycle_details, 'upcycle_details', FIELD_LIMITS.upcycle_details, errors);
   const productStory = normalizeText(input.product_story, 'product_story', FIELD_LIMITS.product_story, errors);
+  const reusePackaging = normalizeBoolean(input.reuse_packaging, 'reuse_packaging', errors);
 
   if (lifecycleType === 'repaired' && (!repairHistory || repairHistory.length < MIN_MEANINGFUL_DETAIL_LENGTH)) {
     errors.repair_history = `Mô tả phần đã sửa ít nhất ${MIN_MEANINGFUL_DETAIL_LENGTH} ký tự.`;
@@ -194,7 +206,7 @@ function validateSustainability(raw, { requireExplicit = false } = {}) {
       repair_history: repairHistory,
       upcycle_details: upcycleDetails,
       product_story: productStory,
-      reuse_packaging: input.reuse_packaging === true || input.reuse_packaging === 'true' || input.reuse_packaging === '1',
+      reuse_packaging: reusePackaging,
       claim_source: 'seller_declared',
     },
   };

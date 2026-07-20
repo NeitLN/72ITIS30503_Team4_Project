@@ -10,14 +10,14 @@ export const metadata: Metadata = {
 
 export default function SellPage() {
   return (
-    <main className="bg-neutral-50 min-h-screen">
+    <div className="bg-neutral-50 min-h-screen">
       <PageHeader
         eyebrow={EN.sell.hubEyebrow}
         title={EN.sell.hubHeading}
         lede="Publish a real StyleHub listing in six quick steps — it goes live across the marketplace immediately."
       />
       <SellListingClient />
-    </main>
+    </div>
   );
 }
 

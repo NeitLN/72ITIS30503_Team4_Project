@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 
 export default function ProfilePage() {
   return (
-    <main>
+    <div>
       <ProfileClient />
-    </main>
+    </div>
   );
 }
 
