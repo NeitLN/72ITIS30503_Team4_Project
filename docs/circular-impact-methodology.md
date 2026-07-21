@@ -70,6 +70,19 @@ Every impact response includes:
 
 `generatedAt` is calculation time. It is not a guarantee that every underlying record was last updated at that instant. Phase 13 therefore does not publish `dataAsOf`.
 
+## Demo environment (Phase 15)
+
+StyleHub is currently a university course demonstration environment, not a
+production marketplace. Some accounts, listings, and completed transactions
+are prepared demonstration data — every one is namespaced (usernames
+starting `stylehub-demo-`, emails on the reserved `example.test` domain,
+listing names starting `Demo Circular —`) and documented in
+[`docs/sustainability-demo-data.md`](../docs/sustainability-demo-data.md).
+These records are included in every metric on this page exactly like any
+other active listing or completed order — the methodology does not treat
+them specially — so a metric being non-zero does not by itself mean it
+reflects organic third-party marketplace activity.
+
 ## Limitations
 
 - Product Journey is seller declared, not independently certified.

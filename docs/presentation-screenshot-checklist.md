@@ -29,6 +29,24 @@ All retained images are optimized JPEGs generated from a built, running applicat
 - [x] Mention that the mobile screenshot is Playwright Chromium emulation, not a physical-device certification.
 - [x] If demonstrating Tawk.to live, configure and manually verify it first; the QA runtime had no Tawk widget configured.
 
+## Phase 15 — retained (non-temporary) demo evidence
+
+Unlike the Phase 14 set above (deliberately temporary QA fixtures, removed
+after capture), these two screenshots show the **retained** Phase 15 demo
+dataset — the numbers persist in the development database and are not
+deleted after capture. Captured 2026-07-21 against the built production
+frontend (port 3000) and running backend (port 8080), full-page disabled
+(1280×900 viewport crop), no console panel, no credentials, no personal
+address, no unrelated desktop content.
+
+| File | Route/state | What it proves |
+|---|---|---|
+| `phase15/01-sustainability-demo-impact.png` | `/sustainability` | Real, non-zero, retained Circular Impact totals (10 active circular listings, 4 completed circular units, 73.3% journey coverage) calculated live by the actual impact service |
+| `phase15/02-seller-storefront-demo-impact.png` | `/seller/stylehub-demo-seller-hanoi` | Public seller storefront rendering real demo listings (with a "Nổi bật"/featured badge) and the public, allowlisted Seller Impact panel |
+
+See `docs/sustainability-demo-data.md` for the exact underlying data and
+`docs/final-rubric-compliance-audit.md` for how these map to rubric items.
+
 ## Capture reproducibility
 
 1. Build the frontend with `npm run build` in `frontend/`.

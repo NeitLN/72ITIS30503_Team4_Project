@@ -1,5 +1,10 @@
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '../.env' }); // Load root .env if running backend independently, or just rely on server.js dotenv config
+// Redundant with server.js's own load, but keeps this module correct when
+// required directly by a standalone script (seeders, tests) that never goes
+// through server.js. dotenv never overrides an already-set var, so this is
+// a safe no-op when server.js already loaded the environment.
+require('dotenv').config({ path: [path.join(__dirname, '../.env'), path.join(__dirname, '../../.env')], quiet: true });
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

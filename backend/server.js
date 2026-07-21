@@ -1,6 +1,12 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config(); // Load root .env
+// Phase 15: resolve explicitly by this file's own location (not process.cwd())
+// so the server loads the same env regardless of whether it's started as
+// `npm run dev:backend` (cwd=backend/) or `node backend/server.js` (cwd=repo
+// root) — backend/.env (has SUPABASE_SERVICE_ROLE_KEY) takes precedence,
+// with the root .env as a fallback for any var it doesn't define.
+require('dotenv').config({ path: [path.join(__dirname, '.env'), path.join(__dirname, '../.env')], quiet: true });
 const { isSupabaseConfigured } = require('./lib/supabase');
 const { success, error } = require('./utils/apiResponse');
 

@@ -65,6 +65,12 @@ export default function SustainabilityPage() {
                 StyleHub không cung cấp ước tính carbon, CO2, lượng nước, chất thải tránh được hoặc điểm môi trường. We publish only counts supported by marketplace records.
               </p>
             </section>
+            <section id="demo-disclosure" className="border border-amber-300 bg-amber-50 p-6">
+              <h2 className="font-display text-xl font-black uppercase">Demo environment</h2>
+              <p className="mt-3 text-sm leading-6 text-neutral-700">
+                StyleHub hiện là <strong>môi trường trình diễn học phần</strong> (university course demonstration environment). Một số tài khoản, tin đăng và đơn hàng — có nhãn rõ &quot;Demo Circular&quot; — là <strong>dữ liệu trình diễn được chuẩn bị sẵn</strong>, không phải hoạt động của khách hàng thật. Product Journey vẫn là seller-declared, không được xác minh độc lập; Circular Impact phản ánh hoạt động đã ghi nhận trên nền tảng (kể cả dữ liệu demo), không phải kết quả môi trường đã được chứng nhận.
+              </p>
+            </section>
             <section className="border border-neutral-950 bg-neutral-950 p-6 text-white">
               <h2 className="font-display text-xl font-black uppercase">How counting works</h2>
               <ol className="mt-4 space-y-4 text-sm leading-6 text-neutral-300">

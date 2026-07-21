@@ -49,6 +49,15 @@ export default function ContactPage() {
               <div className="border-t border-neutral-200 pt-4">
                 <h3 className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-900">Văn phòng</h3>
                 <p className="mt-1.5 text-sm text-neutral-600">Thành phố Hồ Chí Minh, Việt Nam</p>
+                <div className="mt-3 aspect-video w-full overflow-hidden border border-neutral-200">
+                  <iframe
+                    title="Bản đồ văn phòng StyleHub tại Thành phố Hồ Chí Minh"
+                    src="https://www.google.com/maps?q=Th%C3%A0nh%20ph%E1%BB%91%20H%E1%BB%93%20Ch%C3%AD%20Minh%2C%20Vi%E1%BB%87t%20Nam&output=embed"
+                    className="h-full w-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
               </div>
             </div>
 

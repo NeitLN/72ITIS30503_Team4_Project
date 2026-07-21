@@ -10,7 +10,7 @@ const crypto = require('crypto');
 const { supabase, supabaseAdmin } = require('./lib/supabase');
 const { signAuthToken } = require('./services/authService');
 
-const API_BASE = process.env.PHASE13_API_BASE || 'http://127.0.0.1:8081';
+const API_BASE = process.env.PHASE13_API_BASE || 'http://127.0.0.1:8080';
 const run = `phase13-qa-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
 const ids = { users: [], products: [], orders: [] };
 const checks = [];

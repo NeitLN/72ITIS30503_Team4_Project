@@ -33,3 +33,16 @@ This map connects the sustainability problem/UVP, implementation, database autho
 ## Production-readiness boundary
 
 The evidence supports correctness in the configured development project and built local production runtime. It does not establish third-party claim verification, production traffic capacity, multi-browser parity, physical-device behavior, or environmental lifecycle assessment. Those limitations must remain visible in the final project report.
+
+## Phase 15 — final demo and deployment readiness
+
+| Requirement | Implementation | Database/API source | Test evidence | Screenshot/report evidence |
+|---|---|---|---|---|
+| Non-zero factual demo Circular Impact | `backend/data/sustainabilityDemoCatalog.js`; `backend/scripts/seedSustainabilityDemo.js` (real `/sell` + checkout APIs, never direct writes) | 4 demo accounts, 12 demo listings, 2 real orders, namespaced | Phase 15 backend suite 38/38; `validateSustainabilityDemo.js` 24/24 | `docs/sustainability-demo-data.md` before/after table |
+| Idempotent, namespace-scoped demo lifecycle | `seedSustainabilityDemo.js` / `validateSustainabilityDemo.js` / `cleanupSustainabilityDemo.js` | Namespace resolved fresh from DB every run, never a cached ID file | Live-verified this session: dry-run → apply → second apply (0 created) → cleanup dry-run (exact set) | `docs/sustainability-demo-data.md` |
+| Honest demo-environment disclosure | `frontend/app/sustainability/page.tsx` (`#demo-disclosure`), `frontend/components/home/CircularImpactSection.tsx`, `docs/circular-impact-methodology.md` | — | Phase 15 backend suite (disclosure copy present) | Screenshot `phase15_sustainability.png` (session capture) |
+| `/products?_rsc` 404 investigation | `frontend/next.config.ts` `redirects()` | Root cause: Next.js App Router prefetch of the `/products` parent segment, which had no page of its own | Live-verified this session: `/products` now `307`s to `/shop`; zero HTTP ≥400 responses (incl. all `_rsc` requests) across 6 spot-checked routes | `docs/final-rubric-compliance-audit.md` |
+| Map requirement (previously missing) | `frontend/app/contact/page.tsx` (keyless Google Maps iframe) | — | Live-verified `200`, no console error | `docs/final-rubric-compliance-audit.md` |
+| Lecturer rubric compliance audit | — | — | Manual evidence-cited audit | `docs/final-rubric-compliance-audit.md` |
+| Production deployment readiness | — | No hosting provider configured (verified by repo search) | — | `docs/production-deployment-guide.md`; `docs/production-environment-checklist.md` |
+| Lecturer demonstration flow | — | — | — | `docs/final-presentation-demo-checklist.md` |

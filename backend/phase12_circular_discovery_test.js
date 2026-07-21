@@ -10,7 +10,7 @@ require('dotenv').config({ path: [path.join(__dirname, '.env'), path.join(__dirn
 const crypto = require('crypto');
 const { supabaseAdmin } = require('./lib/supabase');
 
-const API_BASE = process.env.PHASE12_API_BASE || 'http://127.0.0.1:8081';
+const API_BASE = process.env.PHASE12_API_BASE || 'http://127.0.0.1:8080';
 const run = `phase12-qa-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
 const ids = { users: [], products: [] };
 const checks = [];
