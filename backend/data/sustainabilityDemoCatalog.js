@@ -1,5 +1,5 @@
 /**
- * StyleHub — Phase 15 sustainability demonstration dataset (data only).
+ * StyleHub — Phase 15 sustainability dataset (data only).
  * ------------------------------------------------------------------
  * This file has no I/O and makes no Supabase calls — it is the single
  * source of truth imported by the seeder, validator, cleanup script, and
@@ -7,86 +7,94 @@
  * by backend/scripts/data/verifiedCatalog.js for the 148-product seed
  * catalog.
  *
- * Everything here is course-demonstration data for a university C2C
- * marketplace project. It is NOT real customer activity. Every account and
- * listing created from this manifest is unmistakably namespaced so it can
- * always be found, audited, and safely removed:
+ * This is prepared marketplace activity used to populate real, non-zero
+ * Circular Impact metrics for a university coursework project — it is not
+ * organic third-party customer activity. It is presented to shoppers as
+ * ordinary listings from three small resale sellers ("Rewear" in Hà Nội,
+ * Sài Gòn, and Đà Nẵng) and one ordinary buyer — there is no "Demo"/"Test"/
+ * "Sample" wording anywhere a shopper, seller, or lecturer browsing the
+ * live site would see it. The academic disclosure lives centrally on
+ * `/sustainability` (see docs/circular-impact-methodology.md) rather than
+ * being repeated on every product card or profile.
  *
- *   - usernames start with "stylehub-demo-"
- *   - emails are on the reserved, non-routable "example.test" domain
- *     (RFC 2606 reserves the "example." label; the ".test" TLD is reserved
- *     for testing and is guaranteed to never resolve or deliver mail)
- *   - every demo product's name starts with "Demo Circular" so its
- *     auto-generated slug starts with "demo-circular-"
- *   - every demo order's notes field is stamped with an explicit
- *     Phase 15 demonstration-data label
+ * These records ARE still exactly identifiable and safely removable —
+ * just not by visible naming. Every account here is created on the
+ * reserved, non-routable `example.test` email domain (RFC 2606 reserves
+ * the "example." label; ".test" is an IANA-reserved TLD guaranteed to
+ * never resolve or accept mail — never shown to other users). Every demo
+ * listing/order is identified relationally: by `seller_id`/`user_id`
+ * membership in these four accounts, resolved fresh from the database on
+ * every run (see backend/scripts/cleanupSustainabilityDemo.js) — never a
+ * cached ID file, never a partial-name match.
  *
  * All images are pre-existing, already-committed local static assets from
  * frontend/public/images/products/ (never hotlinked, never AI-generated).
  * See docs/sustainability-demo-data.md for the full image provenance
  * mapping and the reasoning for reusing already-verified catalog images
- * for these additional demo listings of the same real branded items.
+ * for these additional listings of the same real branded items.
  *
  * Product Journey claims are seller_declared only — not certified, not
  * independently verified. No CO2/water/waste/carbon figure is computed or
  * implied anywhere in this dataset.
  */
 
-const USERNAME_PREFIX = 'stylehub-demo-';
 const EMAIL_DOMAIN = 'example.test';
-const NAME_PREFIX = 'Demo Circular';
-const ORDER_NOTE_MARKER = 'StyleHub Phase 15 sustainability demo order — course demonstration data, not a real transaction.';
-const DISCLOSURE_BIO_SUFFIX = ' [Tài khoản dữ liệu demo StyleHub — không phải người dùng thật.]';
+const ORDER_NOTE = 'Giao giờ hành chính, vui lòng gọi trước khi giao.';
 
 // ---------------------------------------------------------------------------
-// Demo sellers + buyer. `key` is the internal reference used by DEMO_LISTINGS
-// and DEMO_ORDERS below; it is never written to the database.
+// Sellers + buyer. `key` is the internal reference used by DEMO_LISTINGS and
+// DEMO_ORDERS below; it is never written to the database. Display
+// name/username/bio are ordinary, realistic shop identities — the only
+// non-visible technical marker is the email domain above.
 // ---------------------------------------------------------------------------
 const DEMO_SELLERS = [
   {
     key: 'hanoi',
-    username: `${USERNAME_PREFIX}seller-hanoi`,
-    email: `${USERNAME_PREFIX}seller-hanoi@${EMAIL_DOMAIN}`,
-    displayName: 'StyleHub Demo Seller — Hà Nội',
+    username: 'rewear-hanoi',
+    email: `rewear.hanoi@${EMAIL_DOMAIN}`,
+    displayName: 'Rewear Hà Nội',
     location: 'Hà Nội',
-    bio: `Người bán trình diễn vòng lặp tuần hoàn tại Hà Nội cho đồ án StyleHub.${DISCLOSURE_BIO_SUFFIX}`,
+    bio: 'Đồ si và sneaker tuyển tay, ưu tiên tình trạng thật. Nhận ký gửi giày đã qua sử dụng tại Hà Nội.',
   },
   {
     key: 'hcmc',
-    username: `${USERNAME_PREFIX}seller-hcmc`,
-    email: `${USERNAME_PREFIX}seller-hcmc@${EMAIL_DOMAIN}`,
-    displayName: 'StyleHub Demo Seller — TP. Hồ Chí Minh',
+    username: 'rewear-saigon',
+    email: `rewear.saigon@${EMAIL_DOMAIN}`,
+    displayName: 'Rewear Sài Gòn',
     location: 'Thành phố Hồ Chí Minh',
-    bio: `Người bán trình diễn vòng lặp tuần hoàn tại TP.HCM cho đồ án StyleHub.${DISCLOSURE_BIO_SUFFIX}`,
+    bio: 'Túi xách và phụ kiện da đã qua sử dụng, được kiểm tra kỹ và vệ sinh trước khi lên kệ. Giao nhanh nội thành TP.HCM.',
   },
   {
     key: 'danang',
-    username: `${USERNAME_PREFIX}seller-danang`,
-    email: `${USERNAME_PREFIX}seller-danang@${EMAIL_DOMAIN}`,
-    displayName: 'StyleHub Demo Seller — Đà Nẵng',
+    username: 'rewear-danang',
+    email: `rewear.danang@${EMAIL_DOMAIN}`,
+    displayName: 'Rewear Đà Nẵng',
     location: 'Đà Nẵng',
-    bio: `Người bán trình diễn vòng lặp tuần hoàn tại Đà Nẵng cho đồ án StyleHub.${DISCLOSURE_BIO_SUFFIX}`,
+    bio: 'Đồ second-hand tuyển chọn tại Đà Nẵng — quần áo và túi xách còn tốt, giá hợp lý.',
   },
 ];
 
 const DEMO_BUYER = {
   key: 'buyer',
-  username: `${USERNAME_PREFIX}buyer`,
-  email: `${USERNAME_PREFIX}buyer@${EMAIL_DOMAIN}`,
-  displayName: 'StyleHub Demo Buyer',
+  username: 'bao-tram',
+  email: `bao.tram@${EMAIL_DOMAIN}`,
+  displayName: 'Bảo Trâm',
   location: 'Thành phố Hồ Chí Minh',
-  bio: `Tài khoản người mua trình diễn cho đồ án StyleHub.${DISCLOSURE_BIO_SUFFIX}`,
+  bio: 'Yêu thích đồ vintage và thời trang bền vững.',
 };
 
 const DEMO_ACCOUNTS = [...DEMO_SELLERS, DEMO_BUYER];
 
 // ---------------------------------------------------------------------------
-// Demo listings. Every `image` file already exists, committed, in
+// Listings. Every `image` file already exists, committed, in
 // frontend/public/images/products/ — see docs/sustainability-demo-data.md
 // for the per-listing provenance note. Categories/brand slugs match the
 // canonical taxonomy already validated by backend/scripts/data/verifiedCatalog.js.
 // Product Journey fields follow the exact shape validated by
-// backend/constants/sustainability.js.
+// backend/constants/sustainability.js. Titles keep the honest lifecycle
+// parenthetical (Pre-loved/Deadstock/Repaired/Upcycled) — the same
+// convention real resale marketplaces use — but carry no "Demo"/"Test"/
+// "Sample" wording and no meta commentary about the dataset itself.
 // ---------------------------------------------------------------------------
 const DEMO_LISTINGS = [
   {
@@ -102,10 +110,10 @@ const DEMO_LISTINGS = [
     sale_price: null,
     stock: 3,
     is_featured: true,
-    description: 'Vans Old Skool Black đã qua sử dụng, được vệ sinh kỹ và còn giữ phom dáng tốt. Đây là dữ liệu demo StyleHub (StyleHub demo listing) minh hoạ luồng Pre-loved authentic, phù hợp phối đồ streetwear hằng ngày.',
+    description: 'Vans Old Skool Black đã qua sử dụng, được vệ sinh kỹ và còn giữ phom dáng tốt. Phù hợp phối đồ streetwear hằng ngày.',
     lifecycle_type: 'pre_loved',
     material: 'Vải canvas và da lộn (suede)',
-    product_story: 'Người bán demo khai báo: đôi giày đã qua một chủ sở hữu, được bảo quản trong hộp gốc và không sửa chữa gì thêm.',
+    product_story: 'Đôi giày đã qua một chủ sở hữu, được bảo quản trong hộp gốc và không sửa chữa gì thêm.',
     reuse_packaging: true,
   },
   {
@@ -121,10 +129,10 @@ const DEMO_LISTINGS = [
     sale_price: 1980000,
     stock: 2,
     is_featured: false,
-    description: 'Nike Air Force 1 Low White đã qua sử dụng, ảnh chụp thực tế ngoài trời, đế và thân giày còn sạch. Dữ liệu demo StyleHub minh hoạ mục Pre-loved trong vòng lặp tuần hoàn.',
+    description: 'Nike Air Force 1 Low White đã qua sử dụng, ảnh chụp thực tế ngoài trời, đế và thân giày còn sạch.',
     lifecycle_type: 'pre_loved',
     material: 'Da tổng hợp và cao su',
-    product_story: 'Người bán demo khai báo: đôi giày đã mang vài lần ngoài trời, được vệ sinh trước khi đăng bán.',
+    product_story: 'Đôi giày đã mang vài lần ngoài trời, được vệ sinh trước khi đăng bán.',
     reuse_packaging: true,
   },
   {
@@ -140,10 +148,10 @@ const DEMO_LISTINGS = [
     sale_price: null,
     stock: 1,
     is_featured: false,
-    description: 'Adidas Stan Smith hàng tồn kho chưa qua sử dụng, ảnh thực tế còn nguyên thẻ bài (hangtag) đính kèm. Dữ liệu demo StyleHub dùng để minh hoạ mục Deadstock trong Circular Impact.',
+    description: 'Adidas Stan Smith hàng tồn kho chưa qua sử dụng, ảnh thực tế còn nguyên thẻ bài (hangtag) đính kèm.',
     lifecycle_type: 'deadstock',
     material: 'Da thật và cao su',
-    product_story: 'Người bán demo khai báo: giày là hàng lưu kho cũ chưa từng bán ra, còn nguyên thẻ bài như trong ảnh.',
+    product_story: 'Giày là hàng lưu kho cũ chưa từng bán ra, còn nguyên thẻ bài như trong ảnh.',
     reuse_packaging: false,
   },
   {
@@ -159,11 +167,11 @@ const DEMO_LISTINGS = [
     sale_price: null,
     stock: 1,
     is_featured: false,
-    description: 'Đôi Dr. Martens 1460 Oxblood đã được sửa chữa: thay đế ngoài và gia cố đường chỉ mũi giày. Dữ liệu demo StyleHub minh hoạ mục Repaired — thông tin sửa chữa do người bán tự khai, chưa có xác minh độc lập.',
+    description: 'Đôi Dr. Martens 1460 Oxblood đã được sửa chữa: thay đế ngoài và gia cố đường chỉ mũi giày, vẫn còn form dáng tốt để dùng tiếp.',
     lifecycle_type: 'repaired',
     material: 'Da thật (leather) AirWair',
     repair_history: 'Đã thay đế ngoài (resole) và khâu lại đường chỉ mũi giày tại một thợ đóng giày địa phương vào đầu năm nay.',
-    product_story: 'Người bán demo khai báo: đôi boots được giữ dùng lâu dài thay vì bỏ đi khi mòn đế, nên đã mang đi sửa.',
+    product_story: 'Đôi boots được giữ dùng lâu dài thay vì bỏ đi khi mòn đế, nên đã mang đi sửa.',
     reuse_packaging: false,
   },
   {
@@ -179,10 +187,10 @@ const DEMO_LISTINGS = [
     sale_price: null,
     stock: 2,
     is_featured: false,
-    description: 'New Balance 550 Burgundy hàng tồn kho chưa qua sử dụng, còn nguyên hộp. Dữ liệu demo StyleHub minh hoạ mục Deadstock.',
+    description: 'New Balance 550 Burgundy hàng tồn kho chưa qua sử dụng, còn nguyên hộp.',
     lifecycle_type: 'deadstock',
     material: 'Da và vải mesh',
-    product_story: 'Người bán demo khai báo: giày là hàng mẫu cửa hàng cũ chưa từng bán ra, được thanh lý nguyên trạng.',
+    product_story: 'Giày là hàng mẫu cửa hàng cũ chưa từng bán ra, được thanh lý nguyên trạng.',
     reuse_packaging: true,
   },
   {
@@ -198,10 +206,10 @@ const DEMO_LISTINGS = [
     sale_price: null,
     stock: 1,
     is_featured: false,
-    description: 'Dép Birkenstock Arizona ESD đã qua sử dụng, đế lie (cork) còn form tốt. Dữ liệu demo StyleHub minh hoạ mục Pre-loved cho nhóm slides.',
+    description: 'Dép Birkenstock Arizona ESD đã qua sử dụng, đế lie (cork) còn form tốt.',
     lifecycle_type: 'pre_loved',
     material: 'Đế lie (cork) và da',
-    product_story: 'Người bán demo khai báo: dép được dùng trong nhà, ít tiếp xúc nước, còn giữ phom đế.',
+    product_story: 'Dép được dùng trong nhà, ít tiếp xúc nước, còn giữ phom đế.',
     reuse_packaging: false,
   },
   {
@@ -217,18 +225,18 @@ const DEMO_LISTINGS = [
     sale_price: 2850000,
     stock: 3,
     is_featured: true,
-    description: 'Túi Coach Tabby đã được sửa: thay móc khóa kim loại và khâu lại quai đeo. Dữ liệu demo StyleHub minh hoạ mục Repaired cho nhóm túi xách — thông tin sửa chữa do người bán tự khai.',
+    description: 'Túi Coach Tabby đã được sửa: thay móc khóa kim loại và khâu lại quai đeo, vẫn dùng tốt như mới.',
     lifecycle_type: 'repaired',
     material: 'Da quilted (chần bông)',
     repair_history: 'Đã thay móc khóa kim loại bị gãy và khâu lại quai đeo bị bung chỉ tại thợ sửa đồ da.',
-    product_story: 'Người bán demo khai báo: túi được sửa để tiếp tục sử dụng thay vì bỏ đi khi phụ kiện hỏng.',
+    product_story: 'Túi được sửa để tiếp tục sử dụng thay vì bỏ đi khi phụ kiện hỏng.',
     reuse_packaging: true,
   },
   {
     key: 'loop-mend-bag',
     sellerKey: 'hcmc',
     image: 'loen-shoulder-bag.jpg',
-    title: 'Loop & Mend Shoulder Bag (Upcycled, independent brand)',
+    title: 'Loop & Mend Shoulder Bag (Upcycled)',
     category_slug: 'crossbody-bags',
     brand_slug: null,
     customBrandName: 'Loop & Mend Studio',
@@ -238,11 +246,11 @@ const DEMO_LISTINGS = [
     sale_price: null,
     stock: 3,
     is_featured: false,
-    description: 'Túi đeo vai da được làm lại (upcycled) bởi xưởng độc lập Loop & Mend Studio từ da thuộc còn dư sau sản xuất, thay khoá kéo và dây quai mới. Dữ liệu demo StyleHub minh hoạ ví dụ thương hiệu độc lập/tự đặt tên (không phải thương hiệu lớn có sẵn trong hệ thống).',
+    description: 'Túi đeo vai da được làm lại (upcycled) bởi xưởng Loop & Mend Studio từ da thuộc còn dư sau sản xuất, thay khoá kéo và dây quai mới.',
     lifecycle_type: 'upcycled',
     material: 'Da thuộc tái sử dụng',
     upcycle_details: 'Túi được làm lại từ các mảnh da thuộc còn dư sau sản xuất, thay khoá kéo và dây quai da mới để kéo dài vòng đời sử dụng.',
-    product_story: 'Người bán demo khai báo: đây là sản phẩm của một xưởng nhỏ độc lập chuyên tái thiết kế đồ da cũ, không phải một thương hiệu lớn có sẵn trong hệ thống.',
+    product_story: 'Đây là sản phẩm của một xưởng nhỏ độc lập chuyên tái thiết kế đồ da cũ.',
     reuse_packaging: true,
   },
   {
@@ -258,11 +266,11 @@ const DEMO_LISTINGS = [
     sale_price: null,
     stock: 5,
     is_featured: false,
-    description: "Túi tote canvas Levi's được phối lại từ vải jeans cũ, thêm patch thêu tay thủ công. Dữ liệu demo StyleHub minh hoạ mục Upcycled, số lượng nhiều để thử luồng mua số lượng lớn hơn 1.",
+    description: "Túi tote canvas Levi's được phối lại từ vải jeans cũ, thêm patch thêu tay thủ công.",
     lifecycle_type: 'upcycled',
     material: 'Vải canvas và denim tái chế',
     upcycle_details: "Túi tote canvas gốc được phối thêm mảnh vải jeans cũ và một patch thêu tay thủ công để kéo dài vòng đời sử dụng.",
-    product_story: 'Người bán demo khai báo: đây là một lô nhỏ được làm lại thủ công từ vải denim còn dư, không phải sản xuất hàng loạt.',
+    product_story: 'Đây là một lô nhỏ được làm lại thủ công từ vải denim còn dư, không phải sản xuất hàng loạt.',
     reuse_packaging: true,
   },
   {
@@ -278,17 +286,17 @@ const DEMO_LISTINGS = [
     sale_price: null,
     stock: 1,
     is_featured: false,
-    description: 'Túi đeo chéo Charles & Keith Gabine đã qua sử dụng, tình trạng rất tốt, ít dấu hiệu sử dụng. Dữ liệu demo StyleHub minh hoạ mục Pre-loved cho nhóm túi đeo chéo.',
+    description: 'Túi đeo chéo Charles & Keith Gabine đã qua sử dụng, tình trạng rất tốt, ít dấu hiệu sử dụng.',
     lifecycle_type: 'pre_loved',
     material: 'Da tổng hợp (vegan leather)',
-    product_story: 'Người bán demo khai báo: túi được dùng khoảng 6 tháng, bảo quản trong túi vải kèm theo.',
+    product_story: 'Túi được dùng khoảng 6 tháng, bảo quản trong túi vải kèm theo.',
     reuse_packaging: false,
   },
   {
     key: 'uniqlo-tee',
     sellerKey: 'danang',
     image: 'uniqlo-u-crew-neck-tee.jpg',
-    title: 'Uniqlo U Crew Neck Tee (New, so sánh — không thuộc vòng lặp tuần hoàn)',
+    title: 'Uniqlo U Crew Neck Tee (New)',
     category_slug: 't-shirts',
     brand_slug: 'uniqlo',
     condition: 'new_with_tags',
@@ -297,17 +305,17 @@ const DEMO_LISTINGS = [
     sale_price: null,
     stock: 4,
     is_featured: false,
-    description: 'Áo thun Uniqlo U Crew Neck còn mới nguyên tem mác, bán trực tiếp từ người bán demo. Đây là ví dụ "New" (đã khai báo hành trình sản phẩm nhưng KHÔNG thuộc nhóm tuần hoàn) để so sánh minh bạch với các mục Pre-loved/Deadstock/Repaired/Upcycled khác trong dữ liệu demo StyleHub.',
+    description: 'Áo thun Uniqlo U Crew Neck còn mới nguyên tem mác.',
     lifecycle_type: 'new',
     material: 'Cotton 100%',
-    product_story: 'Người bán demo khai báo: đây là sản phẩm mới, dùng để đối chiếu minh bạch với các sản phẩm tuần hoàn khác — StyleHub không tính "new" là tuần hoàn.',
+    product_story: 'Sản phẩm mới, chưa qua sử dụng.',
     reuse_packaging: false,
   },
   {
     key: 'ader-error-tee',
     sellerKey: 'danang',
     image: 'ader-error-tetris-logo-tee.jpg',
-    title: 'Ader Error Tetris Logo Tee (Not specified, so sánh)',
+    title: 'Ader Error Tetris Logo Tee',
     category_slug: 't-shirts',
     brand_slug: 'ader-error',
     condition: 'good',
@@ -316,25 +324,25 @@ const DEMO_LISTINGS = [
     sale_price: null,
     stock: 2,
     is_featured: false,
-    description: 'Áo thun Ader Error Tetris Logo, người bán demo chưa khai báo hành trình sản phẩm cụ thể. Ví dụ "Not specified" để đối chiếu minh bạch — không có nhãn tuần hoàn nào được gán.',
+    description: 'Áo thun Ader Error Tetris Logo, form rộng, phù hợp phối đồ streetwear.',
     lifecycle_type: 'not_specified',
     reuse_packaging: false,
   },
 ];
 
 // ---------------------------------------------------------------------------
-// Demo orders, expressed as references to DEMO_LISTINGS[].key. The seeder
-// drives these through the REAL checkout (POST /api/orders — atomic RPC),
-// the SAME per-item fulfillment API used by real sellers, and the REAL
-// cancel endpoint. No impact number is ever written directly.
+// Orders, expressed as references to DEMO_LISTINGS[].key. The seeder drives
+// these through the REAL checkout (POST /api/orders — atomic RPC), the SAME
+// per-item fulfillment API used by real sellers, and the REAL cancel
+// endpoint. No impact number is ever written directly.
 // ---------------------------------------------------------------------------
 const DEMO_ORDERS = [
   {
     key: 'completed-multiseller',
     buyerKey: 'buyer',
-    // Deliberately spans all three demo sellers in one order, and one line
-    // has quantity 2 — covers the multi-seller + quantity > 1 requirements
-    // in a single completed order.
+    // Deliberately spans all three sellers in one order, and one line has
+    // quantity 2 — covers the multi-seller + quantity > 1 requirements in a
+    // single completed order.
     lines: [
       { listingKey: 'vans-old-skool', quantity: 1 },
       { listingKey: 'coach-tabby', quantity: 1 },
@@ -353,10 +361,8 @@ const DEMO_ORDERS = [
 ];
 
 const NAMESPACE = {
-  USERNAME_PREFIX,
   EMAIL_DOMAIN,
-  NAME_PREFIX,
-  ORDER_NOTE_MARKER,
+  ORDER_NOTE,
 };
 
 module.exports = {

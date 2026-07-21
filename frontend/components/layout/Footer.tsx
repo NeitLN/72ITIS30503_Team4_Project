@@ -62,7 +62,7 @@ export const Footer = () => {
             Buyers and sellers nationwide — all 34 provinces and cities
           </p>
           <p className="text-xs text-neutral-400">
-            &copy; {new Date().getFullYear()} StyleHub — a student demo project. All rights reserved.
+            &copy; {new Date().getFullYear()} StyleHub — a university coursework project. All rights reserved.
           </p>
         </div>
       </Container>

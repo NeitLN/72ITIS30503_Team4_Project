@@ -21,6 +21,23 @@ function check(name, condition, detail = '') {
   console.log(`[${condition ? 'PASS' : 'FAIL'}] ${name}${detail ? ` — ${detail}` : ''}`);
 }
 
+// Word-boundary match so it catches the English loanword "demo"/"test"/
+// "sample" embedded in an otherwise-Vietnamese sentence, without flagging
+// unrelated substrings.
+const FORBIDDEN_WORDING_RE = /\b(demo|test|sample)\b/i;
+function findForbiddenWording(rows, fields) {
+  const hits = [];
+  for (const row of rows) {
+    for (const field of fields) {
+      const value = row[field];
+      if (typeof value === 'string' && FORBIDDEN_WORDING_RE.test(value)) {
+        hits.push(`${row.id || row.email || '?'}.${field}: "${value.slice(0, 80)}"`);
+      }
+    }
+  }
+  return hits;
+}
+
 (async () => {
   try {
     if (!isSupabaseAdminConfigured()) throw new Error('SUPABASE_SERVICE_ROLE_KEY is required in backend/.env.');
@@ -32,22 +49,30 @@ function check(name, condition, detail = '') {
     check('Exactly one demo account has the customer (buyer) role', users.filter((u) => u.role === 'customer').length === 1);
     check('Remaining demo accounts have the seller role', users.filter((u) => u.role === 'seller').length === DEMO_ACCOUNTS.length - 1);
 
-    check('All manifest demo listings resolved by namespace', products.length === DEMO_LISTINGS.length, `found ${products.length}, expected ${DEMO_LISTINGS.length}`);
-    check('Every demo listing name carries the Demo Circular marker', products.every((p) => p.name.startsWith(`${NAMESPACE.NAME_PREFIX} —`)));
-    check('Every demo listing slug carries the namespace prefix', products.every((p) => p.slug.startsWith('demo-circular-')));
+    check('All manifest listings resolved by namespace', products.length === DEMO_LISTINGS.length, `found ${products.length}, expected ${DEMO_LISTINGS.length}`);
 
     const productIds = products.map((p) => p.id);
     const { data: fullProducts, error: fullErr } = await supabaseAdmin
-      .from('products').select('id, status, stock, listing_source').in('id', productIds);
+      .from('products').select('id, name, description, slug, status, stock, listing_source').in('id', productIds);
     if (fullErr) throw fullErr;
-    check('All demo listings are active user listings', fullProducts.every((p) => p.status === 'active' && p.listing_source === 'user'));
-    check('No demo listing has negative stock', fullProducts.every((p) => Number(p.stock) >= 0));
+    check('All listings are active user listings', fullProducts.every((p) => p.status === 'active' && p.listing_source === 'user'));
+    check('No listing has negative stock', fullProducts.every((p) => Number(p.stock) >= 0));
+    const productWordingHits = findForbiddenWording(fullProducts, ['name', 'description', 'slug']);
+    check('No listing name/description/slug contains demo/test/sample wording', productWordingHits.length === 0, productWordingHits.join(' | '));
+
+    const { data: sellerUsers, error: sellerUsersErr } = await supabaseAdmin
+      .from('users').select('id, username, full_name, bio, email').in('id', users.map((u) => u.id));
+    if (sellerUsersErr) throw sellerUsersErr;
+    const userWordingHits = findForbiddenWording(sellerUsers, ['username', 'full_name', 'bio']);
+    check('No account username/display name/bio contains demo/test/sample wording', userWordingHits.length === 0, userWordingHits.join(' | '));
 
     const { data: journeys, error: journeyErr } = await supabaseAdmin
-      .from('product_sustainability').select('product_id, lifecycle_type, claim_source').in('product_id', productIds);
+      .from('product_sustainability').select('product_id, lifecycle_type, claim_source, material, repair_history, upcycle_details, product_story').in('product_id', productIds);
     if (journeyErr) throw journeyErr;
-    check('Every demo listing has a Product Journey row', journeys.length === products.length);
-    check('Every demo Product Journey claim source is seller_declared', journeys.every((j) => j.claim_source === 'seller_declared'));
+    check('Every listing has a Product Journey row', journeys.length === products.length);
+    check('Every Product Journey claim source is seller_declared', journeys.every((j) => j.claim_source === 'seller_declared'));
+    const journeyWordingHits = findForbiddenWording(journeys.map((j) => ({ id: j.product_id, ...j })), ['material', 'repair_history', 'upcycle_details', 'product_story']);
+    check('No Product Journey text contains demo/test/sample wording', journeyWordingHits.length === 0, journeyWordingHits.join(' | '));
 
     const lifecycleCounts = {};
     for (const j of journeys) lifecycleCounts[j.lifecycle_type] = (lifecycleCounts[j.lifecycle_type] || 0) + 1;

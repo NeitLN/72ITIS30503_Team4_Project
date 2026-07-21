@@ -73,10 +73,10 @@ export default function ContactPage() {
 
             <aside className="mt-4 border border-neutral-200 bg-neutral-50 px-4 py-3">
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
-                Lưu ý về dự án demo
+                Lưu ý về dự án học phần
               </p>
               <p className="mt-1.5 text-xs leading-relaxed text-neutral-600">
-                StyleHub là một dự án demo của trường đại học. Biểu mẫu liên hệ này chỉ là giao
+                StyleHub là một dự án học phần của trường đại học. Biểu mẫu liên hệ này chỉ là giao
                 diện minh họa và không gửi email thật.
               </p>
             </aside>

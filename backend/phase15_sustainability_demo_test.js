@@ -17,8 +17,22 @@ const { execFileSync } = require('child_process');
 require('dotenv').config({ path: [path.join(__dirname, '.env'), path.join(__dirname, '../.env')], quiet: true });
 
 const { supabaseAdmin, isSupabaseAdminConfigured } = require('./lib/supabase');
-const { NAMESPACE, DEMO_LISTINGS, DEMO_ACCOUNTS } = require('./data/sustainabilityDemoCatalog');
+const { NAMESPACE, DEMO_SELLERS, DEMO_LISTINGS, DEMO_ACCOUNTS } = require('./data/sustainabilityDemoCatalog');
 const { CIRCULAR_LIFECYCLE_TYPES } = require('./constants/sustainability');
+
+const FORBIDDEN_WORDING_RE = /\b(demo|test|sample)\b/i;
+function findForbiddenWording(rows, fields) {
+  const hits = [];
+  for (const row of rows) {
+    for (const field of fields) {
+      const value = row[field];
+      if (typeof value === 'string' && FORBIDDEN_WORDING_RE.test(value)) {
+        hits.push(`${row.id || row.email || '?'}.${field}: "${value.slice(0, 80)}"`);
+      }
+    }
+  }
+  return hits;
+}
 
 const API_BASE = process.env.PHASE15_API_BASE || 'http://127.0.0.1:8080';
 const checks = [];
@@ -96,24 +110,31 @@ function deriveDemoPassword(username) {
     check('Validator script exits 0 (all Phase 15 dataset checks pass)', validate.code === 0, validate.out.slice(-800));
 
     // ---- 4. Namespace + honesty checks on the resolved dataset ----
+    const managedEmails = DEMO_ACCOUNTS.map((a) => a.email);
     const { data: demoUsers, error: usersErr } = await supabaseAdmin
-      .from('users').select('id, email, role, username').like('email', `${NAMESPACE.USERNAME_PREFIX}%@${NAMESPACE.EMAIL_DOMAIN}`);
+      .from('users').select('id, email, role, username, full_name, bio').in('email', managedEmails);
     if (usersErr) throw usersErr;
-    check('Exactly the manifest demo accounts exist', demoUsers.length === DEMO_ACCOUNTS.length, `found=${demoUsers.length}`);
-    check('Every demo username carries the reserved prefix', demoUsers.every((u) => u.username.startsWith(NAMESPACE.USERNAME_PREFIX)));
+    check('Exactly the manifest accounts exist', demoUsers.length === DEMO_ACCOUNTS.length, `found=${demoUsers.length}`);
+    check('Every account email is on the reserved example.test domain', demoUsers.every((u) => u.email.endsWith(`@${NAMESPACE.EMAIL_DOMAIN}`)));
+    const userWordingHits = findForbiddenWording(demoUsers, ['username', 'full_name', 'bio']);
+    check('No account username/display name/bio contains demo/test/sample wording', userWordingHits.length === 0, userWordingHits.join(' | '));
 
+    const demoUserIds = demoUsers.map((u) => u.id);
     const { data: demoProducts, error: prodErr } = await supabaseAdmin
-      .from('products').select('id, name, seller_id, status, stock, listing_source').like('name', `${NAMESPACE.NAME_PREFIX} —%`);
+      .from('products').select('id, name, description, slug, seller_id, status, stock, listing_source').in('seller_id', demoUserIds).eq('listing_source', 'user');
     if (prodErr) throw prodErr;
-    check('Exactly the manifest demo listings exist', demoProducts.length === DEMO_LISTINGS.length, `found=${demoProducts.length}`);
-    check('Every demo listing belongs to a demo seller', demoProducts.every((p) => demoUsers.some((u) => u.id === p.seller_id)));
-    check('No demo listing has negative stock', demoProducts.every((p) => Number(p.stock) >= 0));
+    check('Exactly the manifest listings exist', demoProducts.length === DEMO_LISTINGS.length, `found=${demoProducts.length}`);
+    check('No listing has negative stock', demoProducts.every((p) => Number(p.stock) >= 0));
+    const productWordingHits = findForbiddenWording(demoProducts, ['name', 'description', 'slug']);
+    check('No listing name/description/slug contains demo/test/sample wording', productWordingHits.length === 0, productWordingHits.join(' | '));
 
     const productIds = demoProducts.map((p) => p.id);
     const { data: journeys, error: journeyErr } = await supabaseAdmin
-      .from('product_sustainability').select('product_id, lifecycle_type, claim_source').in('product_id', productIds);
+      .from('product_sustainability').select('product_id, lifecycle_type, claim_source, material, repair_history, upcycle_details, product_story').in('product_id', productIds);
     if (journeyErr) throw journeyErr;
-    check('Every demo Product Journey claim source is seller_declared (not verified/certified)', journeys.every((j) => j.claim_source === 'seller_declared'));
+    check('Every Product Journey claim source is seller_declared (not verified/certified)', journeys.every((j) => j.claim_source === 'seller_declared'));
+    const journeyWordingHits = findForbiddenWording(journeys.map((j) => ({ id: j.product_id, ...j })), ['material', 'repair_history', 'upcycle_details', 'product_story']);
+    check('No Product Journey text contains demo/test/sample wording', journeyWordingHits.length === 0, journeyWordingHits.join(' | '));
     for (const type of CIRCULAR_LIFECYCLE_TYPES) {
       const count = journeys.filter((j) => j.lifecycle_type === type).length;
       check(`Manifest covers circular lifecycle "${type}"`, count >= 2, `count=${count}`);
@@ -121,9 +142,9 @@ function deriveDemoPassword(username) {
 
     // ---- 5. Orders: real checkout path, multi-seller, qty>1, cancellation exclusion ----
     const { data: demoOrders, error: ordersErr } = await supabaseAdmin
-      .from('orders').select('id, user_id, notes').eq('notes', NAMESPACE.ORDER_NOTE_MARKER);
+      .from('orders').select('id, user_id, notes').in('user_id', demoUserIds);
     if (ordersErr) throw ordersErr;
-    check('At least one demo order carries the explicit Phase 15 notes marker', demoOrders.length >= 1);
+    check('At least one order resolved by seller/buyer relational namespace', demoOrders.length >= 1);
     const orderIds = demoOrders.map((o) => o.id);
     const { data: items, error: itemsErr } = await supabaseAdmin
       .from('order_items').select('order_id, seller_id, quantity, fulfillment_status, lifecycle_type_snapshot, claim_source_snapshot').in('order_id', orderIds);
@@ -149,7 +170,8 @@ function deriveDemoPassword(username) {
     check('Completed lifecycle breakdown sums to the completed circular total', completedBreakdownTotal === platform.metrics.completedCircularUnits);
 
     // ---- 7. Seller isolation via real login (derived, never-stored password) ----
-    const sellerA = demoUsers.find((u) => u.username.includes('seller-hanoi'));
+    const hanoiEmail = DEMO_SELLERS.find((s) => s.key === 'hanoi').email;
+    const sellerA = demoUsers.find((u) => u.email === hanoiEmail);
     const login = await api('POST', '/api/auth/login', { email: sellerA.email, password: deriveDemoPassword(sellerA.username) });
     check('Demo seller can log in with its deterministically derived password', login.status === 200);
     if (login.status === 200) {
@@ -169,9 +191,10 @@ function deriveDemoPassword(username) {
     check('Verified seed catalog remains exactly 148 products', seedAfter === 148, `seed=${seedAfter}`);
 
     const sustainabilityPageSrc = fs.readFileSync(path.join(__dirname, '../frontend/app/sustainability/page.tsx'), 'utf8');
-    check('Sustainability page discloses the demo environment', /demo-disclosure/.test(sustainabilityPageSrc) && /demonstration environment/i.test(sustainabilityPageSrc));
+    check('Sustainability page carries the academic-transparency disclosure', /sustainability-disclosure/.test(sustainabilityPageSrc) && /coursework/i.test(sustainabilityPageSrc));
     const homeSectionSrc = fs.readFileSync(path.join(__dirname, '../frontend/components/home/CircularImpactSection.tsx'), 'utf8');
-    check('Homepage Circular Impact section links to the demo disclosure', /demo-disclosure/.test(homeSectionSrc));
+    const homeWordingHit = FORBIDDEN_WORDING_RE.test(homeSectionSrc);
+    check('Homepage Circular Impact section contains no demo/test/sample wording', !homeWordingHit);
 
     // ---- 10. No secret values written to tracked source files ----
     const catalogSrc = fs.readFileSync(path.join(__dirname, 'data/sustainabilityDemoCatalog.js'), 'utf8');

@@ -107,7 +107,93 @@ async function findUserByEmail(email) {
 }
 
 function demoListingName(listing) {
-  return `${NAMESPACE.NAME_PREFIX} — ${listing.title}`;
+  return listing.title;
+}
+
+// ---------------------------------------------------------------------------
+// One-time legacy migration: an earlier revision of this dataset used
+// visible "stylehub-demo-*" usernames and a "Demo Circular — " product-name
+// prefix as BOTH the identification marker AND the customer-facing text.
+// Those are no longer shown to shoppers — every account/listing here now
+// reads as an ordinary marketplace identity, and records are identified
+// relationally (email domain + seller/buyer id membership) instead. This
+// function renames any rows still carrying the old visible naming, in
+// place (same row id, so every FK — products, orders, images, journeys —
+// is preserved automatically), and is a safe no-op once nothing old-style
+// remains. It never touches a row outside the old exact namespace.
+// ---------------------------------------------------------------------------
+const LEGACY_EMAIL_LIKE = 'stylehub-demo-%@example.test';
+
+async function migrateLegacyIdentities() {
+  const { data: legacyUsers, error: legacyUsersErr } = await supabaseAdmin
+    .from('users').select('id, email, role, location, username').like('email', LEGACY_EMAIL_LIKE);
+  if (legacyUsersErr) throw legacyUsersErr;
+
+  for (const account of DEMO_ACCOUNTS) {
+    const expectedRole = account.key === DEMO_BUYER.key ? 'customer' : 'seller';
+    const match = (legacyUsers || []).find((u) => u.role === expectedRole && u.location === account.location);
+    if (!match) continue; // nothing legacy to migrate for this account (fresh install, or already migrated)
+
+    if (DRY) {
+      log(`  [WOULD MIGRATE] legacy user ${match.email} -> ${account.email}`);
+      continue;
+    }
+    // The derived login password is a function of `username` (see
+    // deriveDemoPassword below) — renaming the username without also
+    // re-hashing the password would silently break login for this account,
+    // since its stored hash was computed from the OLD username at
+    // registration time. Re-hash to the newly-derived password here so the
+    // deterministic derivation and the stored hash stay in sync.
+    const { hashPassword } = require('../services/authService');
+    const newPassword = deriveDemoPassword(account.username);
+    const { error } = await supabaseAdmin.from('users').update({
+      username: account.username,
+      email: account.email,
+      full_name: account.displayName,
+      bio: account.bio,
+      password_hash: hashPassword(newPassword),
+      updated_at: new Date().toISOString(),
+    }).eq('id', match.id);
+    if (error) throw error;
+    log(`  [MIGRATED] legacy user ${match.email} -> ${account.email}`);
+  }
+
+  // Matched by stale SLUG (not name) so this is a safe no-op once nothing
+  // stale remains, but still catches a row whose `name` was already
+  // migrated in an earlier partial run while its `slug` — genuinely
+  // visible in the product URL — was not.
+  const { data: legacyProducts, error: legacyProductsErr } = await supabaseAdmin
+    .from('products').select('id, name, slug, price, seller_id').eq('listing_source', 'user').like('slug', 'demo-circular-%');
+  if (legacyProductsErr) throw legacyProductsErr;
+  if (!legacyProducts || !legacyProducts.length) return;
+
+  const { generateUniqueSlug } = require('../services/listingService');
+
+  // Every manifest price is unique within this dataset, so (scoped to only
+  // the rows already matched by the stale slug prefix above) it is a safe
+  // exact key to bridge old rows to their new manifest entry.
+  for (const listing of DEMO_LISTINGS) {
+    const match = legacyProducts.find((p) => Number(p.price) === Number(listing.price));
+    if (!match) continue;
+
+    const newName = demoListingName(listing);
+    if (DRY) {
+      log(`  [WOULD MIGRATE] legacy listing "${match.name}" (slug=${match.slug}) -> "${newName}"`);
+      continue;
+    }
+    const newSlug = await generateUniqueSlug(newName);
+    const { error } = await supabaseAdmin.from('products').update({
+      name: newName,
+      slug: newSlug,
+      description: listing.description,
+      updated_at: new Date().toISOString(),
+    }).eq('id', match.id);
+    if (error) throw error;
+    await supabaseAdmin.from('product_sustainability').update({
+      product_story: listing.product_story ?? null,
+    }).eq('product_id', match.id);
+    log(`  [MIGRATED] legacy listing slug ${match.slug} -> ${newSlug} ("${newName}")`);
+  }
 }
 
 async function findListingByOwnerAndName(sellerId, name) {
@@ -262,14 +348,14 @@ async function ensureListing(listing, sellers) {
 function buildCheckoutPayload(order, listingIds, listingsByKey) {
   return {
     customer: {
-      name: 'StyleHub Demo Buyer',
+      name: DEMO_BUYER.displayName,
       email: DEMO_BUYER.email,
-      phone: '0900000015',
-      address: '15 Phase 15 Demo Street, Quận 1',
+      phone: '0901234567',
+      address: '12 Nguyễn Huệ, Quận 1',
       city: 'Thành phố Hồ Chí Minh',
     },
     paymentMethod: order.key === 'cancelled-exclusion' ? 'bank_transfer' : 'cod',
-    notes: NAMESPACE.ORDER_NOTE_MARKER,
+    notes: NAMESPACE.ORDER_NOTE,
     couponCode: null,
     items: order.lines.map((line) => ({
       productId: listingIds[line.listingKey],
@@ -303,16 +389,59 @@ async function ensureOrder(order, buyer, sellers, listingIds, listingsByKey) {
 
   const payload = buildCheckoutPayload(order, listingIds, listingsByKey);
   const checkout = await api('POST', '/api/orders', payload, buyer.token, { 'Idempotency-Key': idempotencyKey });
-  if (checkout.status !== 200) {
-    throw new Error(`Checkout failed for order "${order.key}": ${checkout.status} ${JSON.stringify(checkout.body)}`);
-  }
-  const orderId = checkout.body.data.id;
-  if (checkout.body.data.idempotent_replay) {
-    stats.ordersReplayed += 1;
-    log(`  [REPLAYED] order "${order.key}" -> ${orderId}`);
+  let orderId;
+  if (checkout.status === 200) {
+    orderId = checkout.body.data.id;
+    if (checkout.body.data.idempotent_replay) {
+      stats.ordersReplayed += 1;
+      log(`  [REPLAYED] order "${order.key}" -> ${orderId}`);
+    } else {
+      stats.ordersCreated += 1;
+      log(`  [CREATED] order "${order.key}" -> ${orderId}`);
+    }
+  } else if (checkout.body?.error?.code === 'CHECKOUT_IDEMPOTENCY_CONFLICT') {
+    // This exact order already exists from an earlier run whose checkout
+    // payload had different display-only fields (e.g. an earlier buyer
+    // display name/address) — the atomic RPC correctly refuses to replay a
+    // reused idempotency key against changed content. Resolve the real
+    // order id from the idempotency record itself (never guessed) and
+    // patch only cosmetic, non-financial display fields directly — never
+    // order_items, snapshots, totals, or inventory.
+    const { data: idem, error: idemErr } = await supabaseAdmin
+      .from('checkout_idempotency')
+      .select('order_id')
+      .eq('buyer_id', buyer.id)
+      .eq('idempotency_key', idempotencyKey)
+      .maybeSingle();
+    if (idemErr) throw idemErr;
+    if (!idem?.order_id) throw new Error(`Could not resolve existing order id for "${order.key}" from checkout_idempotency.`);
+    orderId = idem.order_id;
+    const { data: currentOrder } = await supabaseAdmin
+      .from('orders').select('customer_name, customer_email, customer_phone, shipping_address, city, notes').eq('id', orderId).maybeSingle();
+    const alreadyCurrent = currentOrder
+      && currentOrder.customer_name === payload.customer.name
+      && currentOrder.customer_email === payload.customer.email
+      && currentOrder.customer_phone === payload.customer.phone
+      && currentOrder.shipping_address === payload.customer.address
+      && currentOrder.city === payload.customer.city
+      && currentOrder.notes === payload.notes;
+    if (alreadyCurrent) {
+      stats.ordersReplayed += 1;
+      log(`  [EXISTS] order "${order.key}" -> ${orderId}`);
+    } else {
+      await supabaseAdmin.from('orders').update({
+        customer_name: payload.customer.name,
+        customer_email: payload.customer.email,
+        customer_phone: payload.customer.phone,
+        shipping_address: payload.customer.address,
+        city: payload.customer.city,
+        notes: payload.notes,
+      }).eq('id', orderId);
+      stats.ordersReplayed += 1;
+      log(`  [DISPLAY FIELDS UPDATED] order "${order.key}" -> ${orderId}`);
+    }
   } else {
-    stats.ordersCreated += 1;
-    log(`  [CREATED] order "${order.key}" -> ${orderId}`);
+    throw new Error(`Checkout failed for order "${order.key}": ${checkout.status} ${JSON.stringify(checkout.body)}`);
   }
 
   if (order.outcome === 'cancelled') {
@@ -348,10 +477,13 @@ async function ensureOrder(order, buyer, sellers, listingIds, listingsByKey) {
     if (!isSupabaseAdminConfigured()) throw new Error('SUPABASE_SERVICE_ROLE_KEY is required in backend/.env to run this seeder.');
     if (!DRY) await requireHealth();
 
-    log(`\nStyleHub Phase 15 sustainability demo seeder — mode: ${MODE.toUpperCase()}`);
+    log(`\nStyleHub Phase 15 sustainability seeder — mode: ${MODE.toUpperCase()}`);
     log(`API base: ${API_BASE}\n`);
 
-    log('== Accounts ==');
+    log('== Legacy naming migration ==');
+    await migrateLegacyIdentities();
+
+    log('\n== Accounts ==');
     const sellers = {};
     for (const seller of DEMO_SELLERS) sellers[seller.key] = { ...await ensureAccount(seller), location: seller.location };
     const buyer = { ...await ensureAccount(DEMO_BUYER), location: DEMO_BUYER.location };

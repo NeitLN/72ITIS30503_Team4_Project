@@ -17,13 +17,6 @@ export function CircularImpactSection() {
           </Link>
         </div>
         <PlatformImpactPanel home />
-        <p className="mt-6 text-xs leading-5 text-neutral-500">
-          Bao gồm dữ liệu trình diễn học phần (demo). Xem{' '}
-          <Link href={`${ROUTES.SUSTAINABILITY}#demo-disclosure`} className="underline underline-offset-2 hover:text-neutral-300">
-            minh bạch dữ liệu demo
-          </Link>
-          .
-        </p>
       </Container>
     </section>
   );

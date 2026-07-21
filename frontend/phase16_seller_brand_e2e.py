@@ -202,8 +202,18 @@ with sync_playwright() as p:
     check("No document-level horizontal overflow on Product Detail (desktop)", not overflow)
 
     # ---------- Shop filter includes the new brand and returns the product ----------
-    page.goto(f"{BASE}/shop", wait_until="load")
-    brand_options = page.locator("#brand-select option").all_inner_texts()
+    # The Shop brand list is fetched with a short (60s) server-side cache
+    # for performance (GET /api/brands?scope=shop-filter, see lib/brands.ts)
+    # — a brand created moments ago may not appear until that cache
+    # revalidates, which is correct/expected production behavior, not a
+    # defect. Poll instead of asserting on the very first load.
+    brand_options = []
+    for _ in range(15):
+        page.goto(f"{BASE}/shop", wait_until="load")
+        brand_options = page.locator("#brand-select option").all_inner_texts()
+        if any(BRAND_NAME in o for o in brand_options):
+            break
+        page.wait_for_timeout(5000)
     check("New brand appears in the Shop brand filter", any(BRAND_NAME in o for o in brand_options), str(len(brand_options)))
     brand_option = page.locator("#brand-select option").filter(has_text=BRAND_NAME).first
     brand_value = brand_option.get_attribute("value")

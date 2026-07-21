@@ -70,13 +70,15 @@ Every impact response includes:
 
 `generatedAt` is calculation time. It is not a guarantee that every underlying record was last updated at that instant. Phase 13 therefore does not publish `dataAsOf`.
 
-## Demo environment (Phase 15)
+## About this data (Phase 15)
 
-StyleHub is currently a university course demonstration environment, not a
-production marketplace. Some accounts, listings, and completed transactions
-are prepared demonstration data — every one is namespaced (usernames
-starting `stylehub-demo-`, emails on the reserved `example.test` domain,
-listing names starting `Demo Circular —`) and documented in
+StyleHub is currently a university coursework project, not a production
+marketplace. Some accounts and marketplace activity were prepared to
+populate this page's Circular Impact metrics for academic purposes —
+identified relationally (account email on the reserved `example.test`
+domain, listings/orders owned by those accounts), never by visible
+"Demo"/"Test"/"Sample" naming on any product, profile, or storefront — and
+documented in
 [`docs/sustainability-demo-data.md`](../docs/sustainability-demo-data.md).
 These records are included in every metric on this page exactly like any
 other active listing or completed order — the methodology does not treat

@@ -19,18 +19,22 @@
 const path = require('path');
 require('dotenv').config({ path: [path.join(__dirname, '../.env'), path.join(__dirname, '../../.env')], quiet: true });
 const { supabaseAdmin, isSupabaseAdminConfigured } = require('../lib/supabase');
-const { NAMESPACE } = require('../data/sustainabilityDemoCatalog');
+const { NAMESPACE, DEMO_ACCOUNTS } = require('../data/sustainabilityDemoCatalog');
 
 const MODE = process.argv.includes('--apply') ? 'apply' : 'dry-run';
 const CONFIRMED = process.argv.includes('--yes');
+const MANAGED_EMAILS = DEMO_ACCOUNTS.map((a) => a.email);
 
 /**
- * Resolves the exact, current set of Phase 15 demo rows by namespace
- * markers only:
- *   - users:    email like 'stylehub-demo-%@example.test'
- *   - products: seller_id in (those users) AND listing_source='user' AND
- *               name starting with the "Demo Circular — " marker
- *   - orders:   user_id = the demo buyer AND notes = the exact Phase 15 marker
+ * Resolves the exact, current set of Phase 15 rows. These records carry no
+ * visible "demo"/"test" naming (they're presented as ordinary marketplace
+ * identities — see backend/data/sustainabilityDemoCatalog.js), so
+ * identification is relational rather than name-based:
+ *   - users:    email is exactly one of the 4 manifest account addresses
+ *               (all on the reserved, non-routable example.test domain —
+ *               never a wildcard/partial match)
+ *   - products: seller_id in (those users) AND listing_source='user'
+ *   - orders:   user_id in (those users)
  * Every dependent table is then scoped to those resolved product/order IDs
  * only — this function is the single source of truth both the dry-run
  * report and the real delete path use, so they can never disagree.
@@ -39,7 +43,7 @@ async function resolveNamespacedRows() {
   const { data: users, error: usersErr } = await supabaseAdmin
     .from('users')
     .select('id, email, role')
-    .like('email', `${NAMESPACE.USERNAME_PREFIX}%@${NAMESPACE.EMAIL_DOMAIN}`);
+    .in('email', MANAGED_EMAILS);
   if (usersErr) throw usersErr;
 
   const userIds = (users || []).map((u) => u.id);
@@ -49,8 +53,7 @@ async function resolveNamespacedRows() {
       .from('products')
       .select('id, seller_id, name, slug, listing_source')
       .in('seller_id', userIds)
-      .eq('listing_source', 'user')
-      .like('name', `${NAMESPACE.NAME_PREFIX} —%`);
+      .eq('listing_source', 'user');
     if (error) throw error;
     products = data || [];
   }
@@ -60,20 +63,21 @@ async function resolveNamespacedRows() {
     const { data, error } = await supabaseAdmin
       .from('orders')
       .select('id, user_id, notes')
-      .in('user_id', userIds)
-      .eq('notes', NAMESPACE.ORDER_NOTE_MARKER);
+      .in('user_id', userIds);
     if (error) throw error;
     orders = data || [];
   }
 
-  // Safety check: every resolved product must have a name that starts with
-  // the exact marker AND belong to a resolved user — refuse to proceed if
-  // that invariant somehow doesn't hold (defense in depth against a future
-  // query change accidentally widening the match).
+  // Safety check: every resolved row must belong to the exact managed
+  // account set — refuse to proceed if that invariant somehow doesn't hold
+  // (defense in depth against a future query change accidentally widening
+  // the match).
   const userIdSet = new Set(userIds);
-  const unsafeProduct = products.find((p) => !p.name.startsWith(`${NAMESPACE.NAME_PREFIX} —`) || !userIdSet.has(p.seller_id));
+  const unsafeUser = users.find((u) => !u.email.endsWith(`@${NAMESPACE.EMAIL_DOMAIN}`));
+  if (unsafeUser) throw new Error(`Refusing to proceed: resolved user ${unsafeUser.id} fails the namespace safety check.`);
+  const unsafeProduct = products.find((p) => !userIdSet.has(p.seller_id));
   if (unsafeProduct) throw new Error(`Refusing to proceed: resolved product ${unsafeProduct.id} fails the namespace safety check.`);
-  const unsafeOrder = orders.find((o) => o.notes !== NAMESPACE.ORDER_NOTE_MARKER || !userIdSet.has(o.user_id));
+  const unsafeOrder = orders.find((o) => !userIdSet.has(o.user_id));
   if (unsafeOrder) throw new Error(`Refusing to proceed: resolved order ${unsafeOrder.id} fails the namespace safety check.`);
 
   return { users, products, orders };
