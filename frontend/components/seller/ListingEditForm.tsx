@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '../ui/Button';
 import { Combobox } from '../ui/Combobox';
+import { BrandField } from '../sell/BrandField';
 import { ROUTES } from '../../constants/routes';
 import { getCategoryTree } from '../../lib/catalog';
 import { Category } from '../../types/category';
@@ -127,14 +128,6 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
       for (const key of ['lifecycle_type', 'material', 'repair_history', 'upcycle_details', 'product_story']) delete next[key];
       return next;
     });
-  };
-
-  const getBrandOptions = (query: string): string[] => {
-    const q = normalizeVnText(query);
-    const names = brands.map((b) => b.name);
-    const filtered = q ? names.filter((n) => normalizeVnText(n).includes(q)) : names;
-    if (!q || normalizeVnText(UNBRANDED_LABEL).includes(q)) return [UNBRANDED_LABEL, ...filtered];
-    return filtered;
   };
 
   const validate = (f: FormState): Record<string, string> => {
@@ -277,6 +270,15 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
 
   const errClass = (field: string) => (errors[field] ? 'border-red-500' : 'border-neutral-300');
 
+  // Convenience match against the loaded brand list (backend is the sole
+  // authority — see BrandField.tsx and backend/services/brandService.js).
+  const matchedBrand = form.brand
+    ? brands.find((b) => normalizeVnText(b.name) === normalizeVnText(form.brand))
+    : undefined;
+  const brandIsUnverified = Boolean(form.brand)
+    && normalizeVnText(form.brand) !== normalizeVnText(UNBRANDED_LABEL)
+    && (!matchedBrand || matchedBrand.verification_status !== 'verified');
+
   return (
     <div>
       <div aria-live="polite" className="sr-only">{statusMessage}</div>
@@ -332,13 +334,17 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
             {errors.category_slug && <p className="text-red-500 text-xs mt-1">{errors.category_slug}</p>}
           </div>
           <div>
-            <label htmlFor="edit-brand" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Thương hiệu</label>
-            <Combobox
-              id="edit-brand" value={form.brand} onChange={(v) => setField('brand', v)}
-              getOptions={getBrandOptions} allowFreeText
-              placeholder="Nhập hoặc chọn thương hiệu"
-              emptyMessage="Không tìm thấy thương hiệu — nhấn Enter để dùng tên bạn vừa nhập."
+            <BrandField
+              id="edit-brand"
+              value={form.brand}
+              onChange={(v) => setField('brand', v)}
+              brands={brands}
             />
+            {brandIsUnverified && (
+              <p className="mt-2 border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                Thương hiệu do người bán khai báo, chưa được StyleHub xác minh.
+              </p>
+            )}
           </div>
         </div>
 

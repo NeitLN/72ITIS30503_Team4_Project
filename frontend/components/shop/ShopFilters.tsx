@@ -5,9 +5,15 @@ import { useState, useTransition } from 'react';
 import { Category } from '../../types/category';
 import { formatCondition } from '../../lib/format';
 import { LIFECYCLE_OPTIONS, getLifecycleOption, type LifecycleType } from '../../lib/productJourney';
+import { BrandOption } from '../../lib/brands';
 
 interface ShopFiltersProps {
   categories: Category[];
+  /** Only brands with at least one active product — see
+   * lib/brands.ts getShopFilterBrands() / GET /api/brands?scope=shop-filter.
+   * Never a hardcoded list, so a newly seller-declared brand appears here
+   * as soon as it has an active listing, and never shows an empty option. */
+  brands: BrandOption[];
   initialFilters: {
     search?: string;
     category?: string;
@@ -19,27 +25,13 @@ interface ShopFiltersProps {
   };
 }
 
-const BRANDS = [
-  { slug: 'dirtycoins', name: 'DirtyCoins' },
-  { slug: 'levents', name: 'Levents' },
-  { slug: 'degrey', name: 'Degrey' },
-  { slug: 'coolmate', name: 'Coolmate' },
-  { slug: 'bitis', name: "Biti's" },
-  { slug: 'ananas', name: 'Ananas' },
-  { slug: 'nike', name: 'Nike' },
-  { slug: 'adidas', name: 'Adidas' },
-  { slug: 'uniqlo', name: 'Uniqlo' },
-  { slug: 'zara', name: 'Zara' },
-  { slug: 'levis', name: "Levi's" },
-];
-
 const CONDITIONS = [
   { slug: 'new', name: formatCondition('new') },
   { slug: 'like_new', name: formatCondition('like_new') },
   { slug: 'used', name: formatCondition('used') },
 ];
 
-export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) => {
+export const ShopFilters = ({ categories, brands, initialFilters }: ShopFiltersProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -105,7 +97,7 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
     Boolean(initialFilters.lifecycle);
 
   const selectedCategoryName = categories.find((c) => c.slug === initialFilters.category)?.name;
-  const selectedBrandName = BRANDS.find((b) => b.slug === initialFilters.brand)?.name;
+  const selectedBrandName = brands.find((b) => b.slug === initialFilters.brand)?.name;
   const selectedConditionName = CONDITIONS.find((c) => c.slug === initialFilters.condition)?.name;
   const selectedLifecycleName = getLifecycleOption(initialFilters.lifecycle as LifecycleType)?.previewLabel;
 
@@ -206,9 +198,9 @@ export const ShopFilters = ({ categories, initialFilters }: ShopFiltersProps) =>
               className="w-full border border-neutral-300 bg-white px-3 py-2 text-xs font-mono text-neutral-800 uppercase tracking-wide focus:border-neutral-900 focus:outline-none"
             >
               <option value="">Tất cả thương hiệu</option>
-              {BRANDS.map((brand) => (
+              {brands.map((brand) => (
                 <option key={brand.slug} value={brand.slug}>
-                  {brand.name}
+                  {brand.name}{brand.verification_status === 'pending' ? ' (chưa xác minh)' : ''}
                 </option>
               ))}
             </select>

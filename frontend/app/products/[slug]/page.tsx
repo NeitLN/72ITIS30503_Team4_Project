@@ -118,6 +118,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {listing.brandName}
             </p>
           )}
+          {listing.brandIsUnverified && (
+            <p className="mb-3 text-xs leading-5 text-amber-700">
+              Thương hiệu do người bán khai báo, chưa được StyleHub xác minh.
+            </p>
+          )}
           <h1 className="font-display text-3xl font-black uppercase tracking-tight text-neutral-900 sm:text-4xl">
             {listing.name}
           </h1>

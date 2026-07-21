@@ -88,6 +88,9 @@ export interface ListingView {
   condition: string;
   size: string;
   brandName: string | null;
+  /** True only for a brand a seller declared through free-text input that
+   * StyleHub has not verified — never true for a curated catalog brand. */
+  brandIsUnverified: boolean;
   categoryName: string | null;
   sellerName: string;
   /** Display handle: "@username" for real sellers, plain fallback label otherwise. */
@@ -135,6 +138,7 @@ export function getListingView(product: Product): ListingView {
     condition: formatCondition(product.condition),
     size: product.size || 'Một cỡ',
     brandName: product.brand?.name ?? null,
+    brandIsUnverified: product.brand?.verification_status === 'pending' || product.brand?.source === 'seller_declared',
     categoryName: product.category?.name ?? prettifySlug(product.category_slug) ?? null,
     sellerName,
     sellerHandle: username ? `@${username}` : sellerName,

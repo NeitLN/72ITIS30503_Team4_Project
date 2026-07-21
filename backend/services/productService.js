@@ -91,7 +91,9 @@ const attachRelations = async (products, { sustainabilityDetails = false } = {})
         name: brand.name,
         slug: brand.slug,
         is_local: brand.is_local,
-        country: brand.country
+        country: brand.country,
+        source: brand.source || 'catalog',
+        verification_status: brand.verification_status || 'verified',
       } : null,
       category: category ? {
         name: category.name,

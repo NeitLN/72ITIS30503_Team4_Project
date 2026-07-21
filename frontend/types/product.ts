@@ -15,6 +15,12 @@ export interface Brand {
   slug?: string;
   is_local?: boolean;
   country?: string;
+  /** 'catalog' = curated StyleHub catalog brand; 'seller_declared' = typed
+   * in by a seller at listing time (see docs/seller-declared-brand-workflow.md). */
+  source?: 'catalog' | 'seller_declared';
+  /** 'verified' for every existing catalog brand; a brand a seller creates
+   * is always 'pending' — StyleHub does not independently verify it. */
+  verification_status?: 'verified' | 'pending' | 'rejected';
 }
 
 export interface CategoryRef {
@@ -72,4 +78,9 @@ export interface Product {
   sellerUsername?: string;
   category_slug?: string;
   imageUrl?: string;
+  /** Seller Dashboard's flat listing endpoints return these alongside the
+   * flat `brand` name string instead of a nested `brand` relation object —
+   * see backend/services/sellerListingService.js. */
+  brand_source?: 'catalog' | 'seller_declared' | null;
+  brand_verification_status?: 'verified' | 'pending' | 'rejected' | null;
 }

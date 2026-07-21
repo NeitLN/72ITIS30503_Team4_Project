@@ -46,3 +46,12 @@ The evidence supports correctness in the configured development project and buil
 | Lecturer rubric compliance audit | — | — | Manual evidence-cited audit | `docs/final-rubric-compliance-audit.md` |
 | Production deployment readiness | — | No hosting provider configured (verified by repo search) | — | `docs/production-deployment-guide.md`; `docs/production-environment-checklist.md` |
 | Lecturer demonstration flow | — | — | — | `docs/final-presentation-demo-checklist.md` |
+
+## Phase 16 — seller-declared brand creation
+
+| Requirement | Implementation | Database/API source | Test evidence | Screenshot/report evidence |
+|---|---|---|---|---|
+| Seller can declare a new, unverified brand | `frontend/components/sell/BrandField.tsx`; `backend/services/brandService.js resolveOrCreateBrand` | `brands.source`/`verification_status`/`created_by` (migration `20260724000000_add_brand_provenance.sql`) | Phase 16 backend suite 38/38; browser suite 22/22 | `docs/seller-declared-brand-workflow.md` |
+| Duplicate/concurrency protection | Atomic `INSERT ... ON CONFLICT (slug) DO NOTHING`; NFC-safe case-insensitive pre-check | `brands.slug` unique index | Live-verified: whitespace/case variant + a genuine concurrent race both resolved to one canonical row | `docs/seller-declared-brand-workflow.md` |
+| Real Shop brand filter (was hardcoded) | `frontend/app/shop/page.tsx` + `ShopFilters.tsx`; `GET /api/brands?scope=shop-filter` | Only brands with ≥1 active product | Live-verified: new brand appeared and filtered correctly | `docs/final-rubric-compliance-audit.md` Phase 16 update |
+| Unverified-brand disclosure | Product card, product detail, Review & Publish, Seller Dashboard edit | `products.brand_id` → `brands.verification_status` | Browser suite confirms disclosure text on all four surfaces | `docs/seller-declared-brand-workflow.md` |

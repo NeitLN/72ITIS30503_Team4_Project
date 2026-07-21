@@ -36,6 +36,15 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         {listing.brandName && (
           <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">
             {listing.brandName}
+            {listing.brandIsUnverified && (
+              <span
+                aria-label="Thương hiệu do người bán khai báo, chưa được StyleHub xác minh"
+                title="Thương hiệu do người bán khai báo, chưa được StyleHub xác minh"
+                className="ml-1 text-neutral-400"
+              >
+                *
+              </span>
+            )}
           </p>
         )}
         <h3 className="line-clamp-1 font-medium text-neutral-900">{listing.name}</h3>

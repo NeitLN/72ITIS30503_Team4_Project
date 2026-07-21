@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
 import { Combobox } from '../ui/Combobox';
+import { BrandField } from './BrandField';
 import { ROUTES } from '../../constants/routes';
 import { ProductCard } from '../product/ProductCard';
 import { Product } from '../../types/product';
@@ -209,14 +210,6 @@ export const SellListingClient = () => {
 
   const isShoeLike = SHOE_LIKE_CATEGORIES.has(form.category_slug);
   const sizeOptions = isShoeLike ? SHOE_SIZES : CLOTHING_SIZES;
-
-  const getBrandOptions = (query: string): string[] => {
-    const q = normalizeVnText(query);
-    const names = brands.map((b) => b.name);
-    const filtered = q ? names.filter((n) => normalizeVnText(n).includes(q)) : names;
-    if (!q || normalizeVnText(UNBRANDED_LABEL).includes(q)) return [UNBRANDED_LABEL, ...filtered];
-    return filtered;
-  };
 
   const validateStep = (targetStep: number): Record<string, string> => {
     const e: Record<string, string> = {};
@@ -424,6 +417,18 @@ export const SellListingClient = () => {
     ? UNBRANDED_LABEL
     : form.brand;
 
+  // Whether publishing will use/create a brand StyleHub has not verified —
+  // true both for a brand new name and for an existing brand that was
+  // itself previously seller-declared (e.g. still `pending`). Matching is
+  // a convenience hint only; the backend is the sole authority on whether
+  // a brand actually already exists (backend/services/brandService.js).
+  const matchedBrand = form.brand
+    ? brands.find((b) => normalizeVnText(b.name) === normalizeVnText(form.brand))
+    : undefined;
+  const brandIsUnverified = Boolean(form.brand)
+    && normalizeVnText(form.brand) !== normalizeVnText(UNBRANDED_LABEL)
+    && (!matchedBrand || matchedBrand.verification_status !== 'verified');
+
   const previewProduct: Product = {
     id: 'draft',
     slug: '#',
@@ -531,17 +536,12 @@ export const SellListingClient = () => {
                   )}
                 </div>
                 <div>
-                  <label htmlFor="brand" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Thương hiệu</label>
-                  <Combobox
+                  <BrandField
                     id="brand"
                     value={form.brand}
                     onChange={(v) => setField('brand', v)}
-                    getOptions={brandsLoading ? () => [] : getBrandOptions}
-                    allowFreeText
-                    placeholder={brandsLoading ? 'Đang tải thương hiệu…' : 'Nhập hoặc chọn thương hiệu'}
-                    description="Chọn một thương hiệu có sẵn hoặc tự nhập tên thương hiệu mới."
-                    disabled={brandsLoading}
-                    emptyMessage="Không tìm thấy thương hiệu — nhấn Enter để dùng tên bạn vừa nhập."
+                    brands={brands}
+                    brandsLoading={brandsLoading}
                   />
                 </div>
               </div>
@@ -707,7 +707,17 @@ export const SellListingClient = () => {
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Tên sản phẩm</dt><dd className="text-neutral-900">{form.name}</dd></div>
                   <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Danh mục</dt><dd className="text-neutral-900">{leafCategories.find((c) => c.slug === form.category_slug)?.name || form.category_slug}</dd></div>
-                  <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Thương hiệu</dt><dd className="text-neutral-900">{displayBrand}</dd></div>
+                  <div>
+                    <dt className="font-mono text-[10px] uppercase text-neutral-400">Thương hiệu</dt>
+                    <dd className="text-neutral-900">
+                      {displayBrand}
+                      {brandIsUnverified && (
+                        <p className="mt-1 text-xs font-normal leading-5 text-amber-700">
+                          Thương hiệu do người bán khai báo, chưa được StyleHub xác minh.
+                        </p>
+                      )}
+                    </dd>
+                  </div>
                   <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Tình trạng</dt><dd className="text-neutral-900">{formatCondition(form.condition)}</dd></div>
                   <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Kích thước</dt><dd className="text-neutral-900">{sizeOptions.find((s) => s.value === form.size)?.label || form.size}</dd></div>
                   <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Giá bán</dt><dd className="text-neutral-900">{Number(form.price).toLocaleString('vi-VN')}đ{form.sale_price ? ` (giảm còn: ${Number(form.sale_price).toLocaleString('vi-VN')}đ)` : ''}</dd></div>

@@ -64,7 +64,8 @@ const LISTING_COLUMNS = [
 async function attachImages(products) {
   if (!products.length) return products;
   const ids = products.map((p) => p.id);
-  const [{ data: images }, { data: sustainabilityRows }] = await Promise.all([
+  const brandIds = [...new Set(products.map((p) => p.brand_id).filter(Boolean))];
+  const [{ data: images }, { data: sustainabilityRows }, { data: brandRows }] = await Promise.all([
     supabaseAdmin
       .from('product_images')
       .select('id, product_id, url, alt_text, sort_order, is_primary')
@@ -74,14 +75,22 @@ async function attachImages(products) {
       .from('product_sustainability')
       .select('product_id, lifecycle_type, material, repair_history, upcycle_details, product_story, reuse_packaging, claim_source')
       .in('product_id', ids),
+    brandIds.length
+      ? supabaseAdmin.from('brands').select('id, source, verification_status').in('id', brandIds)
+      : Promise.resolve({ data: [] }),
   ]);
-  return products.map((p) => ({
-    ...p,
-    images: (images || []).filter((img) => img.product_id === p.id),
-    sustainability: sustainability.toPublicSustainability(
-      (sustainabilityRows || []).find((row) => row.product_id === p.id),
-    ),
-  }));
+  return products.map((p) => {
+    const brandRow = (brandRows || []).find((b) => b.id === p.brand_id);
+    return {
+      ...p,
+      images: (images || []).filter((img) => img.product_id === p.id),
+      sustainability: sustainability.toPublicSustainability(
+        (sustainabilityRows || []).find((row) => row.product_id === p.id),
+      ),
+      brand_source: brandRow ? brandRow.source : null,
+      brand_verification_status: brandRow ? brandRow.verification_status : null,
+    };
+  });
 }
 
 /** Ownership + seed-protection base query — every read/write starts here. */
@@ -283,7 +292,7 @@ async function updateMyListing(userId, id, rawFields) {
   }
 
   if (rawFields.brand_slug !== undefined || rawFields.brand !== undefined) {
-    const { brandId, brandName } = await brandService.resolveOrCreateBrand(rawFields.brand_slug ?? rawFields.brand);
+    const { brandId, brandName } = await brandService.resolveOrCreateBrand(rawFields.brand_slug ?? rawFields.brand, { createdBy: userId });
     updates.brand = brandName;
     updates.brand_id = brandId;
   }

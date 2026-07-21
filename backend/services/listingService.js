@@ -256,11 +256,6 @@ async function createListing(user, rawFields, files) {
     throw new ListingValidationError('Danh mục không hợp lệ.', { category_slug: 'Danh mục đã chọn không tồn tại.' });
   }
 
-  // Phase 8.1: brand is free text, resolved/created race-safely by name
-  // (case-insensitive) rather than required to match an existing slug —
-  // sellers may type a brand StyleHub doesn't have yet.
-  const { brandId, brandName } = await brandService.resolveOrCreateBrand(fields.brand_slug);
-
   // De-dupe: identical, already-fully-validated listing from the same user
   // within a short window returns the already-created product instead of
   // creating a second one — covering both a slow sequential resubmit AND a
@@ -323,6 +318,14 @@ async function createListing(user, rawFields, files) {
         is_primary: i === 0,
       });
     }
+
+    // Resolved last, only after every validation step and the image upload
+    // itself have already succeeded — a purely-in-vain new brand row is
+    // never created for a request that was always going to fail validation.
+    // Phase 8.1/16: brand is free text, resolved/created race-safely by
+    // name (case-insensitive) rather than required to match an existing
+    // slug — sellers may type a brand StyleHub doesn't have yet.
+    const { brandId, brandName } = await brandService.resolveOrCreateBrand(fields.brand_slug, { createdBy: user.id });
 
     const nowIso = new Date().toISOString();
     const primaryUrl = imageRecords[0].url;

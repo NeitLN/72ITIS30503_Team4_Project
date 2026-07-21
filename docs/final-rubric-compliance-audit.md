@@ -63,3 +63,16 @@ The map gap was the one concrete, safely-fixable rubric miss found this
 phase; it has been corrected (see `docs/sustainability-demo-data.md`'s
 sibling defect list in `docs/final-presentation-demo-checklist.md` for the
 full defect log).
+
+## Phase 16 update — Shop filtering (item 9)
+
+Phase 16 ("Seller-Declared Brand Creation") found that item 9's brand
+dropdown (`components/shop/ShopFilters.tsx`) was a **hardcoded list of 11
+brands** — including three (`bitis`, `ananas`, `zara`) that don't exist in
+the real catalog at all — and could never reflect a newly created brand.
+This was corrected: the Shop page now fetches real brands with at least
+one active product from `GET /api/brands?scope=shop-filter`
+(`docs/seller-declared-brand-workflow.md`). Item 9 remains PASS; this note
+records that its underlying mechanism changed and was re-verified this
+phase (backend 38/38, browser 22/22 — see that document for exact
+commands).

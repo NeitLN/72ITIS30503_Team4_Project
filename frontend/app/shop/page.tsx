@@ -4,8 +4,10 @@ import { ShopHero } from '../../components/shop/ShopHero';
 import { ShopFilters } from '../../components/shop/ShopFilters';
 import { ShopEmptyState } from '../../components/shop/ShopEmptyState';
 import { getProducts, getCategories } from '../../lib/catalog';
+import { getShopFilterBrands } from '../../lib/brands';
 import { Product } from '../../types/product';
 import { Category } from '../../types/category';
+import { BrandOption } from '../../lib/brands';
 import { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -46,6 +48,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   let page = Math.max(Number.parseInt(params.page || '1', 10) || 1, 1);
   let limit = 20;
   let categories: Category[] = [];
+  let brands: BrandOption[] = [];
   let hasError = false;
 
   try {
@@ -77,6 +80,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     // Toolbar renders without category chips
   }
 
+  try {
+    const res = await getShopFilterBrands();
+    brands = res.data || [];
+  } catch {
+    // Toolbar renders without brand options
+  }
+
   return (
     <>
       <ShopHero />
@@ -85,7 +95,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <ShopEmptyState variant="error" />
         ) : (
           <>
-            <ShopFilters categories={categories} initialFilters={params} />
+            <ShopFilters categories={categories} brands={brands} initialFilters={params} />
 
             {count != null && products.length > 0 && (
               <div className="mb-6 flex justify-between items-baseline border-b border-neutral-100 pb-3">

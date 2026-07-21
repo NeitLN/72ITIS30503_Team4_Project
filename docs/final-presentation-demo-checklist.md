@@ -35,6 +35,7 @@ Before presenting: confirm both servers are running (`npm run dev:backend`,
 | 20 | Two payment methods | `/checkout` | buyer | COD and bank transfer both selectable and both accepted by the backend | — | Payment methods | Source-verified this phase (frontend/backend allow-lists match) |
 | 21 | Mobile responsive experience | Any of the above at ~390×844 | none | No horizontal overflow, single main/h1, touch-usable filters | — | Responsive design | Phase 14 suite (38/38 ×3 at 5 breakpoints); spot-checked again this phase at desktop width |
 | 22 | Database persistence evidence | Any impact panel, refreshed | none | Values persist across reload/relogin (not client-only state) | — | Persistence | Live-verified this session via `supabaseAdmin` row queries matching API responses |
+| 23 | Seller-declared brand creation | `/sell` step 2 | seller | Click "Không tìm thấy thương hiệu? Thêm thương hiệu mới", type a new name, see the unverified disclosure, publish, then view it on `/shop` (brand filter) and the product detail page with the disclosure still shown | Use the retained `stylehub-demo-seller-hcmc` demo listing "Loop & Mend Shoulder Bag" as a pre-made example if live creation isn't rehearsed in time | Seller-declared brands | `docs/seller-declared-brand-workflow.md`; backend 38/38, browser 22/22 |
 
 ## Known honest limitations for the live demo
 
