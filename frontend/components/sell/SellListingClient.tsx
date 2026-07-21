@@ -14,10 +14,10 @@ import { ProductJourneyFields } from '../sustainability/ProductJourneyFields';
 import { useAuth } from '../../hooks/useAuth';
 import { getCategoryTree } from '../../lib/catalog';
 import { Category } from '../../types/category';
-import { getBrands, BrandOption } from '../../lib/brands';
+import { getBrands, BrandOption, findEquivalentBrand, normalizeBrandText } from '../../lib/brands';
 import { createListing } from '../../lib/products';
 import { formatCondition } from '../../lib/format';
-import { VN_PROVINCES, searchVnLocations, normalizeVnText } from '../../lib/vnLocations';
+import { VN_PROVINCES, searchVnLocations } from '../../lib/vnLocations';
 import {
   CONDITIONS, CLOTHING_SIZES, SHOE_SIZES, SHOE_LIKE_CATEGORIES, UNBRANDED_LABEL,
   MAX_IMAGES, MAX_IMAGE_BYTES, ALLOWED_IMAGE_MIME as ALLOWED_MIME,
@@ -35,6 +35,7 @@ type FormState = {
   description: string;
   category_slug: string;
   brand: string;
+  brand_id: string | null;
   condition: string;
   size: string;
   price: string;
@@ -50,6 +51,7 @@ const INITIAL_FORM: FormState = {
   description: '',
   category_slug: '',
   brand: '',
+  brand_id: null,
   condition: '',
   size: '',
   price: '',
@@ -187,6 +189,16 @@ export const SellListingClient = () => {
       if (!prev[field as string]) return prev;
       const next = { ...prev };
       delete next[field as string];
+      return next;
+    });
+  };
+
+  const setBrandField = (value: string, brandId: string | null) => {
+    setForm((prev) => ({ ...prev, brand: value, brand_id: brandId }));
+    setErrors((prev) => {
+      if (!prev.brand) return prev;
+      const next = { ...prev };
+      delete next.brand;
       return next;
     });
   };
@@ -341,7 +353,8 @@ export const SellListingClient = () => {
     fd.append('name', form.name.trim());
     fd.append('description', form.description.trim());
     fd.append('category_slug', form.category_slug);
-    fd.append('brand_slug', form.brand.trim());
+    if (form.brand_id) fd.append('brand_id', form.brand_id);
+    else if (form.brand.trim()) fd.append('new_brand_name', form.brand.trim());
     fd.append('condition', form.condition);
     fd.append('size', form.size);
     fd.append('price', form.price);
@@ -368,7 +381,13 @@ export const SellListingClient = () => {
         return;
       }
       setSubmitError(res.error.message || 'Không thể đăng sản phẩm.');
-      if (res.error.details) setErrors((prev) => ({ ...prev, ...res.error.details }));
+      if (res.error.details) {
+        setErrors((prev) => ({ ...prev, ...res.error.details }));
+        if (res.error.details.brand) {
+          setStep(2);
+          setTimeout(() => document.getElementById('brand')?.focus(), 0);
+        }
+      }
       setStatusMessage('Đăng sản phẩm không thành công. Vui lòng kiểm tra lại các lỗi bên dưới.');
       submitLockRef.current = false;
       setIsSubmitting(false);
@@ -413,7 +432,7 @@ export const SellListingClient = () => {
     );
   }
 
-  const displayBrand = !form.brand || normalizeVnText(form.brand) === normalizeVnText(UNBRANDED_LABEL)
+  const displayBrand = !form.brand || normalizeBrandText(form.brand) === normalizeBrandText(UNBRANDED_LABEL)
     ? UNBRANDED_LABEL
     : form.brand;
 
@@ -422,11 +441,11 @@ export const SellListingClient = () => {
   // itself previously seller-declared (e.g. still `pending`). Matching is
   // a convenience hint only; the backend is the sole authority on whether
   // a brand actually already exists (backend/services/brandService.js).
-  const matchedBrand = form.brand
-    ? brands.find((b) => normalizeVnText(b.name) === normalizeVnText(form.brand))
-    : undefined;
+  const matchedBrand = form.brand_id
+    ? brands.find((brand) => brand.id === form.brand_id)
+    : findEquivalentBrand(form.brand, brands);
   const brandIsUnverified = Boolean(form.brand)
-    && normalizeVnText(form.brand) !== normalizeVnText(UNBRANDED_LABEL)
+    && normalizeBrandText(form.brand) !== normalizeBrandText(UNBRANDED_LABEL)
     && (!matchedBrand || matchedBrand.verification_status !== 'verified');
 
   const previewProduct: Product = {
@@ -440,7 +459,11 @@ export const SellListingClient = () => {
     location: form.location,
     status: 'active',
     thumbnail_url: images[0]?.previewUrl,
-    brand: form.brand ? { name: displayBrand } : undefined,
+    brand: form.brand ? {
+      name: displayBrand,
+      source: brandIsUnverified ? 'seller_declared' : matchedBrand?.source,
+      verification_status: brandIsUnverified ? 'pending' : matchedBrand?.verification_status,
+    } : undefined,
     category: form.category_slug ? { name: leafCategories.find((c) => c.slug === form.category_slug)?.name } : undefined,
   };
 
@@ -539,10 +562,13 @@ export const SellListingClient = () => {
                   <BrandField
                     id="brand"
                     value={form.brand}
-                    onChange={(v) => setField('brand', v)}
+                    onChange={setBrandField}
                     brands={brands}
                     brandsLoading={brandsLoading}
+                    ariaInvalid={!!errors.brand}
+                    errorId={errors.brand ? 'brand-error' : undefined}
                   />
+                  {errors.brand && <p id="brand-error" className="mt-1 text-xs text-red-600">{errors.brand}</p>}
                 </div>
               </div>
             )}

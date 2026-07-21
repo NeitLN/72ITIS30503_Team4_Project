@@ -5,7 +5,8 @@ import { useState, useTransition } from 'react';
 import { Category } from '../../types/category';
 import { formatCondition } from '../../lib/format';
 import { LIFECYCLE_OPTIONS, getLifecycleOption, type LifecycleType } from '../../lib/productJourney';
-import { BrandOption } from '../../lib/brands';
+import { BrandOption, normalizeBrandText } from '../../lib/brands';
+import { Combobox } from '../ui/Combobox';
 
 interface ShopFiltersProps {
   categories: Category[];
@@ -14,6 +15,7 @@ interface ShopFiltersProps {
    * Never a hardcoded list, so a newly seller-declared brand appears here
    * as soon as it has an active listing, and never shows an empty option. */
   brands: BrandOption[];
+  brandsError?: boolean;
   initialFilters: {
     search?: string;
     category?: string;
@@ -31,7 +33,7 @@ const CONDITIONS = [
   { slug: 'used', name: formatCondition('used') },
 ];
 
-export const ShopFilters = ({ categories, brands, initialFilters }: ShopFiltersProps) => {
+export const ShopFilters = ({ categories, brands, brandsError = false, initialFilters }: ShopFiltersProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -97,9 +99,28 @@ export const ShopFilters = ({ categories, brands, initialFilters }: ShopFiltersP
     Boolean(initialFilters.lifecycle);
 
   const selectedCategoryName = categories.find((c) => c.slug === initialFilters.category)?.name;
-  const selectedBrandName = brands.find((b) => b.slug === initialFilters.brand)?.name;
+  const uniqueBrands = Array.from(new Map(brands.map((brand) => [brand.id, brand])).values());
+  const selectedBrand = uniqueBrands.find((brand) => brand.slug === initialFilters.brand);
+  const selectedBrandName = selectedBrand?.name;
   const selectedConditionName = CONDITIONS.find((c) => c.slug === initialFilters.condition)?.name;
   const selectedLifecycleName = getLifecycleOption(initialFilters.lifecycle as LifecycleType)?.previewLabel;
+  const brandLabel = (brand: BrandOption) => (
+    `${brand.name}${brand.verification_status === 'pending' ? ' (chưa xác minh)' : ''}`
+  );
+  const getBrandOptions = (query: string) => {
+    const normalizedQuery = normalizeBrandText(query);
+    return uniqueBrands
+      .filter((brand) => !normalizedQuery || normalizeBrandText(brand.name).includes(normalizedQuery))
+      .map(brandLabel);
+  };
+  const handleBrandSelect = (label: string) => {
+    if (!label) {
+      handleSelectChange('brand', '');
+      return;
+    }
+    const brand = uniqueBrands.find((option) => brandLabel(option) === label);
+    if (brand) handleSelectChange('brand', brand.slug);
+  };
 
   return (
     <div className="mb-8 border-b border-neutral-200 pb-6">
@@ -186,24 +207,22 @@ export const ShopFilters = ({ categories, brands, initialFilters }: ShopFiltersP
             </select>
           </div>
 
-          {/* Brand Dropdown */}
-          <div className="flex-1 sm:min-w-[140px]">
-            <label htmlFor="brand-select" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">
+          {/* Searchable active-brand filter */}
+          <div className="min-w-0 flex-1 sm:min-w-[190px]">
+            <label htmlFor="brand-search" className="mb-1.5 block font-mono text-[10px] uppercase tracking-wider text-neutral-500">
               Thương hiệu
             </label>
-            <select
-              id="brand-select"
-              value={initialFilters.brand || ''}
-              onChange={(e) => handleSelectChange('brand', e.target.value)}
-              className="w-full border border-neutral-300 bg-white px-3 py-2 text-xs font-mono text-neutral-800 uppercase tracking-wide focus:border-neutral-900 focus:outline-none"
-            >
-              <option value="">Tất cả thương hiệu</option>
-              {brands.map((brand) => (
-                <option key={brand.slug} value={brand.slug}>
-                  {brand.name}{brand.verification_status === 'pending' ? ' (chưa xác minh)' : ''}
-                </option>
-              ))}
-            </select>
+            <Combobox
+              id="brand-search"
+              value={selectedBrand?.name || ''}
+              onChange={handleBrandSelect}
+              getOptions={getBrandOptions}
+              placeholder="Tìm thương hiệu..."
+              description={brandsError ? 'Không thể tải thương hiệu. Vui lòng thử lại sau.' : undefined}
+              emptyMessage="Không tìm thấy thương hiệu phù hợp."
+              disabled={brandsError}
+              className="font-sans"
+            />
           </div>
 
           {/* Condition Dropdown */}

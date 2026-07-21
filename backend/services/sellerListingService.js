@@ -291,8 +291,11 @@ async function updateMyListing(userId, id, rawFields) {
     }
   }
 
-  if (rawFields.brand_slug !== undefined || rawFields.brand !== undefined) {
-    const { brandId, brandName } = await brandService.resolveOrCreateBrand(rawFields.brand_slug ?? rawFields.brand, { createdBy: userId });
+  if (
+    rawFields.brand_id !== undefined || rawFields.new_brand_name !== undefined
+    || rawFields.brand_slug !== undefined || rawFields.brand !== undefined
+  ) {
+    const { brandId, brandName } = await brandService.resolveBrandSelection(rawFields, { createdBy: userId });
     updates.brand = brandName;
     updates.brand_id = brandId;
   }

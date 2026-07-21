@@ -87,7 +87,7 @@ function validateFields(raw, sellerName) {
   const name = stripControlChars(raw.name || '');
   const description = stripControlChars(raw.description || '');
   const category_slug = String(raw.category_slug || raw.category || '').trim();
-  const brand_slug = String(raw.brand_slug || raw.brand || '').trim();
+  const brand_selection = brandService.validateBrandSelectionInput(raw);
   const condition = String(raw.condition || '').trim();
   const size = stripControlChars(raw.size || '');
   const location = stripControlChars(raw.location || '');
@@ -163,7 +163,7 @@ function validateFields(raw, sellerName) {
     name,
     description,
     category_slug,
-    brand_slug: brand_slug || null,
+    brand_selection,
     condition,
     size,
     location,
@@ -269,7 +269,7 @@ async function createListing(user, rawFields, files) {
   // event loop: whichever concurrent request's continuation is scheduled
   // first reserves the slot before the other request's continuation can run.
   const now = Date.now();
-  const key = `${dedupeKey(fields, productJourney)}::${fields.brand_slug || ''}`;
+  const key = `${dedupeKey(fields, productJourney)}::${JSON.stringify(fields.brand_selection)}`;
   const prev = recentSubmissions.get(user.id);
   if (prev && prev.key === key && prev.expiresAt > now) {
     if (prev.status === 'done') {
@@ -322,10 +322,13 @@ async function createListing(user, rawFields, files) {
     // Resolved last, only after every validation step and the image upload
     // itself have already succeeded — a purely-in-vain new brand row is
     // never created for a request that was always going to fail validation.
-    // Phase 8.1/16: brand is free text, resolved/created race-safely by
-    // name (case-insensitive) rather than required to match an existing
-    // slug — sellers may type a brand StyleHub doesn't have yet.
-    const { brandId, brandName } = await brandService.resolveOrCreateBrand(fields.brand_slug, { createdBy: user.id });
+    // A selected suggestion resolves by canonical ID; unselected text is
+    // resolved/created by normalized name. The service rejects ambiguous
+    // payloads and remains authoritative in both cases.
+    const selectionPayload = fields.brand_selection.kind === 'existing'
+      ? { brand_id: fields.brand_selection.brandId }
+      : { new_brand_name: fields.brand_selection.kind === 'name' ? fields.brand_selection.brandName : '' };
+    const { brandId, brandName } = await brandService.resolveBrandSelection(selectionPayload, { createdBy: user.id });
 
     const nowIso = new Date().toISOString();
     const primaryUrl = imageRecords[0].url;

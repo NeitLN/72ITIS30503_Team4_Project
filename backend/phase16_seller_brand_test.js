@@ -53,13 +53,24 @@ async function register(label, role = 'seller') {
 
 const SAMPLE_IMAGE_PATH = path.join(__dirname, '../frontend/public/images/products/adidas-stan-smith.jpg');
 
-async function createListingMultipart(seller, { name, brand, categorySlug = 't-shirts', priceOverride } = {}) {
+async function createListingMultipart(seller, {
+  name,
+  brand,
+  brandId,
+  newBrandName,
+  categorySlug = 't-shirts',
+  priceOverride,
+  extraBrandFields = {},
+} = {}) {
   const buffer = fs.readFileSync(SAMPLE_IMAGE_PATH);
   const form = new FormData();
   form.append('name', name);
   form.append('description', 'Scoped Phase 16 seller-declared-brand QA listing with real database state.');
   form.append('category_slug', categorySlug);
   if (brand !== undefined) form.append('brand_slug', typeof brand === 'string' ? brand : JSON.stringify(brand));
+  if (brandId !== undefined) form.append('brand_id', brandId);
+  if (newBrandName !== undefined) form.append('new_brand_name', newBrandName);
+  for (const [key, value] of Object.entries(extraBrandFields)) form.append(key, String(value));
   form.append('condition', 'good');
   form.append('size', 'M');
   form.append('price', String(priceOverride || 350000));
@@ -124,12 +135,12 @@ async function cleanup() {
     const customer = await register('customer', 'customer');
 
     // ---- Anonymous / unauthorized cannot create a brand or product ----
-    const anonAttempt = await createListingMultipart(null, { name: `Phase 16 anon ${run}`, brand: `${BRAND_NS} anon` });
+    const anonAttempt = await createListingMultipart(null, { name: `Phase 16 anon ${run}`, newBrandName: `${BRAND_NS} anon` });
     check('Anonymous request cannot create a listing (and therefore cannot create a brand)', anonAttempt.status === 401);
 
     // ---- New valid brand: authenticated seller creates a product with it ----
     const newBrandName = `${BRAND_NS} New`;
-    const first = await createListingMultipart(sellerA, { name: `Phase 16 First ${run}`, brand: newBrandName });
+    const first = await createListingMultipart(sellerA, { name: `Phase 16 First ${run}`, newBrandName });
     check('Authenticated seller can create a product with a valid new brand', first.status === 201, `${first.status} ${JSON.stringify(first.body)}`);
     const { product: firstProduct, brand: firstBrand } = await getProductBrand(first.body?.data?.id);
     check('New product references the newly created brand', Boolean(firstProduct?.brand_id) && firstBrand?.name === newBrandName);
@@ -142,6 +153,7 @@ async function cleanup() {
     const spoofAttempt = await createListingMultipart(sellerA, {
       name: `Phase 16 Spoof ${run}`,
       brand: { name: spoofName, verification_status: 'verified', source: 'catalog', created_by: customer.id },
+      extraBrandFields: { verification_status: 'verified', source: 'catalog', created_by: customer.id },
     });
     // brand_slug is coerced to a plain string server-side (String(raw.brand_slug)),
     // so an object payload can never inject structured fields — it either
@@ -153,14 +165,35 @@ async function cleanup() {
       check('Spoofed brand payload never results in created_by belonging to someone else', spoofBrand?.created_by !== customer.id);
     }
 
-    // ---- Existing brand selection still works (catalog brand, e.g. Nike) ----
-    const nikeListing = await createListingMultipart(sellerA, { name: `Phase 16 Nike ${run}`, brand: 'Nike' });
-    check('Existing catalog brand selection still works', nikeListing.status === 201);
+    // ---- Existing suggestion selection submits a stable canonical ID ----
+    const { data: canonicalNike } = await supabaseAdmin
+      .from('brands').select('id, name, source, verification_status').eq('slug', 'nike').single();
+    const nikeListing = await createListingMultipart(sellerA, {
+      name: `Phase 16 Nike ${run}`,
+      brandId: canonicalNike.id,
+    });
+    check('Existing catalog brand ID still works', nikeListing.status === 201);
     const { brand: nikeBrand } = await getProductBrand(nikeListing.body?.data?.id);
-    check('Selecting an existing catalog brand does not create a duplicate or alter its verified status', nikeBrand?.name === 'Nike' && nikeBrand?.verification_status === 'verified' && nikeBrand?.source === 'catalog');
+    check('Selected canonical brand ID is preserved without changing provenance', nikeBrand?.id === canonicalNike.id && nikeBrand?.name === 'Nike' && nikeBrand?.verification_status === 'verified' && nikeBrand?.source === 'catalog');
+
+    // ---- Equivalent unselected text is still resolved authoritatively ----
+    const nikeTextListing = await createListingMultipart(sellerA, {
+      name: `Phase 16 Nike text ${run}`,
+      newBrandName: '  nIkE  ',
+    });
+    check('Equivalent existing brand text resolves successfully', nikeTextListing.status === 201);
+    const { brand: nikeTextBrand } = await getProductBrand(nikeTextListing.body?.data?.id);
+    check('Equivalent existing text resolves to the canonical Nike row', nikeTextBrand?.id === canonicalNike.id);
+
+    const ambiguous = await createListingMultipart(sellerA, {
+      name: `Phase 16 Ambiguous ${run}`,
+      brandId: canonicalNike.id,
+      newBrandName: `${BRAND_NS} Ambiguous`,
+    });
+    check('Ambiguous brand_id plus new_brand_name payload is rejected', ambiguous.status === 422);
 
     // ---- Whitespace/case variations resolve to the SAME existing brand, zero duplicates ----
-    const variant = await createListingMultipart(sellerB, { name: `Phase 16 Variant ${run}`, brand: `  ${newBrandName.toUpperCase()}  ` });
+    const variant = await createListingMultipart(sellerB, { name: `Phase 16 Variant ${run}`, newBrandName: `  ${newBrandName.toUpperCase()}  ` });
     check('Whitespace/case variant resolves to the existing brand (second identical request creates zero duplicates)', variant.status === 201);
     const { brand: variantBrand } = await getProductBrand(variant.body?.data?.id);
     check('Case/whitespace variant brand_id equals the original', variantBrand?.id === firstBrand?.id);
@@ -170,8 +203,8 @@ async function cleanup() {
     // ---- Concurrent equivalent requests create exactly one canonical brand ----
     const concurrentName = `${BRAND_NS} Concurrent`;
     const [c1, c2] = await Promise.all([
-      createListingMultipart(sellerA, { name: `Phase 16 Concurrent A ${run}`, brand: concurrentName }),
-      createListingMultipart(sellerB, { name: `Phase 16 Concurrent B ${run}`, brand: concurrentName.toUpperCase() }),
+      createListingMultipart(sellerA, { name: `Phase 16 Concurrent A ${run}`, newBrandName: concurrentName }),
+      createListingMultipart(sellerB, { name: `Phase 16 Concurrent B ${run}`, newBrandName: concurrentName.toUpperCase() }),
     ]);
     check('Both concurrent requests succeed', c1.status === 201 && c2.status === 201, `${c1.status}/${c2.status}`);
     const { brand: c1Brand } = await getProductBrand(c1.body?.data?.id);
@@ -181,14 +214,18 @@ async function cleanup() {
     check('Exactly one brand row exists after the concurrent race', concurrentCount === 1, `count=${concurrentCount}`);
 
     // ---- Invalid names rejected ----
-    const controlCharAttempt = await createListingMultipart(sellerA, { name: `Phase 16 Bad ${run}`, brand: `${BRAND_NS} Control` });
+    const controlCharAttempt = await createListingMultipart(sellerA, { name: `Phase 16 Bad ${run}`, newBrandName: `${BRAND_NS} Control` });
     check('Control-character brand name is rejected', controlCharAttempt.status === 422);
-    const htmlAttempt = await createListingMultipart(sellerA, { name: `Phase 16 Bad2 ${run}`, brand: `<script>alert(1)</script>` });
+    const htmlAttempt = await createListingMultipart(sellerA, { name: `Phase 16 Bad2 ${run}`, newBrandName: `<script>alert(1)</script>` });
     check('HTML/script brand name is rejected (safely, not stored or rendered)', htmlAttempt.status === 422);
-    const tooLong = await createListingMultipart(sellerA, { name: `Phase 16 Bad3 ${run}`, brand: 'A'.repeat(61) });
+    const tooLong = await createListingMultipart(sellerA, { name: `Phase 16 Bad3 ${run}`, newBrandName: 'A'.repeat(61) });
     check('Over-length brand name is rejected', tooLong.status === 422);
-    const symbolsOnly = await createListingMultipart(sellerA, { name: `Phase 16 Bad4 ${run}`, brand: '!!!???---' });
+    const symbolsOnly = await createListingMultipart(sellerA, { name: `Phase 16 Bad4 ${run}`, newBrandName: '!!!???---' });
     check('Symbols-only brand name is rejected', symbolsOnly.status === 422);
+    const emailOnly = await createListingMultipart(sellerA, { name: `Phase 16 Bad5 ${run}`, newBrandName: 'brand@example.com' });
+    check('Email-only brand name is rejected', emailOnly.status === 422);
+    const urlOnly = await createListingMultipart(sellerA, { name: `Phase 16 Bad6 ${run}`, newBrandName: 'https://example.com/brand' });
+    check('URL-only brand name is rejected', urlOnly.status === 422);
 
     // ---- Non-seller (customer) role: still safely attributed, not elevated ----
     // This app has no seller-only role gate on listing creation (any
@@ -197,23 +234,24 @@ async function cleanup() {
     // matters here is that a customer-role account cannot end up creating a
     // brand attributed to anyone but itself, and never a verified one.
     const customerBrandName = `${BRAND_NS} Customer`;
-    const customerListing = await createListingMultipart(customer, { name: `Phase 16 Customer ${run}`, brand: customerBrandName });
+    const customerListing = await createListingMultipart(customer, { name: `Phase 16 Customer ${run}`, newBrandName: customerBrandName });
     check('Customer-role account can create a listing (no distinct seller role gate exists)', customerListing.status === 201);
     const { brand: customerBrand } = await getProductBrand(customerListing.body?.data?.id);
     check('Customer-created brand is attributed to the customer, never elevated to verified/catalog', customerBrand?.created_by === customer.id && customerBrand?.verification_status === 'pending' && customerBrand?.source === 'seller_declared');
 
     // ---- Editing: switch to an existing brand, declare a new brand, and no-op preserves current ----
-    const editBase = await createListingMultipart(sellerA, { name: `Phase 16 EditBase ${run}`, brand: newBrandName });
+    const editBase = await createListingMultipart(sellerA, { name: `Phase 16 EditBase ${run}`, newBrandName });
     const editProductId = editBase.body.data.id;
     const { product: beforeEdit } = await getProductBrand(editProductId);
 
-    const switchToExisting = await api('PATCH', `/api/seller/listings/${editProductId}`, { brand_slug: 'Adidas' }, sellerA.token);
+    const { data: canonicalAdidas } = await supabaseAdmin.from('brands').select('id').eq('slug', 'adidas').single();
+    const switchToExisting = await api('PATCH', `/api/seller/listings/${editProductId}`, { brand_id: canonicalAdidas.id }, sellerA.token);
     check('Product editing can switch to an existing brand', switchToExisting.status === 200);
     const { brand: afterSwitch } = await getProductBrand(editProductId);
     check('Switched brand resolves to the real existing Adidas row', afterSwitch?.name === 'Adidas' && afterSwitch?.source === 'catalog');
 
     const editNewBrandName = `${BRAND_NS} EditedNew`;
-    const switchToNew = await api('PATCH', `/api/seller/listings/${editProductId}`, { brand_slug: editNewBrandName }, sellerA.token);
+    const switchToNew = await api('PATCH', `/api/seller/listings/${editProductId}`, { new_brand_name: editNewBrandName }, sellerA.token);
     check('Product editing can declare a brand-new brand', switchToNew.status === 200);
     const { brand: afterNew } = await getProductBrand(editProductId);
     check('Newly declared brand via edit is seller_declared/pending, created_by the editor', afterNew?.source === 'seller_declared' && afterNew?.verification_status === 'pending' && afterNew?.created_by === sellerA.id);
@@ -228,10 +266,26 @@ async function cleanup() {
     check('Catalog brand count is unaffected by this suite (still exactly 52)', catalogBrandCountAfter === 52, `catalog=${catalogBrandCountAfter}`);
 
     // ---- Product creation failure does not leave an orphaned brand ----
-    const invalidCategoryAttempt = await createListingMultipart(sellerA, { name: `Phase 16 BadCat ${run}`, brand: `${BRAND_NS} NeverCreated`, categorySlug: 'not-a-real-category' });
+    const invalidCategoryAttempt = await createListingMultipart(sellerA, { name: `Phase 16 BadCat ${run}`, newBrandName: `${BRAND_NS} NeverCreated`, categorySlug: 'not-a-real-category' });
     check('Invalid category is rejected before any brand is created', invalidCategoryAttempt.status === 422);
     const { count: orphanCount } = await supabaseAdmin.from('brands').select('id', { count: 'exact', head: true }).ilike('name', `${BRAND_NS} NeverCreated`);
     check('A request that fails validation leaves zero orphaned brand rows', orphanCount === 0, `count=${orphanCount}`);
+
+    // ---- Shop filter contains the active seller-created brand only once ----
+    const shopBrands = await api('GET', '/api/brands?scope=shop-filter');
+    const shopMatches = (shopBrands.body?.data || []).filter((brand) => brand.id === firstBrand.id);
+    check('Active seller-created brand is available to the Shop filter', shopBrands.status === 200 && shopMatches.length === 1);
+    const [{ data: activeProductBrands }, { data: allActiveBrands }] = await Promise.all([
+      supabaseAdmin.from('products').select('brand_id').eq('status', 'active').not('brand_id', 'is', null),
+      supabaseAdmin.from('brands').select('id, name').eq('is_active', true),
+    ]);
+    const activeProductBrandIds = new Set((activeProductBrands || []).map((product) => product.brand_id));
+    const zeroActiveProductBrand = (allActiveBrands || []).find((brand) => !activeProductBrandIds.has(brand.id));
+    check(
+      'Brand with zero active products is excluded from the Shop filter',
+      Boolean(zeroActiveProductBrand) && !(shopBrands.body?.data || []).some((brand) => brand.id === zeroActiveProductBrand.id),
+      zeroActiveProductBrand?.name || 'no zero-active-product brand fixture available',
+    );
 
     // ---- 148 seed products remain intact throughout ----
     const { count: seedAfter } = await supabaseAdmin.from('products').select('id', { count: 'exact', head: true }).eq('listing_source', 'seed');

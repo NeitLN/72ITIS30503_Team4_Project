@@ -49,6 +49,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   let limit = 20;
   let categories: Category[] = [];
   let brands: BrandOption[] = [];
+  let brandsError = false;
   let hasError = false;
 
   try {
@@ -84,7 +85,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     const res = await getShopFilterBrands();
     brands = res.data || [];
   } catch {
-    // Toolbar renders without brand options
+    brandsError = true;
   }
 
   return (
@@ -95,7 +96,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <ShopEmptyState variant="error" />
         ) : (
           <>
-            <ShopFilters categories={categories} brands={brands} initialFilters={params} />
+            <ShopFilters categories={categories} brands={brands} brandsError={brandsError} initialFilters={params} />
 
             {count != null && products.length > 0 && (
               <div className="mb-6 flex justify-between items-baseline border-b border-neutral-100 pb-3">

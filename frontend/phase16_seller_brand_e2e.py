@@ -1,4 +1,4 @@
-"""Phase 16 end-to-end coverage for seller-declared brand creation.
+"""Phase 16 end-to-end coverage for unified seller brand entry and Shop search.
 
 Drives the real rendered /sell wizard, Shop filter, product detail, and
 Seller Dashboard edit form in a real browser against the locally running
@@ -15,6 +15,7 @@ Usage:
     python phase16_seller_brand_e2e.py
 """
 import json
+import atexit
 import os
 import secrets
 import subprocess
@@ -41,6 +42,7 @@ IMG = os.path.join(HERE, "public", "images", "products", "adidas-stan-smith.jpg"
 
 results = []
 console_errors = []
+http_errors = []
 
 
 def check(name, cond, extra=""):
@@ -50,6 +52,12 @@ def check(name, cond, extra=""):
 
 def attach_console(page):
     page.on("console", lambda msg: console_errors.append(f"{page.url} :: {msg.text[:200]}") if msg.type == "error" else None)
+    page.on(
+        "response",
+        lambda response: http_errors.append(f"{response.status} {response.url}")
+        if response.status >= 400 and "/api/" in response.url
+        else None,
+    )
 
 
 def api_post(path, payload):
@@ -71,6 +79,25 @@ def register_seller():
     if not res.get("success"):
         print("ERROR: could not register the Phase 16 E2E seller account:", res.get("error"))
         sys.exit(2)
+    # Registration intentionally leaves username unset. Assign a unique one
+    # through the normal authenticated profile API so this disposable listing
+    # can also exercise the public seller storefront.
+    token = res["data"]["token"]
+    username = f"p16-{RUN}"[:30]
+    profile_req = urllib.request.Request(
+        f"{API_BASE}/api/profile/me",
+        data=json.dumps({"username": username}).encode(),
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+        method="PATCH",
+    )
+    try:
+        with urllib.request.urlopen(profile_req, timeout=10) as profile_resp:
+            profile = json.loads(profile_resp.read())
+    except urllib.error.HTTPError as exc:
+        profile = json.loads(exc.read())
+    if not profile.get("success"):
+        print("ERROR: could not assign the disposable Phase 16 storefront username:", profile.get("error"))
+        sys.exit(2)
     return res["data"]["user"]["id"]
 
 
@@ -80,35 +107,59 @@ def cleanup(product_slug):
     Python; the Supabase service-role client used elsewhere in this repo
     is Node-only)."""
     script = f"""
-require('dotenv').config({{ path: ['.env', '../.env'] }});
+require('dotenv').config({{ path: ['.env', '../.env'], quiet: true }});
 const {{ supabaseAdmin }} = require('./lib/supabase');
 (async () => {{
-  const {{ data: product }} = await supabaseAdmin.from('products').select('id,brand_id').eq('slug', {json.dumps(product_slug)}).maybeSingle();
+  const productSlug = {json.dumps(product_slug)};
+  const {{ data: user }} = await supabaseAdmin.from('users').select('id').eq('email', {json.dumps(EMAIL)}).maybeSingle();
+  const product = productSlug
+    ? (await supabaseAdmin.from('products').select('id,brand_id').eq('slug', productSlug).maybeSingle()).data
+    : null;
+  let brandId = product?.brand_id || null;
   if (product) {{
     await supabaseAdmin.from('product_sustainability').delete().eq('product_id', product.id);
     await supabaseAdmin.from('product_images').delete().eq('product_id', product.id);
     await supabaseAdmin.from('products').delete().eq('id', product.id);
-    if (product.brand_id) {{
-      const {{ data: brand }} = await supabaseAdmin.from('brands').select('id,slug').eq('id', product.brand_id).maybeSingle();
-      if (brand && brand.slug.startsWith('stylehub-brand-test-')) {{
-        await supabaseAdmin.from('brands').delete().eq('id', brand.id);
-      }}
+  }}
+  if (!brandId && user) {{
+    const {{ data: exactBrand }} = await supabaseAdmin.from('brands')
+      .select('id').eq('name', {json.dumps(BRAND_NAME)}).eq('created_by', user.id).maybeSingle();
+    brandId = exactBrand?.id || null;
+  }}
+  if (brandId && user) {{
+    const {{ data: brand }} = await supabaseAdmin.from('brands')
+      .select('id,slug,created_by').eq('id', brandId).maybeSingle();
+    const {{ count: productRefs }} = await supabaseAdmin.from('products')
+      .select('id', {{ count: 'exact', head: true }}).eq('brand_id', brandId);
+    if (brand && brand.created_by === user.id && brand.slug.startsWith('stylehub-brand-test-') && productRefs === 0) {{
+      await supabaseAdmin.from('brands').delete().eq('id', brand.id);
     }}
   }}
-  const {{ data: user }} = await supabaseAdmin.from('users').select('id').eq('email', {json.dumps(EMAIL)}).maybeSingle();
   if (user) await supabaseAdmin.from('users').delete().eq('id', user.id);
   console.log('phase16 e2e cleanup done');
 }})();
 """
     backend_dir = os.path.join(os.path.dirname(HERE), "backend")
-    proc = subprocess.run(["node", "-e", script], cwd=backend_dir, capture_output=True, text=True, timeout=30)
-    print(proc.stdout.strip())
+    proc = subprocess.run(
+        ["node", "-e", script], cwd=backend_dir, capture_output=True,
+        text=True, encoding="utf-8", errors="replace", timeout=30,
+    )
+    print((proc.stdout or "").strip())
     if proc.returncode != 0:
         print("CLEANUP STDERR:", proc.stderr.strip())
 
 
-seller_id = register_seller()
 created_slug = None
+cleanup_done = False
+
+
+def cleanup_at_exit():
+    if not cleanup_done:
+        cleanup(created_slug)
+
+
+atexit.register(cleanup_at_exit)
+seller_id = register_seller()
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
@@ -117,12 +168,15 @@ with sync_playwright() as p:
     attach_console(page)
 
     # ---------- Login ----------
-    page.goto(f"{BASE}/login", wait_until="load")
+    # Wait for the client bundle to hydrate before submitting. Interacting at
+    # the earlier `load` boundary can trigger the browser's native GET
+    # `/login?` form submission before React attaches LoginForm.handleSubmit.
+    page.goto(f"{BASE}/login", wait_until="networkidle")
     page.fill("#email", EMAIL)
     page.fill("#password", PASSWORD)
     page.click("button[type=submit]")
-    page.wait_for_url(lambda url: not url.endswith("/login"), timeout=10000)
-    check("Fresh seller account logs in successfully", "/login" not in page.url, page.url)
+    page.wait_for_url(f"{BASE}/profile", timeout=10000)
+    check("Fresh seller account logs in successfully", page.url.rstrip("/") == f"{BASE}/profile", page.url)
 
     # ---------- /sell step 1 ----------
     page.goto(f"{BASE}/sell", wait_until="load")
@@ -131,29 +185,34 @@ with sync_playwright() as p:
     page.click("[data-testid=sell-next]")
     expect(page.get_by_text("Bước 2")).to_be_visible(timeout=5000)
 
-    # ---------- /sell step 2 — category + NEW brand ----------
+    # ---------- /sell step 2 — one unified free-text brand combobox ----------
     expect(page.locator("#category_slug")).to_be_enabled(timeout=10000)
     page.select_option("#category_slug", "t-shirts")
 
-    expect(page.locator("#brand")).to_be_enabled(timeout=10000)
-    add_new_btn = page.get_by_role("button", name="Không tìm thấy thương hiệu? Thêm thương hiệu mới")
-    expect(add_new_btn).to_be_visible(timeout=5000)
-    check("'Thêm thương hiệu mới' option is visible next to the brand search", True)
-    add_new_btn.click()
+    brand_input = page.locator("#brand")
+    expect(brand_input).to_be_enabled(timeout=10000)
+    expect(brand_input).to_have_attribute("role", "combobox")
+    expect(brand_input).to_have_attribute("placeholder", "Nhập hoặc tìm thương hiệu")
+    check("Seller sees one accessible unified brand combobox", page.locator("#brand").count() == 1)
+    check("No separate add-new-brand action exists", page.get_by_text("Không tìm thấy thương hiệu? Thêm thương hiệu mới", exact=True).count() == 0)
+    check("No second new-brand input exists", page.locator("#brand-new").count() == 0)
 
-    new_brand_input = page.locator("#brand-new")
-    expect(new_brand_input).to_be_visible(timeout=5000)
-    check("Dedicated new-brand input appears only after choosing to add one", True)
-    disclosure = page.get_by_text("Thương hiệu mới sẽ được ghi nhận là do người bán khai báo và chưa được StyleHub xác minh.")
-    expect(disclosure).to_be_visible(timeout=5000)
-    check("Unverified-brand disclosure is visible while declaring a new brand", True)
+    brand_input.fill("nike")
+    nike_option = page.get_by_role("option", name="Nike", exact=True)
+    expect(nike_option).to_be_visible(timeout=5000)
+    brand_input.press("ArrowDown")
+    brand_input.press("Enter")
+    expect(brand_input).to_have_value("Nike")
+    check("Keyboard selects an existing brand suggestion", True)
 
-    new_brand_input.fill(BRAND_NAME)
-    expect(new_brand_input).to_have_value(BRAND_NAME)
+    brand_input.fill(BRAND_NAME)
+    expect(brand_input).to_have_value(BRAND_NAME)
+    expect(page.get_by_text("Không tìm thấy thương hiệu phù hợp. Bạn vẫn có thể sử dụng tên này.", exact=True)).to_be_visible(timeout=5000)
+    check("Unknown valid free text remains accepted without changing modes", True)
 
     page.click("[data-testid=sell-next]")
     expect(page.get_by_text("Bước 3")).to_be_visible(timeout=5000)
-    check("Step 2 -> Step 3 advanced with a declared new brand", True)
+    check("Step 2 -> Step 3 advances directly with unknown brand text", True)
 
     # ---------- step 3 ----------
     page.select_option("#condition", "good")
@@ -201,26 +260,40 @@ with sync_playwright() as p:
     check("Exactly one visible <h1> on Product Detail", h1_count == 1, str(h1_count))
     check("No document-level horizontal overflow on Product Detail (desktop)", not overflow)
 
+    # ---------- Public seller storefront carries the canonical brand ----------
+    storefront_link = page.locator("section[aria-label='Thông tin người bán'] a[href^='/seller/']").first
+    storefront_href = storefront_link.get_attribute("href")
+    check("Product Detail links to the seller's public storefront", bool(storefront_href), str(storefront_href))
+    page.goto(f"{BASE}{storefront_href}", wait_until="networkidle")
+    expect(page.get_by_text(LISTING_NAME, exact=True).first).to_be_visible(timeout=10000)
+    expect(page.get_by_text(BRAND_NAME, exact=False).first).to_be_visible(timeout=5000)
+    check("Public seller storefront shows the listing with its declared brand", True)
+
     # ---------- Shop filter includes the new brand and returns the product ----------
-    # The Shop brand list is fetched with a short (60s) server-side cache
-    # for performance (GET /api/brands?scope=shop-filter, see lib/brands.ts)
-    # — a brand created moments ago may not appear until that cache
-    # revalidates, which is correct/expected production behavior, not a
-    # defect. Poll instead of asserting on the very first load.
-    brand_options = []
-    for _ in range(15):
-        page.goto(f"{BASE}/shop", wait_until="load")
-        brand_options = page.locator("#brand-select option").all_inner_texts()
-        if any(BRAND_NAME in o for o in brand_options):
+    # The Shop page fetches its active-brand dataset uncached so a brand from
+    # the just-published listing is immediately eligible. Poll briefly only
+    # to tolerate normal server-render/navigation timing.
+    partial_brand_query = BRAND_NAME.split()[-1].lower()
+    shop_brand_found = False
+    for _ in range(5):
+        # The combobox is client-interactive; wait through hydration before
+        # filling it so `onChange` opens the listbox deterministically.
+        page.goto(f"{BASE}/shop", wait_until="networkidle")
+        shop_brand_search = page.locator("#brand-search")
+        expect(shop_brand_search).to_be_visible(timeout=5000)
+        shop_brand_search.fill(partial_brand_query)
+        brand_option = page.get_by_role("option", name=f"{BRAND_NAME} (chưa xác minh)", exact=True)
+        if brand_option.count() and brand_option.is_visible():
+            shop_brand_found = True
             break
-        page.wait_for_timeout(5000)
-    check("New brand appears in the Shop brand filter", any(BRAND_NAME in o for o in brand_options), str(len(brand_options)))
-    brand_option = page.locator("#brand-select option").filter(has_text=BRAND_NAME).first
-    brand_value = brand_option.get_attribute("value")
-    page.select_option("#brand-select", brand_value)
-    page.wait_for_url(f"**/shop?brand={brand_value}**", timeout=10000)
+        page.wait_for_timeout(1000)
+    check("Partial text finds the new active seller-created brand", shop_brand_found, partial_brand_query)
+    brand_option.click()
+    page.wait_for_url("**/shop?brand=**", timeout=10000)
+    brand_value = page.url.split("brand=")[1].split("&")[0]
     expect(page.get_by_text(LISTING_NAME).first).to_be_visible(timeout=10000)
-    check("Selecting the new brand filter returns exactly the new listing", True)
+    expect(page.get_by_text(f"Thương hiệu: {BRAND_NAME}")).to_be_visible(timeout=5000)
+    check("Selecting the searched brand applies its stable URL value and returns the listing", True)
 
     # Browser back/forward still works with the brand filter applied
     page.go_back()
@@ -228,18 +301,9 @@ with sync_playwright() as p:
     check("Browser Back restores the unfiltered Shop URL", True)
     page.go_forward()
     page.wait_for_url(f"**/shop?brand={brand_value}**", timeout=5000)
-    check("Browser Forward restores the brand-filtered Shop URL", True)
-
-    # ---------- Mobile viewport ----------
-    mobile_ctx = browser.new_context(viewport={"width": 390, "height": 844})
-    mobile_page = mobile_ctx.new_page()
-    attach_console(mobile_page)
-    mobile_page.goto(f"{BASE}/products/{created_slug}", wait_until="load")
-    m_overflow = mobile_page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth + 2")
-    check("No horizontal overflow on Product Detail at 390x844", not m_overflow)
-    expect(mobile_page.get_by_text(BRAND_NAME).first).to_be_visible(timeout=5000)
-    check("Brand name visible on Product Detail at 390x844", True)
-    mobile_ctx.close()
+    expect(page.locator("#brand-search")).to_have_value(BRAND_NAME, timeout=5000)
+    expect(page.get_by_text(LISTING_NAME).first).to_be_visible(timeout=10000)
+    check("Browser Forward restores the brand-filtered Shop state and products", True)
 
     # ---------- Seller Dashboard: edit preserves and displays the declared brand ----------
     page.goto(f"{BASE}/seller/dashboard", wait_until="load")
@@ -254,10 +318,74 @@ with sync_playwright() as p:
     expect(edit_disclosure).to_be_visible(timeout=5000)
     check("Seller Dashboard edit form shows the unverified-brand disclosure", True)
 
+    # ---------- Required responsive viewports ----------
+    for width, height in [(375, 667), (390, 844), (768, 1024), (1440, 900)]:
+        page.set_viewport_size({"width": width, "height": height})
+
+        # /sell through Review & Publish, including an open suggestion list.
+        page.goto(f"{BASE}/sell", wait_until="load")
+        page.fill("#name", f"{LISTING_NAME} viewport {width}")
+        page.fill("#description", "Responsive unified brand combobox review fixture that is never published.")
+        page.click("[data-testid=sell-next]")
+        expect(page.get_by_text("Bước 2")).to_be_visible(timeout=5000)
+        page.select_option("#category_slug", "t-shirts")
+        page.locator("#brand").fill("nike")
+        expect(page.get_by_role("option", name="Nike", exact=True)).to_be_visible(timeout=5000)
+        sell_listbox = page.locator("#brand-listbox").bounding_box()
+        check(
+            f"Seller brand dropdown stays inside {width}x{height}",
+            bool(sell_listbox) and sell_listbox["x"] >= 0 and sell_listbox["x"] + sell_listbox["width"] <= width + 1,
+        )
+        page.locator("#brand").fill(BRAND_NAME)
+        page.click("[data-testid=sell-next]")
+        page.select_option("#condition", "good")
+        page.select_option("#size", "M")
+        page.check("#sell-lifecycle_type-not_specified")
+        page.click("[data-testid=sell-next]")
+        page.fill("#price", "350000")
+        page.fill("#stock", "1")
+        page.click("[data-testid=sell-next]")
+        page.set_input_files("#images", [IMG])
+        page.click("[data-testid=sell-next]")
+        expect(page.get_by_text("Bước 6")).to_be_visible(timeout=5000)
+        sell_overflow = page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth + 2")
+        check(f"No horizontal overflow on /sell Review & Publish at {width}x{height}", not sell_overflow)
+
+        # Product detail and searchable Shop filter.
+        page.goto(f"{BASE}/products/{created_slug}", wait_until="load")
+        detail_overflow = page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth + 2")
+        check(f"No horizontal overflow on Product Detail at {width}x{height}", not detail_overflow)
+
+        # Repeat the hydration boundary at each responsive viewport before
+        # exercising the client-side brand option search.
+        page.goto(f"{BASE}/shop", wait_until="networkidle")
+        shop_search = page.locator("#brand-search")
+        expect(shop_search).to_be_visible(timeout=5000)
+        shop_search.fill(partial_brand_query)
+        expect(page.get_by_role("option", name=f"{BRAND_NAME} (chưa xác minh)", exact=True)).to_be_visible(timeout=5000)
+        shop_listbox = page.locator("#brand-search-listbox").bounding_box()
+        shop_overflow = page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth + 2")
+        check(f"No horizontal overflow on /shop at {width}x{height}", not shop_overflow)
+        check(
+            f"Shop brand search dropdown stays inside {width}x{height}",
+            bool(shop_listbox) and shop_listbox["x"] >= 0 and shop_listbox["x"] + shop_listbox["width"] <= width + 1,
+        )
+
+        # Seller Dashboard editor retains the same unified field.
+        page.goto(f"{BASE}/seller/dashboard", wait_until="load")
+        page.click("[data-testid='dashboard-tab-listings']")
+        responsive_row = page.locator("[data-testid=listing-row]:visible").filter(has_text=LISTING_NAME).first
+        expect(responsive_row).to_be_visible(timeout=10000)
+        responsive_row.get_by_test_id("listing-action-edit").click()
+        expect(page.locator("#edit-brand")).to_have_value(BRAND_NAME, timeout=10000)
+        edit_overflow = page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth + 2")
+        check(f"No horizontal overflow in Seller Dashboard edit at {width}x{height}", not edit_overflow)
+
     ctx.close()
     browser.close()
 
 cleanup(created_slug)
+cleanup_done = True
 
 print("\n" + "=" * 70)
 passed = sum(1 for _, ok, _ in results if ok)
@@ -269,4 +397,12 @@ if console_errors:
 else:
     print("\nNo console errors captured.")
 
-sys.exit(0 if passed == len(results) else 1)
+if http_errors:
+    print(f"\nUNEXPLAINED API 4xx/5xx RESPONSES ({len(http_errors)}):")
+    for response_error in http_errors[:20]:
+        print(" -", response_error)
+    results.append(("No unexplained API 4xx/5xx responses", False, str(len(http_errors))))
+else:
+    print("No unexplained API 4xx/5xx responses captured.")
+
+sys.exit(0 if all(ok for _, ok, _ in results) and not console_errors and not http_errors else 1)

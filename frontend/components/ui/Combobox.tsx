@@ -96,8 +96,7 @@ export const Combobox = ({
         e.preventDefault();
         commit(options[activeIndex]);
       } else if (allowFreeText) {
-        setIsOpen(false);
-        onChange(inputValue.trim());
+        commit(inputValue.trim());
       }
     } else if (e.key === 'Escape') {
       if (isOpen) {
@@ -130,7 +129,7 @@ export const Combobox = ({
           onFocus={() => setIsOpen(true)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className={`w-full border ${ariaInvalid ? 'border-red-500' : 'border-neutral-300'} px-3.5 py-2 pr-9 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none disabled:opacity-50`}
+          className={`w-full border ${ariaInvalid ? 'border-red-500' : 'border-neutral-300'} px-3.5 py-2 pr-9 text-sm text-neutral-900 placeholder:text-neutral-600 focus:border-neutral-900 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 disabled:opacity-50`}
         />
         {inputValue && !disabled && (
           <button
@@ -159,7 +158,7 @@ export const Combobox = ({
                 id={`${id}-option-${i}`}
                 role="option"
                 aria-selected={i === activeIndex}
-                onMouseDown={(e) => { e.preventDefault(); commit(opt); }}
+                onPointerDown={(e) => { e.preventDefault(); commit(opt); }}
                 className={`cursor-pointer px-3.5 py-2 text-sm ${i === activeIndex ? 'bg-neutral-900 text-white' : 'text-neutral-900 hover:bg-neutral-100'}`}
               >
                 {opt}

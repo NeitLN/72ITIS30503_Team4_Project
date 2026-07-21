@@ -8,8 +8,8 @@ import { BrandField } from '../sell/BrandField';
 import { ROUTES } from '../../constants/routes';
 import { getCategoryTree } from '../../lib/catalog';
 import { Category } from '../../types/category';
-import { getBrands, BrandOption } from '../../lib/brands';
-import { searchVnLocations, normalizeVnText } from '../../lib/vnLocations';
+import { getBrands, BrandOption, findEquivalentBrand, normalizeBrandText } from '../../lib/brands';
+import { searchVnLocations } from '../../lib/vnLocations';
 import {
   CONDITIONS, CLOTHING_SIZES, SHOE_SIZES, SHOE_LIKE_CATEGORIES, UNBRANDED_LABEL,
 } from '../../lib/listingOptions';
@@ -35,6 +35,7 @@ type FormState = {
   description: string;
   category_slug: string;
   brand: string;
+  brand_id: string | null;
   condition: string;
   size: string;
   price: string;
@@ -51,6 +52,7 @@ function toForm(listing: SellerListing): FormState {
     description: listing.description,
     category_slug: listing.category_slug,
     brand: listing.brand || '',
+    brand_id: listing.brand_id,
     condition: listing.condition,
     size: listing.size,
     price: String(listing.price),
@@ -121,6 +123,16 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
     });
   };
 
+  const setBrandField = (value: string, brandId: string | null) => {
+    setForm((prev) => (prev ? { ...prev, brand: value, brand_id: brandId } : prev));
+    setErrors((prev) => {
+      if (!prev.brand) return prev;
+      const next = { ...prev };
+      delete next.brand;
+      return next;
+    });
+  };
+
   const setProductJourney = (value: ProductJourneyFormState) => {
     setForm((prev) => (prev ? { ...prev, product_journey: value } : prev));
     setErrors((prev) => {
@@ -178,7 +190,9 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
         name: form.name.trim(),
         description: form.description.trim(),
         category_slug: form.category_slug,
-        brand_slug: form.brand.trim(),
+        ...(form.brand_id
+          ? { brand_id: form.brand_id }
+          : { new_brand_name: form.brand.trim() }),
         condition: form.condition,
         size: form.size,
         price: form.price,
@@ -272,11 +286,11 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
 
   // Convenience match against the loaded brand list (backend is the sole
   // authority — see BrandField.tsx and backend/services/brandService.js).
-  const matchedBrand = form.brand
-    ? brands.find((b) => normalizeVnText(b.name) === normalizeVnText(form.brand))
-    : undefined;
+  const matchedBrand = form.brand_id
+    ? brands.find((brand) => brand.id === form.brand_id)
+    : findEquivalentBrand(form.brand, brands);
   const brandIsUnverified = Boolean(form.brand)
-    && normalizeVnText(form.brand) !== normalizeVnText(UNBRANDED_LABEL)
+    && normalizeBrandText(form.brand) !== normalizeBrandText(UNBRANDED_LABEL)
     && (!matchedBrand || matchedBrand.verification_status !== 'verified');
 
   return (
@@ -337,9 +351,12 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
             <BrandField
               id="edit-brand"
               value={form.brand}
-              onChange={(v) => setField('brand', v)}
+              onChange={setBrandField}
               brands={brands}
+              ariaInvalid={!!errors.brand}
+              errorId={errors.brand ? 'edit-brand-error' : undefined}
             />
+            {errors.brand && <p id="edit-brand-error" className="mt-1 text-xs text-red-600">{errors.brand}</p>}
             {brandIsUnverified && (
               <p className="mt-2 border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
                 Thương hiệu do người bán khai báo, chưa được StyleHub xác minh.
