@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { supabaseAdmin, isSupabaseAdminConfigured } = require('../lib/supabase');
 const { ServiceError, fromRpcError } = require('../utils/serviceError');
+const { getOrderPayment, normalizePayment, toSafeCheckoutPayment } = require('./paymentService');
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const IDEMPOTENCY_KEY_RE = UUID_RE;
@@ -107,17 +108,15 @@ function normalizeCheckoutPayload(payload, { requireCustomer = true } = {}) {
     throw new ServiceError('INVALID_CHECKOUT_PAYLOAD', 'Yêu cầu thanh toán không hợp lệ.', 422);
   }
 
+  const payment = normalizePayment(payload);
   const items = normalizeItems(payload.items);
   const couponCode = normalizeCouponCode(payload.couponCode);
-  const paymentMethod = String(payload.paymentMethod || 'cod');
-  if (!['cod', 'bank_transfer'].includes(paymentMethod)) {
-    throw new ServiceError('INVALID_CHECKOUT_PAYLOAD', 'Phương thức thanh toán không hợp lệ.', 422);
-  }
 
   const notes = payload.notes == null ? null : String(payload.notes).trim().slice(0, 2000) || null;
   return {
     customer: requireCustomer ? normalizeCustomer(payload.customer) : null,
-    paymentMethod,
+    paymentMethod: payment.method,
+    paymentDetails: payment.details,
     notes,
     couponCode,
     items,
@@ -128,6 +127,7 @@ function buildFingerprint(normalized) {
   const canonical = JSON.stringify({
     customer: normalized.customer,
     paymentMethod: normalized.paymentMethod,
+    paymentDetails: normalized.paymentDetails,
     notes: normalized.notes,
     couponCode: normalized.couponCode,
     items: normalized.items,
@@ -136,7 +136,7 @@ function buildFingerprint(normalized) {
 }
 
 function mapCheckoutResult(result) {
-  return {
+  const mapped = {
     id: result.id,
     order_code: result.orderCode,
     status: result.status,
@@ -149,6 +149,8 @@ function mapCheckoutResult(result) {
     idempotent_replay: Boolean(result.idempotentReplay),
     message: result.message,
   };
+  if (result.payment) mapped.payment = toSafeCheckoutPayment(result.payment);
+  return mapped;
 }
 
 async function quoteOrder(user, payload) {
@@ -192,7 +194,7 @@ async function createOrder(user, payload, idempotencyKey) {
   const normalized = normalizeCheckoutPayload(payload);
   const fingerprint = buildFingerprint(normalized);
 
-  const { data, error } = await supabaseAdmin.rpc('stylehub_checkout_atomic', {
+  const rpcArgs = {
     p_buyer_id: user.id,
     p_idempotency_key: idempotencyKey,
     p_request_fingerprint: fingerprint,
@@ -201,7 +203,15 @@ async function createOrder(user, payload, idempotencyKey) {
     p_notes: normalized.notes,
     p_coupon_code: normalized.couponCode,
     p_items: normalized.items,
-  });
+  };
+  const rpcName = normalized.paymentMethod === 'simulated_card'
+    ? 'stylehub_checkout_atomic_v2'
+    : 'stylehub_checkout_atomic';
+  if (normalized.paymentMethod === 'simulated_card') {
+    rpcArgs.p_payment_details = normalized.paymentDetails;
+  }
+
+  const { data, error } = await supabaseAdmin.rpc(rpcName, rpcArgs);
 
   if (error) {
     console.error('Atomic checkout RPC failed:', { code: error.code });
@@ -255,7 +265,8 @@ async function getOrderById(orderId, user) {
     .order('created_at', { ascending: true });
   if (itemsError) throw new ServiceError('ORDER_LOAD_FAILED', 'Không thể tải chi tiết đơn hàng.', 500);
 
-  return { ...order, items: items || [] };
+  const payment = await getOrderPayment(orderId);
+  return { ...order, items: items || [], ...(payment ? { payment } : {}) };
 }
 
 async function cancelOrder(user, orderId) {
@@ -276,6 +287,7 @@ async function cancelOrder(user, orderId) {
     status: data.status,
     cancelled_items: Number(data.cancelledItems || 0),
     restored_items: Number(data.restoredItems || 0),
+    payment_state: data.paymentState || null,
     idempotent_replay: Boolean(data.idempotentReplay),
     message: data.message,
   };

@@ -133,6 +133,11 @@ export const vi = {
     paymentMethod: 'Phương thức thanh toán',
     cod: 'Thanh toán khi nhận hàng',
     bankTransfer: 'Chuyển khoản ngân hàng',
+    simulatedCard: 'Simulated Card / Demo Card',
+    simulatedCardCopy: 'Mô phỏng thanh toán bằng thương hiệu thẻ và bốn số cuối.',
+    simulatedCardBrand: 'Thương hiệu thẻ mô phỏng',
+    simulatedCardLastFour: 'Bốn số cuối',
+    simulatedCardWarning: 'Simulated payment for academic demonstration only. No real card or money is processed.',
     orderSummary: 'Tóm tắt đơn hàng',
     placeOrder: 'Đặt hàng',
     processingOrder: 'Đang xử lý đơn hàng...',
@@ -152,6 +157,8 @@ export const vi = {
     districtRequired: 'Vui lòng nhập quận hoặc huyện.',
     streetRequired: 'Vui lòng nhập địa chỉ cụ thể.',
     paymentMethodRequired: 'Vui lòng chọn phương thức thanh toán.',
+    simulatedCardBrandRequired: 'Vui lòng chọn thương hiệu thẻ mô phỏng.',
+    simulatedCardLastFourInvalid: 'Vui lòng nhập đúng bốn chữ số cuối.',
   },
 
   orders: {
@@ -190,6 +197,7 @@ export const vi = {
     cod: 'Thanh toán khi nhận hàng',
     bank_transfer: 'Chuyển khoản ngân hàng',
     bankTransfer: 'Chuyển khoản ngân hàng',
+    simulated_card: 'Thẻ mô phỏng',
     momo: 'Ví MoMo',
     unknown: 'Không xác định',
   },

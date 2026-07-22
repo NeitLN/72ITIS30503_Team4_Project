@@ -57,6 +57,8 @@ export const CheckoutClient = () => {
   const [district, setDistrict] = useState('');
   const [province, setProvince] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [cardBrand, setCardBrand] = useState('visa');
+  const [lastFour, setLastFour] = useState('');
   const [couponCodeInput, setCouponCodeInput] = useState('');
   const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
@@ -162,6 +164,14 @@ export const CheckoutClient = () => {
     if (!province.trim()) nextErrors.province = vi.validation.provinceRequired;
     if (!district.trim()) nextErrors.district = vi.validation.districtRequired;
     if (!streetAddress.trim()) nextErrors.streetAddress = vi.validation.streetRequired;
+    if (paymentMethod === 'simulated_card') {
+      if (!['visa', 'mastercard', 'amex'].includes(cardBrand)) {
+        nextErrors.cardBrand = vi.validation.simulatedCardBrandRequired;
+      }
+      if (!/^\d{4}$/.test(lastFour)) {
+        nextErrors.lastFour = vi.validation.simulatedCardLastFourInvalid;
+      }
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
     if (!isAuthenticated || !quote || quote.requires_review) {
@@ -176,6 +186,9 @@ export const CheckoutClient = () => {
         city: province.trim(),
       },
       paymentMethod,
+      ...(paymentMethod === 'simulated_card' ? {
+        payment: { cardBrand, lastFour },
+      } : {}),
       ...(appliedCouponCode ? { couponCode: appliedCouponCode } : {}),
       items: quoteItems,
     };
@@ -247,7 +260,30 @@ export const CheckoutClient = () => {
             </div>
           </section>
           <section className="border border-neutral-200 bg-white p-6 sm:p-8"><h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b pb-3 mb-6">2. {vi.checkout.paymentMethod}</h2>
-            <div className="space-y-3">{[['cod', vi.checkout.cod, 'Thanh toán khi nhận hàng.'], ['bank_transfer', vi.checkout.bankTransfer, 'Chuyển khoản theo hướng dẫn sau khi đơn được tạo.']].map(([value, title, copy]) => <label key={value} className="flex gap-3 border border-neutral-300 p-4 cursor-pointer"><input type="radio" name="payment" value={value} checked={paymentMethod === value} onChange={() => setPaymentMethod(value)} /><span><strong className="block text-sm">{title}</strong><span className="text-xs text-neutral-500">{copy}</span></span></label>)}</div>
+            <div className="space-y-3">{[
+              ['cod', vi.checkout.cod, 'Thanh toán khi nhận hàng.'],
+              ['bank_transfer', vi.checkout.bankTransfer, 'Chuyển khoản theo hướng dẫn sau khi đơn được tạo.'],
+              ['simulated_card', vi.checkout.simulatedCard, vi.checkout.simulatedCardCopy],
+            ].map(([value, title, copy]) => <label key={value} className="flex gap-3 border border-neutral-300 p-4 cursor-pointer"><input type="radio" name="payment" value={value} checked={paymentMethod === value} onChange={() => { setPaymentMethod(value); setErrors((old) => ({ ...old, cardBrand: '', lastFour: '' })); }} /><span><strong className="block text-sm">{title}</strong><span className="text-xs text-neutral-500">{copy}</span></span></label>)}</div>
+            {paymentMethod === 'simulated_card' && <div data-testid="simulated-card-fields" className="mt-4 border border-amber-300 bg-amber-50 p-4">
+              <p className="text-xs leading-relaxed text-amber-950">{vi.checkout.simulatedCardWarning}</p>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="simulated-card-brand" className="block text-xs font-mono uppercase tracking-wider text-neutral-600">{vi.checkout.simulatedCardBrand}</label>
+                  <select id="simulated-card-brand" value={cardBrand} onChange={(event) => { setCardBrand(event.target.value); setErrors((old) => ({ ...old, cardBrand: '' })); }} aria-invalid={Boolean(errors.cardBrand)} aria-describedby={errors.cardBrand ? 'simulated-card-brand-error' : undefined} className={inputClass('cardBrand')}>
+                    <option value="visa">Visa</option>
+                    <option value="mastercard">Mastercard</option>
+                    <option value="amex">American Express</option>
+                  </select>
+                  {errors.cardBrand && <p id="simulated-card-brand-error" className="mt-1 text-xs text-red-700">{errors.cardBrand}</p>}
+                </div>
+                <div>
+                  <label htmlFor="simulated-card-last-four" className="block text-xs font-mono uppercase tracking-wider text-neutral-600">{vi.checkout.simulatedCardLastFour}</label>
+                  <input id="simulated-card-last-four" inputMode="numeric" maxLength={4} autoComplete="off" value={lastFour} onChange={(event) => { setLastFour(event.target.value.replace(/[^0-9]/g, '').slice(0, 4)); setErrors((old) => ({ ...old, lastFour: '' })); }} aria-invalid={Boolean(errors.lastFour)} aria-describedby={errors.lastFour ? 'simulated-card-last-four-error' : undefined} className={inputClass('lastFour')} />
+                  {errors.lastFour && <p id="simulated-card-last-four-error" className="mt-1 text-xs text-red-700">{errors.lastFour}</p>}
+                </div>
+              </div>
+            </div>}
           </section>
         </form></div>
 
