@@ -90,6 +90,14 @@ async function createQaListing(token, overrides = {}) {
   const created = await createQaListing(token1);
   check('Setup: QA listing created for security tests', created.status === 201, JSON.stringify(created.body).slice(0, 150));
   const listingId = created.body?.data?.id;
+  const { data: createdListing } = listingId
+    ? await supabaseAdmin.from('products').select('seller_name').eq('id', listingId).single()
+    : { data: null };
+  check(
+    'Seller listing persists canonical full_name in the seller_name compatibility field',
+    created.status === 201 && createdListing?.seller_name === 'Phase7 QA Seller',
+    String(createdListing?.seller_name || created.status),
+  );
 
   // ---------- Auth ----------
   const noToken = await api('/api/seller/listings');

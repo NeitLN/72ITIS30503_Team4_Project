@@ -231,7 +231,7 @@ async function createListing(user, rawFields, files) {
 
   const { data: userRow, error: userErr } = await supabaseAdmin
     .from('users')
-    .select('id, full_name, name')
+    .select('id, full_name')
     .eq('id', user.id)
     .maybeSingle();
   if (userErr) throw userErr;
@@ -240,7 +240,7 @@ async function createListing(user, rawFields, files) {
     e.status = 401;
     throw e;
   }
-  const sellerName = userRow.full_name || userRow.name || user.email || 'Người bán StyleHub';
+  const sellerName = userRow.full_name || user.email || 'Người bán StyleHub';
 
   const fields = validateFields(rawFields, sellerName);
   const productJourney = sustainability.validateSustainability(rawFields);
