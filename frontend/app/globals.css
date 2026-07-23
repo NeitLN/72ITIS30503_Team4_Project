@@ -37,3 +37,15 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Default zoom for mobile and smaller screens to ensure components do not appear too large */
+html {
+  zoom: 85%;
+}
+
+/* Adjust desktop zoom so that 100% zoom renders identically to 75% zoom */
+@media (min-width: 1024px) {
+  html {
+    zoom: 75%;
+  }
+}
