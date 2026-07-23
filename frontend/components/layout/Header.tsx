@@ -28,9 +28,9 @@ export const Header = async () => {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/cat-logo.jpg"
+              src="/images/cat-logo.png"
               alt="StyleHub Cat Logo"
-              className="h-8 w-8 rounded-full border border-neutral-950 object-cover"
+              className="h-8 w-8 object-contain"
             />
             <span>
               Style<span className="text-red-600">Hub</span>
