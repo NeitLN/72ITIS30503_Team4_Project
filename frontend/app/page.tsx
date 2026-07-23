@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   const [newArrivalsResult, onSaleResult] = await Promise.all([
-    getProducts({ sort: 'latest', limit: '8' }).catch(() => null),
+    getProducts({ sort: 'latest', on_sale: 'false', limit: '8' }).catch(() => null),
     getProducts({ on_sale: 'true', limit: '8' }).catch(() => null)
   ]);
 

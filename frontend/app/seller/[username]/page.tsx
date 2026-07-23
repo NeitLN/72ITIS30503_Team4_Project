@@ -188,7 +188,7 @@ export default async function SellerPage({ params }: SellerPageProps) {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-5">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
