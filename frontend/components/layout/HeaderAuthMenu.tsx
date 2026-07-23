@@ -28,7 +28,7 @@ export const HeaderAuthMenu = () => {
         </div>
 
         {user.role === 'admin' && (
-          <Link href={ROUTES.ADMIN_ORDERS} className="text-neutral-600 transition-colors hover:text-neutral-900 hidden sm:inline-block">
+          <Link href={ROUTES.ADMIN_TRANSACTIONS} className="text-neutral-600 transition-colors hover:text-neutral-900 hidden sm:inline-block">
             Quản trị
           </Link>
         )}
