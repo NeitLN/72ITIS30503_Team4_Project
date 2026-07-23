@@ -217,6 +217,8 @@ const getProducts = async (options = {}) => {
 
   if (options.on_sale === 'true' || options.on_sale === true || options.filter === 'on_sale') {
     query = query.not('sale_price', 'is', null).gt('sale_price', 0);
+  } else if (options.on_sale === 'false' || options.on_sale === false) {
+    query = query.or('sale_price.is.null,sale_price.eq.0,sale_price.lte.0');
   }
 
   const from = (page - 1) * limit;
@@ -256,9 +258,16 @@ const getProducts = async (options = {}) => {
   }
 
   // Filter out any products where sale_price is not strictly less than price
-  let validData = data;
+  const cleanedData = data.map(p => {
+    if (p.sale_price !== null && Number(p.sale_price) >= Number(p.price)) {
+      p.sale_price = null;
+    }
+    return p;
+  });
+
+  let validData = cleanedData;
   if (options.on_sale === 'true' || options.on_sale === true || options.filter === 'on_sale') {
-    validData = data.filter(p => p.sale_price < p.price);
+    validData = cleanedData.filter(p => p.sale_price !== null && Number(p.sale_price) < Number(p.price) && Number(p.sale_price) > 0);
   }
 
   const enrichedData = await attachRelations(validData, { sustainabilityDetails: false });
