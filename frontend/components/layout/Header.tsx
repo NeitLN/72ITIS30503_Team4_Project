@@ -24,9 +24,17 @@ export const Header = async () => {
         <div className="flex h-16 items-center justify-between gap-4">
           <Link
             href={ROUTES.HOME}
-            className="font-display text-xl font-black uppercase tracking-tight text-neutral-900"
+            className="flex items-center gap-2 font-display text-xl font-black uppercase tracking-tight text-neutral-900 hover:opacity-90 transition-opacity"
           >
-            StyleHub
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/cat-logo.jpg"
+              alt="StyleHub Cat Logo"
+              className="h-8 w-8 rounded-full border border-neutral-950 object-cover"
+            />
+            <span>
+              Style<span className="text-red-600">Hub</span>
+            </span>
           </Link>
 
           <nav aria-label="Main navigation" className="flex min-w-0 items-center gap-4 overflow-x-auto sm:gap-5">
