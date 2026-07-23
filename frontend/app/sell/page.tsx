@@ -14,7 +14,7 @@ export default function SellPage() {
       <PageHeader
         eyebrow={EN.sell.hubEyebrow}
         title={EN.sell.hubHeading}
-        lede="Publish a real StyleHub listing in six quick steps — it goes live across the marketplace immediately."
+        lede="Đăng sản phẩm trên StyleHub chỉ với 6 bước nhanh chóng — tin đăng sẽ hiển thị ngay trên toàn sàn."
       />
       <SellListingClient />
     </div>

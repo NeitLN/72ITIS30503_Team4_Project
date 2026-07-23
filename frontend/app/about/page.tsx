@@ -12,19 +12,19 @@ export const metadata: Metadata = {
 
 const principles = [
   {
-    title: 'Condition transparency',
+    title: 'MINH BẠCH TÌNH TRẠNG',
     description:
-      'Every listing carries a clear condition label, so you know exactly what you are buying before it arrives.',
+      'Mỗi tin đăng đều mô tả rõ tình trạng sản phẩm, giúp người mua nắm đầy đủ thông tin trước khi đặt hàng.',
   },
   {
-    title: 'Seller identity',
+    title: 'THÔNG TIN NGƯỜI BÁN',
     description:
-      'Ratings, sold counts, and verified badges keep trust between buyers and sellers visible on every listing.',
+      'Đánh giá, số lượng đã bán và huy hiệu xác minh giúp người mua dễ dàng kiểm tra độ tin cậy của người bán.',
   },
   {
-    title: 'Local focus',
+    title: 'PHÙ HỢP THỊ TRƯỜNG VIỆT NAM',
     description:
-      'Built for the Vietnamese market — VNĐ pricing, local seller locations, and domestic delivery expectations.',
+      'Được xây dựng dành cho thị trường Việt Nam — hiển thị giá bằng VNĐ, hỗ trợ vị trí người bán trong nước và giao hàng nội địa.',
   },
 ];
 
@@ -32,25 +32,22 @@ export default function AboutPage() {
   return (
     <>
       <PageHeader
-        eyebrow="The marketplace"
-        title="About StyleHub"
-        lede="A C2C fashion marketplace where people buy, sell, and rediscover pieces across different brands, styles, and stories — connecting buyers and sellers across Vietnam."
+        eyebrow="SÀN THƯƠNG MẠI ĐIỆN TỬ C2C"
+        title="Giới thiệu StyleHub"
+        lede="StyleHub là sàn thương mại điện tử C2C về thời trang, nơi mọi người có thể mua, bán và khám phá lại những món đồ thuộc nhiều thương hiệu, phong cách và câu chuyện khác nhau — kết nối người mua và người bán trên khắp Việt Nam."
       />
 
       <Container className="max-w-4xl py-14 sm:py-16">
         <section className="mb-14">
-          <h2 className="mb-4 font-display text-2xl font-black uppercase tracking-tight">Why StyleHub</h2>
+          <h2 className="mb-4 font-display text-2xl font-black uppercase tracking-tight">TẠI SAO CHỌN STYLEHUB</h2>
           <p className="leading-relaxed text-neutral-600">
-            We believe fashion should be circular, accessible, and community-focused. Whether
-            you&apos;re after a new piece from your favorite brand, a rare find, or clearing your
-            closet to make room for new styles, StyleHub gives you a place to do it safely and
-            simply — seller to buyer, no middle rack.
+            Chúng tôi tin rằng thời trang nên bền vững, dễ tiếp cận và gắn kết cộng đồng. Dù bạn đang tìm một sản phẩm từ thương hiệu yêu thích, một món đồ hiếm hay muốn thanh lý quần áo không còn sử dụng, StyleHub giúp bạn mua bán trực tiếp, an toàn và thuận tiện.
           </p>
         </section>
 
         <section className="mb-14">
           <h2 className="mb-8 font-display text-2xl font-black uppercase tracking-tight">
-            HOW THE MARKETPLACE WORKS
+            CÁCH STYLEHUB HOẠT ĐỘNG
           </h2>
           <ul className="space-y-6">
             {principles.map((item) => (
@@ -69,13 +66,13 @@ export default function AboutPage() {
             href={ROUTES.SHOP}
             className="inline-flex items-center justify-center bg-neutral-900 px-7 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-neutral-700"
           >
-            Shop the marketplace
+            Khám phá sàn mua bán
           </Link>
           <Link
             href={ROUTES.SELL}
             className="inline-flex items-center justify-center border border-neutral-900 px-7 py-3.5 text-sm font-semibold uppercase tracking-wide text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
           >
-            Start selling
+            Đăng bán sản phẩm
           </Link>
         </div>
       </Container>

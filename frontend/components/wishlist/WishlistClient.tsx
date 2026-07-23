@@ -42,7 +42,7 @@ export const WishlistClient = () => {
           <div className="mt-8">
             <Link href="/shop">
               <Button size="lg" className="font-mono text-xs uppercase tracking-wider">
-                Khám phá chợ thời trang
+                Khám phá sàn mua bán
               </Button>
             </Link>
           </div>

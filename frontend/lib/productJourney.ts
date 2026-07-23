@@ -49,40 +49,40 @@ export const MIN_MEANINGFUL_DETAIL_LENGTH = 8;
 export const LIFECYCLE_OPTIONS: readonly LifecycleOption[] = [
   {
     value: 'new',
-    label: 'NEW',
-    previewLabel: 'New',
+    label: 'HÀNG MỚI',
+    previewLabel: 'Hàng mới',
     description: 'Sản phẩm mới, chưa qua sử dụng.',
   },
   {
     value: 'deadstock',
-    label: 'DEADSTOCK',
-    previewLabel: 'Deadstock',
+    label: 'HÀNG MỚI TỒN KHO',
+    previewLabel: 'Hàng mới tồn kho',
     description: 'Hàng tồn kho chưa qua sử dụng; không hàm ý có chứng nhận.',
   },
   {
     value: 'pre_loved',
-    label: 'PRE-LOVED',
-    previewLabel: 'Pre-loved',
+    label: 'HÀNG ĐÃ QUA SỬ DỤNG',
+    previewLabel: 'Hàng đã qua sử dụng',
     description: 'Sản phẩm đã được sử dụng và đang tiếp tục vòng đời mới.',
   },
   {
     value: 'repaired',
-    label: 'REPAIRED',
-    previewLabel: 'Repaired',
+    label: 'HÀNG ĐÃ SỬA CHỮA',
+    previewLabel: 'Hàng đã sửa chữa',
     description: 'Sản phẩm đã được sửa chữa; cần mô tả phần đã sửa.',
     requires: 'repair_history',
   },
   {
     value: 'upcycled',
-    label: 'UPCYCLED',
-    previewLabel: 'Upcycled',
+    label: 'HÀNG TÁI THIẾT KẾ',
+    previewLabel: 'Hàng tái thiết kế',
     description: 'Sản phẩm đã được tái thiết kế; cần mô tả thay đổi.',
     requires: 'upcycle_details',
   },
   {
     value: 'not_specified',
-    label: 'NOT SPECIFIED',
-    previewLabel: 'Not specified',
+    label: 'CHƯA PHÂN LOẠI',
+    previewLabel: 'Chưa phân loại',
     description: 'Bạn chưa có hoặc không muốn cung cấp thông tin hành trình.',
   },
 ];
@@ -110,7 +110,7 @@ export function toProductJourneyForm(value?: ProductSustainability | null): Prod
 export function validateProductJourney(value: ProductJourneyFormState): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!value.lifecycle_type || !LIFECYCLE_TYPES.includes(value.lifecycle_type as LifecycleType)) {
-    errors.lifecycle_type = 'Vui lòng chọn một lựa chọn, kể cả Not specified.';
+    errors.lifecycle_type = 'Vui lòng chọn một lựa chọn, kể cả Chưa phân loại.';
   }
 
   for (const field of ['material', 'repair_history', 'upcycle_details', 'product_story'] as const) {

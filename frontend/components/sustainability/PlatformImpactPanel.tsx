@@ -38,13 +38,13 @@ export function PlatformImpactPanel({ home = false }: { home?: boolean }) {
         </div>
       ) : null}
       <ImpactLedger
-        eyebrow={home ? 'Live marketplace ledger' : 'Current platform totals'}
-        title={home ? 'Circular Impact' : 'What the marketplace records'}
-        description="Direct counts from active community listings and completed order-item snapshots. New items improve journey coverage but are not counted as circular."
+        eyebrow={home ? 'SỐ LIỆU TỪ SÀN MUA BÁN' : 'SỐ LIỆU HIỆN TẠI'}
+        title={home ? 'GIÁ TRỊ TUẦN HOÀN' : 'NHỮNG GÌ STYLEHUB GHI NHẬN'}
+        description="Số liệu được tổng hợp từ các tin đăng đang hoạt động và những sản phẩm đã giao dịch thành công. Sản phẩm mới không được tính vào số liệu thời trang tuần hoàn."
         metrics={[
-          { label: 'Active circular listings', value: impact.metrics.activeCircularListings, testId: 'metric-active-circular' },
-          { label: 'Completed circular units', value: impact.metrics.completedCircularUnits, testId: 'metric-completed-circular' },
-          { label: 'Journey coverage', value: `${impact.metrics.journeyCoveragePercent}%`, testId: 'metric-coverage' },
+          { label: 'TIN ĐĂNG ĐỒ ĐÃ QUA SỬ DỤNG', value: impact.metrics.activeCircularListings, testId: 'metric-active-circular' },
+          { label: 'SẢN PHẨM ĐÃ GIAO DỊCH', value: impact.metrics.completedCircularUnits, testId: 'metric-completed-circular' },
+          { label: 'TỶ LỆ THEO DÕI HÀNH TRÌNH', value: `${impact.metrics.journeyCoveragePercent}%`, testId: 'metric-coverage' },
         ]}
         generatedAt={impact.generatedAt}
         methodologyVersion={impact.methodologyVersion}

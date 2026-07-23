@@ -12,14 +12,13 @@ export const ShopHero = () => {
       <div className="relative z-20">
         <Container className="py-14 sm:py-20">
           <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-400">
-            Every listing has a seller
+            MỖI SẢN PHẨM ĐỀU CÓ NGƯỜI BÁN
           </p>
           <h1 className="font-display text-5xl font-black uppercase tracking-tight sm:text-6xl text-white">
-            Marketplace
+            SÀN MUA BÁN
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-200 sm:text-lg">
-            Discover new and pre-loved fashion — any brand, any style — from real sellers across
-            Vietnam.
+            Khám phá thời trang mới và đã qua sử dụng — đa dạng thương hiệu, phong cách — từ người bán trên khắp Việt Nam.
           </p>
           <ul className="mt-8 flex flex-wrap gap-2">
             {trustBadges.map((badge) => (

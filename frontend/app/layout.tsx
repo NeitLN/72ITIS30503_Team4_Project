@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: `%s — ${siteConfig.name}`,
   },
   description: DEFAULT_DESCRIPTION,
-  keywords: ['StyleHub', 'chợ thời trang C2C', 'mua bán thời trang', 'thời trang đã qua sử dụng', 'thời trang mới', 'streetwear Việt Nam', 'giày sneaker', 'chợ bán hàng cá nhân'],
+  keywords: ['StyleHub', 'sàn thương mại điện tử C2C', 'mua bán thời trang', 'thời trang đã qua sử dụng', 'thời trang mới', 'streetwear Việt Nam', 'giày sneaker', 'chợ bán hàng cá nhân'],
   openGraph: {
     type: 'website',
     locale: 'vi_VN',

@@ -578,7 +578,7 @@ export const SellerDashboardClient = () => {
             ? 'Sản phẩm sẽ được lưu trữ và không còn hiển thị công khai. Bạn có thể xem lại trong lịch sử nhưng không thể đăng bán lại tin này — bạn vẫn có thể tạo tin đăng mới sau này.'
             : pendingAction?.action === 'sold'
               ? 'Sản phẩm sẽ được đánh dấu đã bán và không thể đăng bán lại. Chỉ dùng khi sản phẩm đã thực sự được bán.'
-              : 'Sản phẩm sẽ tạm ẩn khỏi chợ và có thể đăng bán lại bất cứ lúc nào.'
+              : 'Sản phẩm sẽ tạm ẩn khỏi sàn mua bán và có thể đăng bán lại bất cứ lúc nào.'
         }
         confirmLabel={pendingAction?.label || 'Xác nhận'}
         danger={pendingAction?.action === 'sold' || pendingAction?.action === 'archived'}

@@ -394,7 +394,7 @@ export const ProfileClient = () => {
               <ul className="space-y-3 mb-6 font-medium text-sm">
                 <li><Link href={ROUTES.CART} className="text-neutral-600 hover:text-neutral-900">→ Xem giỏ hàng</Link></li>
                 <li><Link href={ROUTES.WISHLIST} className="text-neutral-600 hover:text-neutral-900">→ Xem danh sách yêu thích</Link></li>
-                <li><Link href={ROUTES.SHOP} className="text-neutral-600 hover:text-neutral-900">→ Khám phá chợ thời trang</Link></li>
+                <li><Link href={ROUTES.SHOP} className="text-neutral-600 hover:text-neutral-900">→ Khám phá sàn mua bán</Link></li>
               </ul>
               <div className="bg-neutral-50 p-3 text-xs text-neutral-500 leading-relaxed border border-neutral-100">
                 <p className="mb-2">Xem lịch sử đặt hàng và trạng thái đơn hàng thực tế trong Đơn hàng của tôi.</p>
@@ -407,11 +407,11 @@ export const ProfileClient = () => {
             <section className="border border-neutral-950 bg-neutral-950 text-white p-6 shadow-[4px_4px_0px_0px_rgba(200,200,200,1)]">
               <h2 className="font-mono text-xs uppercase tracking-[0.2em] font-bold mb-2">{EN.sell.hubEyebrow}</h2>
               <p className="text-sm text-neutral-300 leading-relaxed mb-6">
-                Turn new or pre-loved fashion — any brand, any style — into cash. List items to the community in minutes.
+                Biến những món đồ thời trang mới hoặc đã qua sử dụng — thuộc mọi thương hiệu, mọi phong cách — thành thu nhập. Chỉ mất vài phút để đăng bán tới cộng đồng.
               </p>
               <Link href={ROUTES.SELL} className="block w-full">
                 <button className="w-full bg-white text-neutral-900 px-4 py-2 font-mono text-xs uppercase tracking-wider font-bold hover:bg-neutral-200 transition-colors">
-                  Create a listing
+                  ĐĂNG SẢN PHẨM
                 </button>
               </Link>
             </section>

@@ -14,7 +14,7 @@ import Link from 'next/link';
 export const revalidate = 60; // Revalidate cache every 60 seconds
 
 export const metadata: Metadata = {
-  title: 'Chợ Thời Trang C2C',
+  title: 'Sàn Thương Mại Điện Tử C2C',
   description: 'Duyệt tin đăng thời trang C2C theo danh mục, thương hiệu, tình trạng và từ khóa — sản phẩm mới và đã qua sử dụng từ nhiều người bán trên StyleHub.',
 };
 

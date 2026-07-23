@@ -21,7 +21,7 @@ export function ProductJourneyDetails({ journey }: ProductJourneyDetailsProps) {
       <div className="border-b border-neutral-200 px-4 py-3 sm:px-5">
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-400">Thông tin vòng đời</p>
         <h2 id="product-journey-title" className="mt-1 font-display text-xl font-black uppercase tracking-tight text-neutral-900">
-          Product Journey
+          PHÂN LOẠI SẢN PHẨM
         </h2>
         <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-neutral-500">
           Thông tin do người bán cung cấp để mô tả hành trình của sản phẩm; không phải chứng nhận của StyleHub.

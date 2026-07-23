@@ -4,18 +4,18 @@ import { ROUTES } from '../../constants/routes';
 
 const linkGroups = [
   {
-    heading: 'Marketplace',
+    heading: 'MUA SẮM',
     links: [
-      { label: 'Shop all listings', href: ROUTES.SHOP },
-      { label: 'Start selling', href: ROUTES.SELL },
+      { label: 'Xem tất cả sản phẩm', href: ROUTES.SHOP },
+      { label: 'Đăng bán sản phẩm', href: ROUTES.SELL },
     ],
   },
   {
-    heading: 'Company',
+    heading: 'VỀ STYLEHUB',
     links: [
-      { label: 'About StyleHub', href: ROUTES.ABOUT },
-      { label: 'Circular impact', href: ROUTES.SUSTAINABILITY },
-      { label: 'Contact us', href: ROUTES.CONTACT },
+      { label: 'Giới thiệu StyleHub', href: ROUTES.ABOUT },
+      { label: 'Giá trị tuần hoàn', href: ROUTES.SUSTAINABILITY },
+      { label: 'Liên hệ', href: ROUTES.CONTACT },
     ],
   },
   {
@@ -35,8 +35,7 @@ export const Footer = () => {
           <div>
             <p className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900">StyleHub</p>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-neutral-500">
-              A C2C fashion marketplace where people buy, sell, and rediscover pieces across
-              different brands, styles, and stories.
+              Sàn thương mại điện tử C2C, nơi mọi người có thể mua, bán và khám phá những món đồ thuộc nhiều thương hiệu và phong cách khác nhau.
             </p>
           </div>
           {linkGroups.map((group) => (
@@ -59,10 +58,10 @@ export const Footer = () => {
 
         <div className="flex flex-col items-center gap-2 border-t border-neutral-200 py-6 sm:flex-row sm:justify-between">
           <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-400">
-            Buyers and sellers nationwide — all 34 provinces and cities
+            NGƯỜI MUA VÀ NGƯỜI BÁN TRÊN TOÀN QUỐC — KHẮP 34 TỈNH, THÀNH
           </p>
           <p className="text-xs text-neutral-400">
-            &copy; {new Date().getFullYear()} StyleHub — a university coursework project. All rights reserved.
+            &copy; {new Date().getFullYear()} StyleHub — Dự án học phần đại học. Mọi quyền được bảo lưu.
           </p>
         </div>
       </Container>

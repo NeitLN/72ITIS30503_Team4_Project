@@ -31,9 +31,9 @@ export default async function Home() {
       <CategorySpotlight />
       <CircularImpactSection />
       <ProductRow
-        eyebrow="Fresh from the community"
+        eyebrow="MỚI ĐĂNG TỪ CỘNG ĐỒNG"
         title={EN.home.newArrivals}
-        description="Newest active listings from StyleHub sellers"
+        description="Sản phẩm mới đăng từ người bán trên StyleHub"
         products={newArrivals}
         viewAllHref={ROUTES.SHOP}
         emptyMessage="Hiện chưa có tin đăng nào. Quay lại sau — hoặc là người đầu tiên đăng bán."
@@ -41,7 +41,7 @@ export default async function Home() {
       <ProductRow
         eyebrow="Limited price drops"
         title={EN.home.onSale}
-        description="Active listings currently offered below their original price"
+        description="Các sản phẩm đang được bán với giá thấp hơn giá gốc"
         products={onSale}
         viewAllHref={ROUTES.SHOP}
         emptyMessage="Hiện chưa có tin đăng giảm giá nào. Quay lại sau nhé."

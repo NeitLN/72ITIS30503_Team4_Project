@@ -30,7 +30,7 @@ export const ProductJourneyFields = ({
     <fieldset className="min-w-0 border-t border-neutral-200 pt-6">
       <legend className="w-full px-0">
         <span className="block font-mono text-xs font-bold uppercase tracking-[0.2em] text-neutral-900">
-          Product Journey
+          PHÂN LOẠI SẢN PHẨM
         </span>
         <span className="mt-2 block max-w-2xl text-sm leading-relaxed text-neutral-600">
           Chia sẻ hành trình của sản phẩm để người mua hiểu rõ hơn về tình trạng và cách sản phẩm đã được sử dụng.

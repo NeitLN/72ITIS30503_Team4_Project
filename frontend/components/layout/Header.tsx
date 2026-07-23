@@ -15,7 +15,7 @@ export const Header = async () => {
       <div className="border-b border-neutral-200 bg-neutral-900 py-1.5">
         <Container>
           <p className="truncate text-center font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-300">
-            Buy • Sell • Rewear · New &amp; Pre-loved · Everyday Fashion · C2C Community
+            MUA ĐÚNG GU • BÁN ĐÚNG GIÁ • MẶC LÂU HƠN • KẾT NỐI CỘNG ĐỒNG C2C
           </p>
         </Container>
       </div>
@@ -45,8 +45,8 @@ export const Header = async () => {
             <Link
               href={ROUTES.CONTACT}
               className="hidden text-neutral-900 transition-colors hover:text-neutral-500 md:block"
-              title="Contact Us"
-              aria-label="Contact Us"
+              title="Liên hệ"
+              aria-label="Liên hệ"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

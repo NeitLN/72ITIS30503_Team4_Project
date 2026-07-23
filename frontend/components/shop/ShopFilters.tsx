@@ -175,7 +175,7 @@ export const ShopFilters = ({ categories, brands, brandsError = false, initialFi
           {/* Lifecycle Dropdown */}
           <div className="flex-1 sm:min-w-[150px]">
             <label htmlFor="lifecycle-select" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">
-              Hành trình sản phẩm
+              Phân loại sản phẩm
             </label>
             <select
               id="lifecycle-select"
@@ -183,7 +183,7 @@ export const ShopFilters = ({ categories, brands, brandsError = false, initialFi
               onChange={(e) => handleSelectChange('lifecycle', e.target.value)}
               className="w-full border border-neutral-300 bg-white px-3 py-2 text-xs font-mono text-neutral-800 uppercase tracking-wide focus:border-neutral-900 focus:outline-none"
             >
-              <option value="">Tất cả hành trình</option>
+              <option value="">TẤT CẢ SẢN PHẨM</option>
               {LIFECYCLE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.previewLabel}</option>
               ))}
@@ -324,7 +324,7 @@ export const ShopFilters = ({ categories, brands, brandsError = false, initialFi
                 type="button"
                 onClick={() => handleClearSingle('lifecycle')}
                 className="hover:text-red-600 font-bold ml-1 cursor-pointer"
-                aria-label="Xóa bộ lọc hành trình sản phẩm"
+                aria-label="Xóa bộ lọc phân loại sản phẩm"
               >
                 ✕
               </button>

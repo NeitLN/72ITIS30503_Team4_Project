@@ -42,7 +42,7 @@ export const CategorySpotlight = () => {
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
-              Browse the racks
+              KHÁM PHÁ SẢN PHẨM
             </p>
             <h2 className="font-display text-3xl font-black uppercase tracking-tight sm:text-4xl">
               Shop by category

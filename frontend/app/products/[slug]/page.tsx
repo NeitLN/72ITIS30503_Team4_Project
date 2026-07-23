@@ -90,7 +90,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           href={ROUTES.SHOP}
           className="font-mono text-[11px] uppercase tracking-[0.16em] text-neutral-500 transition-colors hover:text-neutral-900"
         >
-          ← Chợ
+          ← Sàn mua bán
         </Link>
       </nav>
 

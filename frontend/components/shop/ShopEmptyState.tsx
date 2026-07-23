@@ -16,7 +16,7 @@ const copy = {
   },
   error: {
     label: 'Lỗi kết nối',
-    title: 'Không thể tải tin đăng trên chợ vào lúc này.',
+    title: 'Không thể tải tin đăng trên sàn mua bán vào lúc này.',
     body: 'Vui lòng kiểm tra máy chủ backend có đang hoạt động không.',
   },
 };

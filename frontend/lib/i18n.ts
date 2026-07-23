@@ -73,12 +73,12 @@ export const EN = {
   home: {
     newArrivals: 'New Arrivals',
     onSale: 'On Sale',
-    viewAllProducts: 'View All Products',
+    viewAllProducts: 'XEM TẤT CẢ SẢN PHẨM',
   },
   sell: {
-    hubEyebrow: 'Seller Hub',
-    hubHeading: 'List your archive. Find its next owner.',
-    categoryAndBrand: 'Category & Brand',
+    hubEyebrow: 'KHU VỰC NGƯỜI BÁN',
+    hubHeading: 'ĐĂNG MÓN ĐỒ CỦA BẠN. TÌM CHỦ NHÂN MỚI.',
+    categoryAndBrand: 'DANH MỤC & THƯƠNG HIỆU',
     livePreview: 'Live Preview',
   },
 } as const;

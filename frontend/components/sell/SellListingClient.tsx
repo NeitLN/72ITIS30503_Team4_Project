@@ -71,12 +71,12 @@ const DRAFT_KEY = 'stylehub:sell-draft-v2';
 // stay Vietnamese since those are the parts a seller must get right to
 // complete the task.
 const STEP_LABELS = [
-  'Basic Details',
-  'Category & Brand',
-  'Condition & Size',
-  'Price & Shipping',
-  'Photos',
-  'Review & Publish',
+  'THÔNG TIN CƠ BẢN',
+  'DANH MỤC & THƯƠNG HIỆU',
+  'TÌNH TRẠNG & KÍCH THƯỚC',
+  'GIÁ & VẬN CHUYỂN',
+  'HÌNH ẢNH',
+  'KIỂM TRA & ĐĂNG BÁN',
 ];
 
 type ImageEntry = { file: File; previewUrl: string };
@@ -508,7 +508,7 @@ export const SellListingClient = () => {
             {step === 1 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 1 — Basic Details
+                  Bước 1 — THÔNG TIN CƠ BẢN
                 </h2>
                 <div>
                   <label htmlFor="name" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Tên sản phẩm *</label>
@@ -539,7 +539,7 @@ export const SellListingClient = () => {
             {step === 2 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 2 — Category & Brand
+                  Bước 2 — DANH MỤC & THƯƠNG HIỆU
                 </h2>
                 {categoriesError && <p className="text-red-500 text-xs">{categoriesError}</p>}
                 <div>
@@ -577,7 +577,7 @@ export const SellListingClient = () => {
             {step === 3 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 3 — Condition & Size
+                  Bước 3 — TÌNH TRẠNG & KÍCH THƯỚC
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
@@ -621,7 +621,7 @@ export const SellListingClient = () => {
             {step === 4 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 4 — Price & Shipping
+                  Bước 4 — GIÁ & VẬN CHUYỂN
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
@@ -685,7 +685,7 @@ export const SellListingClient = () => {
             {step === 5 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 5 — Photos
+                  Bước 5 — HÌNH ẢNH
                 </h2>
                 <div>
                   <label htmlFor="images" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">
@@ -728,7 +728,7 @@ export const SellListingClient = () => {
             {step === 6 && (
               <div className="space-y-6">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
-                  Bước 6 — Review & Publish
+                  Bước 6 — KIỂM TRA & ĐĂNG BÁN
                 </h2>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Tên sản phẩm</dt><dd className="text-neutral-900">{form.name}</dd></div>
@@ -751,8 +751,8 @@ export const SellListingClient = () => {
                   <div><dt className="font-mono text-[10px] uppercase text-neutral-400">Tỉnh/Thành phố</dt><dd className="text-neutral-900">{form.location}{form.is_negotiable ? ' · Có thể thương lượng' : ''}</dd></div>
                   <div className="sm:col-span-2"><dt className="font-mono text-[10px] uppercase text-neutral-400">Mô tả</dt><dd className="text-neutral-900 whitespace-pre-wrap">{form.description}</dd></div>
                   <div className="sm:col-span-2 border-t border-neutral-100 pt-4">
-                    <dt className="font-mono text-[10px] uppercase text-neutral-400">Product Journey · Người bán cung cấp</dt>
-                    <dd className="mt-1 text-neutral-900">{lifecycleOption?.previewLabel || 'Not specified'}</dd>
+                    <dt className="font-mono text-[10px] uppercase text-neutral-400">PHÂN LOẠI SẢN PHẨM · Người bán cung cấp</dt>
+                    <dd className="mt-1 text-neutral-900">{lifecycleOption?.previewLabel || 'Chưa xác định'}</dd>
                     {form.product_journey.material && form.product_journey.lifecycle_type !== 'not_specified' && (
                       <dd className="mt-1 text-neutral-600">Chất liệu: {form.product_journey.material}</dd>
                     )}
@@ -820,13 +820,13 @@ export const SellListingClient = () => {
         {/* Right: Preview & Tips */}
         <div className="lg:col-span-4 flex flex-col gap-8">
           <div className="sticky top-24">
-            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-400 mb-3">Live Preview</h3>
+            <h3 className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-400 mb-3">XEM TRƯỚC TRỰC TIẾP</h3>
             <div className="pointer-events-none">
               <ProductCard product={previewProduct} />
             </div>
             <div className="mt-3 border-t border-neutral-200 pt-3" data-testid="sell-product-journey-preview">
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">Product Journey</p>
-              <p className="mt-1 text-sm font-medium text-neutral-900">{lifecycleOption?.previewLabel || 'Not specified'}</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-neutral-500">PHÂN LOẠI SẢN PHẨM</p>
+              <p className="mt-1 text-sm font-medium text-neutral-900">{lifecycleOption?.previewLabel || 'Chưa xác định'}</p>
               <p className="mt-1 text-xs leading-relaxed text-neutral-500">Thông tin do người bán cung cấp, chưa được StyleHub kiểm định.</p>
             </div>
 
