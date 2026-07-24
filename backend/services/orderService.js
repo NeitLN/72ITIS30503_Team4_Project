@@ -404,7 +404,6 @@ function isAllowedStatusTransition(currentStatus, nextStatus) {
 }
 
 async function updateOrderStatus(orderId, nextStatus, actor) {
-  if (nextStatus === 'cancelled') return cancelOrder(actor, orderId);
   checkDb();
 
   const { data: currentOrder } = await supabaseAdmin
@@ -417,12 +416,14 @@ async function updateOrderStatus(orderId, nextStatus, actor) {
     throw new ServiceError('INVALID_ORDER_TRANSITION', 'Không thể chuyển đơn hàng sang trạng thái này.', 409);
   }
 
+  if (nextStatus === 'cancelled') return cancelOrder(actor, orderId);
+
   const { data, error } = await supabaseAdmin
     .from('orders')
-    .update({ status: nextStatus })
+    .update({ status: nextStatus, updated_at: new Date().toISOString() })
     .eq('id', orderId)
     .eq('status', currentOrder.status)
-    .select('id, order_code, status')
+    .select('id, order_code, status, updated_at')
     .maybeSingle();
   if (error || !data) {
     throw new ServiceError('ORDER_STATE_CONFLICT', 'Trạng thái đơn hàng vừa thay đổi. Vui lòng tải lại.', 409);

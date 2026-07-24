@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
-import { listAllOrdersForAdmin, updateOrderStatus } from '../../lib/orders';
+import { listAllOrdersForAdmin } from '../../lib/orders';
 import { formatVND, formatVietnamDateTime } from '../../lib/format';
 import { ROUTES } from '../../constants/routes';
 import { Container } from '../ui/Container';
@@ -35,7 +35,6 @@ export const AdminOrdersClient = () => {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
@@ -124,30 +123,8 @@ export const AdminOrdersClient = () => {
     }
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
-    setUpdatingId(orderId);
-    setErrorMsg(null);
-    try {
-      const res = await updateOrderStatus(orderId, newStatus);
-      if (res.success) {
-        setOrders(prev => prev.map(order =>
-          order.id === orderId ? { ...order, status: newStatus as AdminOrder['status'] } : order
-        ));
-      } else {
-        setErrorMsg(res.error?.message || 'Không thể cập nhật trạng thái đơn hàng.');
-      }
-    } catch (err) {
-      const e = err as Error;
-      setErrorMsg(e?.message || 'Đã xảy ra lỗi kết nối không mong muốn khi cập nhật trạng thái.');
-    } finally {
-      setUpdatingId(null);
-    }
-  };
-
   const renderStatusActions = (order: AdminOrder) => {
-    const isUpdating = updatingId === order.id;
-
-    const detailButton = (
+    return (
       <button
         onClick={() => setSelectedOrderId(order.id)}
         className="text-[10px] font-mono uppercase bg-neutral-100 text-neutral-700 px-2 py-1 hover:bg-neutral-200"
@@ -155,83 +132,6 @@ export const AdminOrdersClient = () => {
         Xem chi tiết
       </button>
     );
-
-    if (isUpdating) {
-      return (
-        <div className="flex gap-2">
-          {detailButton}
-          <span className="font-mono text-[10px] text-neutral-400 italic">{vi.common.loading}</span>
-        </div>
-      );
-    }
-
-    if (order.status === 'pending') {
-      return (
-        <div className="flex gap-2 flex-wrap">
-          {detailButton}
-          <button 
-            onClick={() => handleStatusChange(order.id, 'processing')}
-            disabled={!!updatingId}
-            className="text-[10px] font-mono uppercase bg-neutral-900 text-white px-2 py-1 hover:bg-neutral-700 disabled:opacity-50"
-          >
-            Chuyển sang xử lý
-          </button>
-          <button
-            onClick={() => {
-              if(window.confirm('Hủy đơn hàng này?')) handleStatusChange(order.id, 'cancelled');
-            }}
-            disabled={!!updatingId}
-            className="text-[10px] font-mono uppercase border border-red-200 text-red-600 bg-red-50 px-2 py-1 hover:bg-red-100 disabled:opacity-50"
-          >
-            Hủy
-          </button>
-        </div>
-      );
-    }
-
-    if (order.status === 'processing') {
-      return (
-        <div className="flex gap-2 flex-wrap">
-          {detailButton}
-          <button
-            onClick={() => handleStatusChange(order.id, 'completed')}
-            disabled={!!updatingId}
-            className="text-[10px] font-mono uppercase bg-green-700 text-white px-2 py-1 hover:bg-green-600 disabled:opacity-50"
-          >
-            Đánh dấu hoàn tất
-          </button>
-          <button
-            onClick={() => {
-              if(window.confirm('Hủy đơn hàng này?')) handleStatusChange(order.id, 'cancelled');
-            }}
-            disabled={!!updatingId}
-            className="text-[10px] font-mono uppercase border border-red-200 text-red-600 bg-red-50 px-2 py-1 hover:bg-red-100 disabled:opacity-50"
-          >
-            Hủy
-          </button>
-        </div>
-      );
-    }
-
-    if (order.status === 'completed') {
-      return (
-        <div className="flex gap-2 items-center flex-wrap">
-          {detailButton}
-          <span className="font-mono text-[10px] text-neutral-500 italic">Đã hoàn tất</span>
-        </div>
-      );
-    }
-
-    if (order.status === 'cancelled') {
-      return (
-        <div className="flex gap-2 items-center flex-wrap">
-          {detailButton}
-          <span className="font-mono text-[10px] text-red-500 italic">{tStatus('cancelled')}</span>
-        </div>
-      );
-    }
-
-    return <div className="flex gap-2">{detailButton}</div>;
   };
 
   const getStatusBadge = (status: AdminOrder['status']) => {
@@ -577,7 +477,7 @@ export const AdminOrdersClient = () => {
         </div>
       )}
 
-      <OrderDetailDrawer orderId={selectedOrderId} onClose={() => setSelectedOrderId(null)} />
+      <OrderDetailDrawer orderId={selectedOrderId} onClose={() => setSelectedOrderId(null)} onUpdateSuccess={retryLoadOrders} />
     </Container>
   );
 };

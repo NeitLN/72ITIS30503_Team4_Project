@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { getOrderById } from '../../lib/orders';
+import { getOrderById, updateOrderStatus } from '../../lib/orders';
 import { formatVND, formatVietnamDateTime } from '../../lib/format';
 import { Button } from '../ui/Button';
 import { vi, tStatus, tPaymentMethod } from '../../lib/i18n';
+import { ConfirmDialog } from '../seller/ConfirmDialog';
 
 // Local types matching the API detail response
 type OrderItem = {
@@ -65,14 +66,19 @@ type OrderDetail = {
 interface OrderDetailDrawerProps {
   orderId: string | null;
   onClose: () => void;
+  onUpdateSuccess?: () => void;
 }
 
-export const OrderDetailDrawer = ({ orderId, onClose }: OrderDetailDrawerProps) => {
+export const OrderDetailDrawer = ({ orderId, onClose, onUpdateSuccess }: OrderDetailDrawerProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<OrderDetail | null>(null);
   const fetchAbortController = useRef<AbortController | null>(null);
+
+  const [confirmAction, setConfirmAction] = useState<'cancelled' | 'completed' | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -149,6 +155,27 @@ export const OrderDetailDrawer = ({ orderId, onClose }: OrderDetailDrawerProps) 
     }
   };
 
+  const handleStatusChange = async (newStatus: 'processing' | 'completed' | 'cancelled') => {
+    if (!orderId) return;
+    setIsUpdating(true);
+    setUpdateError(null);
+    try {
+      const res = await updateOrderStatus(orderId, newStatus);
+      if (res.success) {
+        setDetail(prev => prev ? { ...prev, status: newStatus } : null);
+        if (onUpdateSuccess) onUpdateSuccess();
+      } else {
+        setUpdateError(res.error?.message || 'Không thể cập nhật trạng thái đơn hàng.');
+      }
+    } catch (err) {
+      const e = err as Error;
+      setUpdateError(e?.message || 'Đã xảy ra lỗi kết nối.');
+    } finally {
+      setIsUpdating(false);
+      setConfirmAction(null);
+    }
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -198,153 +225,208 @@ export const OrderDetailDrawer = ({ orderId, onClose }: OrderDetailDrawerProps) 
     if (!detail) return null;
 
     return (
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8 bg-neutral-50">
-        <section className="bg-white border border-neutral-200 p-5">
-          <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Thông tin chung</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-neutral-500 text-xs">Mã đơn hàng</p>
-              <p className="font-mono font-bold">{detail.order_code}</p>
-            </div>
-            <div>
-              <p className="text-neutral-500 text-xs">Trạng thái</p>
-              <p className="font-semibold">{tStatus(detail.status)}</p>
-            </div>
-            <div>
-              <p className="text-neutral-500 text-xs">Ngày tạo</p>
-              <p>{formatVietnamDateTime(detail.created_at)}</p>
-            </div>
-            <div>
-              <p className="text-neutral-500 text-xs">Cập nhật lần cuối</p>
-              <p>{formatVietnamDateTime(detail.updated_at)}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white border border-neutral-200 p-5">
-          <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Người mua & Giao hàng</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="font-semibold mb-1">Thông tin người mua</p>
-              <p>{detail.customer_name || 'Khách vãng lai'}</p>
-              <p className="text-neutral-600">{detail.customer_email || 'Chưa có'}</p>
-              <p className="text-neutral-600">{detail.customer_phone || 'Chưa có'}</p>
-            </div>
-            {detail.shipping_address && (
+      <div className="flex-1 overflow-y-auto flex flex-col bg-neutral-50">
+        <div className="p-6 flex flex-col gap-8">
+          <section className="bg-white border border-neutral-200 p-5">
+            <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Thông tin chung</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="font-semibold mb-1">Địa chỉ giao hàng</p>
-                <p className="text-neutral-600">{detail.shipping_address}</p>
-                {detail.city && <p className="text-neutral-600">{detail.city}</p>}
+                <p className="text-neutral-500 text-xs">Mã đơn hàng</p>
+                <p className="font-mono font-bold">{detail.order_code}</p>
               </div>
+              <div>
+                <p className="text-neutral-500 text-xs">Trạng thái</p>
+                <p className="font-semibold">{tStatus(detail.status)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 text-xs">Ngày tạo</p>
+                <p>{formatVietnamDateTime(detail.created_at)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 text-xs">Cập nhật lần cuối</p>
+                <p>{formatVietnamDateTime(detail.updated_at)}</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-white border border-neutral-200 p-5">
+            <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Người mua & Giao hàng</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="font-semibold mb-1">Thông tin người mua</p>
+                <p>{detail.customer_name || 'Khách vãng lai'}</p>
+                <p className="text-neutral-600">{detail.customer_email || 'Chưa có'}</p>
+                <p className="text-neutral-600">{detail.customer_phone || 'Chưa có'}</p>
+              </div>
+              {detail.shipping_address && (
+                <div>
+                  <p className="font-semibold mb-1">Địa chỉ giao hàng</p>
+                  <p className="text-neutral-600">{detail.shipping_address}</p>
+                  {detail.city && <p className="text-neutral-600">{detail.city}</p>}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="bg-white border border-neutral-200 p-5">
+            <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Chi tiết thanh toán</h3>
+            <div className="flex flex-col gap-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-neutral-500">Tạm tính:</span>
+                <span>{formatVND(detail.subtotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-neutral-500">Phí vận chuyển:</span>
+                <span>{formatVND(detail.shipping_fee)}</span>
+              </div>
+              <div className="flex justify-between text-green-600">
+                <span className="text-green-600/80">Giảm giá:</span>
+                <span>-{formatVND(detail.discount_amount)}</span>
+              </div>
+              <div className="flex justify-between font-bold text-base mt-2 pt-2 border-t border-neutral-100">
+                <span>Tổng cộng:</span>
+                <span>{formatVND(detail.total_amount)}</span>
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-white border border-neutral-200 overflow-hidden">
+            <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 p-5 pb-0 mb-4">Sản phẩm ({detail.items.length})</h3>
+            <div className="divide-y divide-neutral-100">
+              {detail.items.map((item) => (
+                <div key={item.id} className="flex gap-4 p-5 text-sm">
+                  <div className="w-16 h-16 bg-neutral-100 flex-shrink-0 border border-neutral-200 relative overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {item.image_url ? (
+                      <img src={item.image_url} alt="" className="object-cover w-full h-full" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-neutral-300 text-xs">IMG</div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-neutral-900">{item.product_name}</p>
+                    <p className="text-neutral-500 text-xs">{item.variant_name || 'Mặc định'}</p>
+                    <p className="font-mono mt-1">{formatVND(item.unit_price)} x {item.quantity}</p>
+                  </div>
+                  <div className="text-right font-mono font-semibold">
+                    {formatVND(item.line_total)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-white border border-neutral-200 p-5">
+            <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Bản ghi thanh toán</h3>
+            {detail.payments && detail.payments.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {detail.payments.map((p) => (
+                  <div key={p.id} className="border border-neutral-100 p-3 bg-neutral-50 text-sm">
+                    <div className="flex justify-between font-mono mb-1">
+                      <span>{tPaymentMethod(p.payment_method)}</span>
+                      <span className="font-bold">{formatVND(p.gross_amount)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-neutral-500">
+                      <span>Trạng thái: <strong className="text-neutral-700">{p.state}</strong></span>
+                      <span>Mã: {p.id.split('-')[0]}...</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-neutral-500 italic">Chưa có bản ghi thanh toán</p>
             )}
-          </div>
-        </section>
+          </section>
 
-        <section className="bg-white border border-neutral-200 p-5">
-          <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Chi tiết thanh toán</h3>
-          <div className="flex flex-col gap-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-neutral-500">Tạm tính:</span>
-              <span>{formatVND(detail.subtotal)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-neutral-500">Phí vận chuyển:</span>
-              <span>{formatVND(detail.shipping_fee)}</span>
-            </div>
-            <div className="flex justify-between text-green-600">
-              <span className="text-green-600/80">Giảm giá:</span>
-              <span>-{formatVND(detail.discount_amount)}</span>
-            </div>
-            <div className="flex justify-between font-bold text-base mt-2 pt-2 border-t border-neutral-100">
-              <span>Tổng cộng:</span>
-              <span>{formatVND(detail.total_amount)}</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white border border-neutral-200 overflow-hidden">
-          <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 p-5 pb-0 mb-4">Sản phẩm ({detail.items.length})</h3>
-          <div className="divide-y divide-neutral-100">
-            {detail.items.map((item) => (
-              <div key={item.id} className="flex gap-4 p-5 text-sm">
-                <div className="w-16 h-16 bg-neutral-100 flex-shrink-0 border border-neutral-200 relative overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {item.image_url ? (
-                    <img src={item.image_url} alt="" className="object-cover w-full h-full" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-neutral-300 text-xs">IMG</div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-neutral-900">{item.product_name}</p>
-                  <p className="text-neutral-500 text-xs">{item.variant_name || 'Mặc định'}</p>
-                  <p className="font-mono mt-1">{formatVND(item.unit_price)} x {item.quantity}</p>
-                </div>
-                <div className="text-right font-mono font-semibold">
-                  {formatVND(item.line_total)}
-                </div>
+          <section className="bg-white border border-neutral-200 p-5">
+            <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Dữ liệu phân bổ</h3>
+            {detail.paymentAllocations && detail.paymentAllocations.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {detail.paymentAllocations.map((a) => (
+                  <div key={a.id} className="border border-neutral-100 p-3 bg-neutral-50 text-sm">
+                    <p className="font-mono text-xs mb-1">Seller: {a.seller_id}</p>
+                    <div className="flex justify-between text-xs text-neutral-500">
+                      <span>Thực nhận: <strong className="text-neutral-700 font-mono">{formatVND(a.seller_net_amount)}</strong></span>
+                      <span>Trạng thái: {a.state}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+            ) : (
+              <p className="text-sm text-neutral-500 italic">Chưa có dữ liệu phân bổ</p>
+            )}
+          </section>
 
-        <section className="bg-white border border-neutral-200 p-5">
-          <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Bản ghi thanh toán</h3>
-          {detail.payments && detail.payments.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {detail.payments.map((p) => (
-                <div key={p.id} className="border border-neutral-100 p-3 bg-neutral-50 text-sm">
-                  <div className="flex justify-between font-mono mb-1">
-                    <span>{tPaymentMethod(p.payment_method)}</span>
-                    <span className="font-bold">{formatVND(p.gross_amount)}</span>
+          <section className="bg-white border border-neutral-200 p-5">
+            <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Sự kiện thanh toán</h3>
+            {detail.paymentEvents && detail.paymentEvents.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {detail.paymentEvents.map((e) => (
+                  <div key={e.id} className="border-l-2 border-neutral-300 pl-3 py-1 text-sm">
+                    <p className="font-mono font-semibold">{e.event_type}</p>
+                    <p className="text-xs text-neutral-500">{formatVietnamDateTime(e.created_at)}</p>
+                    {e.new_state && <p className="text-xs mt-1">Trạng thái mới: {e.new_state}</p>}
                   </div>
-                  <div className="flex justify-between text-xs text-neutral-500">
-                    <span>Trạng thái: <strong className="text-neutral-700">{p.state}</strong></span>
-                    <span>Mã: {p.id.split('-')[0]}...</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-neutral-500 italic">Chưa có bản ghi thanh toán</p>
-          )}
-        </section>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-neutral-500 italic">Chưa có sự kiện thanh toán</p>
+            )}
+          </section>
+        </div>
 
-        <section className="bg-white border border-neutral-200 p-5">
-          <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Dữ liệu phân bổ</h3>
-          {detail.paymentAllocations && detail.paymentAllocations.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {detail.paymentAllocations.map((a) => (
-                <div key={a.id} className="border border-neutral-100 p-3 bg-neutral-50 text-sm">
-                  <p className="font-mono text-xs mb-1">Seller: {a.seller_id}</p>
-                  <div className="flex justify-between text-xs text-neutral-500">
-                    <span>Thực nhận: <strong className="text-neutral-700 font-mono">{formatVND(a.seller_net_amount)}</strong></span>
-                    <span>Trạng thái: {a.state}</span>
-                  </div>
-                </div>
-              ))}
+        {detail.status !== 'completed' && detail.status !== 'cancelled' && (
+          <section className="bg-white border-t border-neutral-200 p-6 mt-auto flex-shrink-0 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4">Thao tác đơn hàng</h3>
+            <div className="flex flex-wrap gap-3">
+              {detail.status === 'pending' && (
+                <Button
+                  onClick={() => handleStatusChange('processing')}
+                  disabled={isUpdating}
+                  className="font-mono text-xs uppercase"
+                >
+                  Bắt đầu xử lý
+                </Button>
+              )}
+              {detail.status === 'processing' && (
+                <Button
+                  onClick={() => setConfirmAction('completed')}
+                  disabled={isUpdating}
+                  className="font-mono text-xs uppercase bg-green-700 text-white hover:bg-green-800"
+                >
+                  Đánh dấu hoàn tất
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => setConfirmAction('cancelled')}
+                disabled={isUpdating}
+                className="font-mono text-xs uppercase border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+              >
+                Hủy đơn
+              </Button>
             </div>
-          ) : (
-            <p className="text-sm text-neutral-500 italic">Chưa có dữ liệu phân bổ</p>
-          )}
-        </section>
+            {isUpdating && <p className="mt-3 font-mono text-[10px] text-neutral-400 italic">Đang cập nhật...</p>}
+            {updateError && <p className="mt-3 text-xs text-red-600 font-medium">{updateError}</p>}
+          </section>
+        )}
 
-        <section className="bg-white border border-neutral-200 p-5">
-          <h3 className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-4 border-b border-neutral-100 pb-2">Sự kiện thanh toán</h3>
-          {detail.paymentEvents && detail.paymentEvents.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {detail.paymentEvents.map((e) => (
-                <div key={e.id} className="border-l-2 border-neutral-300 pl-3 py-1 text-sm">
-                  <p className="font-mono font-semibold">{e.event_type}</p>
-                  <p className="text-xs text-neutral-500">{formatVietnamDateTime(e.created_at)}</p>
-                  {e.new_state && <p className="text-xs mt-1">Trạng thái mới: {e.new_state}</p>}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-neutral-500 italic">Chưa có sự kiện thanh toán</p>
-          )}
-        </section>
+        <ConfirmDialog
+          open={confirmAction !== null}
+          title={confirmAction === 'cancelled' ? 'Xác nhận hủy đơn hàng' : 'Xác nhận hoàn tất đơn hàng'}
+          body={
+            confirmAction === 'cancelled'
+              ? `Bạn có chắc chắn muốn hủy đơn hàng ${detail?.order_code}? Hành động này không thể hoàn tác.`
+              : `Đánh dấu hoàn tất đơn hàng ${detail?.order_code}?`
+          }
+          confirmLabel={confirmAction === 'cancelled' ? 'Xác nhận hủy' : 'Xác nhận hoàn tất'}
+          cancelLabel="Quay lại"
+          danger={confirmAction === 'cancelled'}
+          onConfirm={() => {
+            if (confirmAction) handleStatusChange(confirmAction);
+          }}
+          onCancel={() => setConfirmAction(null)}
+        />
       </div>
     );
   };
