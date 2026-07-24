@@ -2,11 +2,13 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../constants/routes';
 
 export const HeaderAuthMenu = () => {
   const { user, isAuthenticated, isHydrated, logout } = useAuth();
+  const pathname = usePathname();
 
   if (!isHydrated) {
     // Neutral placeholder to avoid layout shift before hydration
@@ -14,24 +16,47 @@ export const HeaderAuthMenu = () => {
   }
 
   if (isAuthenticated && user) {
+    if (user.role === 'admin') {
+      return (
+        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium whitespace-nowrap">
+          <Link
+            href={ROUTES.ADMIN_OVERVIEW}
+            className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_OVERVIEW ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
+          >
+            Tổng quan
+          </Link>
+
+          <Link
+            href={ROUTES.ADMIN_TRANSACTIONS}
+            className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_TRANSACTIONS ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
+          >
+            Quản lý giao dịch
+          </Link>
+
+          <Link
+            href={ROUTES.ADMIN_ORDERS}
+            className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_ORDERS ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
+          >
+            Quản lý đơn hàng
+          </Link>
+
+          <button
+            onClick={() => logout()}
+            className="text-neutral-600 transition-colors hover:text-neutral-900 focus:outline-none"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium whitespace-nowrap">
         <div className="hidden md:flex items-center">
           <Link href={ROUTES.PROFILE} className="text-neutral-900 transition-colors hover:text-neutral-500 font-semibold truncate max-w-[120px]">
             {user.full_name || user.name || 'Hồ sơ của tôi'}
           </Link>
-          {user.role === 'admin' && (
-            <span className="ml-1.5 text-[9px] uppercase tracking-wider font-mono text-neutral-500">
-              [QUẢN TRỊ]
-            </span>
-          )}
         </div>
-
-        {user.role === 'admin' && (
-          <Link href={ROUTES.ADMIN_TRANSACTIONS} className="text-neutral-600 transition-colors hover:text-neutral-900 hidden sm:inline-block">
-            Quản trị
-          </Link>
-        )}
 
         <Link href={ROUTES.ORDERS} className="text-neutral-600 transition-colors hover:text-neutral-900 hidden sm:inline-block">
           Đơn hàng

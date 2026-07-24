@@ -18,6 +18,7 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   ORDERS: '/orders',
+  ADMIN_OVERVIEW: '/admin',
   ADMIN_ORDERS: '/admin/orders',
   ADMIN_TRANSACTIONS: '/admin/transactions',
   SELLER_DASHBOARD: '/seller/dashboard',

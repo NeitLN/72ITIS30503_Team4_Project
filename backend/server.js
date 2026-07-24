@@ -22,6 +22,7 @@ const sellerListingRoutes = require('./routes/sellerListings');
 const sellerOrderRoutes = require('./routes/sellerOrders');
 const sustainabilityRoutes = require('./routes/sustainability');
 const adminTransactionRoutes = require('./routes/adminTransactions');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use('/api/seller/listings', sellerListingRoutes);
 app.use('/api/seller/orders', sellerOrderRoutes);
 app.use('/api/sustainability', sustainabilityRoutes);
 app.use('/api/admin/transactions', adminTransactionRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 Handler
 app.use((req, res) => {
