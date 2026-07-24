@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Container } from '../ui/Container';
 import { ROUTES } from '../../constants/routes';
 
@@ -28,6 +31,11 @@ const linkGroups = [
 ];
 
 export const Footer = () => {
+  const pathname = usePathname();
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <footer className="mt-auto border-t border-neutral-200 bg-white">
       <Container>

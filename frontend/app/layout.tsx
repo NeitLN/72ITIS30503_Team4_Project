@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { Archivo, Inter } from 'next/font/google';
-import Script from 'next/script';
 import './globals.css';
 import { siteConfig } from '../constants/site';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
+import { ChatWidget } from '../components/layout/ChatWidget';
 import { AuthProvider } from '../hooks/useAuth';
 import { CartProvider } from '../hooks/useCart';
 import { WishlistProvider } from '../hooks/useWishlist';
@@ -72,13 +72,7 @@ export default function RootLayout({
             <Footer />
           </WishlistProvider>
         </CartProvider></AuthProvider>
-        {process.env.NEXT_PUBLIC_TAWKTO_ID ? (
-          <Script
-            id="tawkto-widget"
-            strategy="lazyOnload"
-            src={`https://embed.tawk.to/${process.env.NEXT_PUBLIC_TAWKTO_ID}`}
-          />
-        ) : null}
+        <ChatWidget />
       </body>
     </html>
   );
