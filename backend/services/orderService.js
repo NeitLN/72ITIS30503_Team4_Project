@@ -232,49 +232,88 @@ async function listMyOrders(userId) {
   return data;
 }
 
-async function listAllOrders(filters = {}) {
+async function listAllOrders(filters = {}, page = 1, pageSize = 20) {
   checkDb();
-  let query = supabaseAdmin
-    .from('orders')
-    .select('id, order_code, user_id, customer_name, customer_email, customer_phone, status, payment_method, subtotal, shipping_fee, discount_amount, total_amount, created_at, updated_at');
 
-  if (filters.orderStatus) {
-    if (!['pending', 'processing', 'completed', 'cancelled'].includes(filters.orderStatus)) {
-      throw new ServiceError('INVALID_ORDER_STATUS', 'Trạng thái đơn hàng không hợp lệ.', 400);
-    }
-    query = query.eq('status', filters.orderStatus);
-  }
-
-  if (filters.paymentMethod) {
-    if (!['cod', 'bank_transfer', 'simulated_card'].includes(filters.paymentMethod)) {
-      throw new ServiceError('INVALID_PAYMENT_METHOD', 'Phương thức thanh toán không hợp lệ.', 400);
-    }
-    query = query.eq('payment_method', filters.paymentMethod);
-  }
-
-  if (filters.query && typeof filters.query === 'string') {
-    const q = filters.query.trim();
-    if (q.length > 0) {
-      if (q.length > 100) {
-        throw new ServiceError('INVALID_QUERY', 'Từ khóa tìm kiếm quá dài.', 400);
+  function applyFilters(q) {
+    if (filters.orderStatus) {
+      if (!['pending', 'processing', 'completed', 'cancelled'].includes(filters.orderStatus)) {
+        throw new ServiceError('INVALID_ORDER_STATUS', 'Trạng thái đơn hàng không hợp lệ.', 400);
       }
+      q = q.eq('status', filters.orderStatus);
+    }
 
-      const isUuid = UUID_RE.test(q);
-      if (isUuid) {
-        query = query.eq('id', q);
-      } else {
-        // Sanitize for ilike
-        const safeQuery = q.replace(/[%_\\]/g, '\\$&');
-        query = query.or(`order_code.ilike.%${safeQuery}%,customer_name.ilike.%${safeQuery}%,customer_email.ilike.%${safeQuery}%`);
+    if (filters.paymentMethod) {
+      if (!['cod', 'bank_transfer', 'simulated_card'].includes(filters.paymentMethod)) {
+        throw new ServiceError('INVALID_PAYMENT_METHOD', 'Phương thức thanh toán không hợp lệ.', 400);
+      }
+      q = q.eq('payment_method', filters.paymentMethod);
+    }
+
+    if (filters.query && typeof filters.query === 'string') {
+      const qs = filters.query.trim();
+      if (qs.length > 0) {
+        if (qs.length > 100) {
+          throw new ServiceError('INVALID_QUERY', 'Từ khóa tìm kiếm quá dài.', 400);
+        }
+
+        const isUuid = UUID_RE.test(qs);
+        if (isUuid) {
+          q = q.eq('id', qs);
+        } else {
+          const safeQuery = qs.replace(/[%_\\]/g, '\\$&');
+          q = q.or(`order_code.ilike.%${safeQuery}%,customer_name.ilike.%${safeQuery}%,customer_email.ilike.%${safeQuery}%`);
+        }
       }
     }
+    return q;
   }
 
-  query = query.order('created_at', { ascending: false });
+  let countQuery = supabaseAdmin.from('orders').select('id', { count: 'exact', head: true });
+  countQuery = applyFilters(countQuery);
 
-  const { data, error } = await query;
-  if (error) throw new ServiceError('ORDER_LIST_FAILED', 'Không thể tải danh sách đơn hàng.', 500);
-  return data;
+  const { count, error: countError } = await countQuery;
+  if (countError) {
+    console.error('List all orders count error:', countError);
+    throw new ServiceError('ORDER_LIST_FAILED', 'Không thể tải danh sách đơn hàng.', 500);
+  }
+
+  const totalItems = count || 0;
+  const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / pageSize);
+  let resultData = [];
+
+  const from = (page - 1) * pageSize;
+
+  if (totalItems > 0 && from < totalItems) {
+    let dataQuery = supabaseAdmin
+      .from('orders')
+      .select('id, order_code, user_id, customer_name, customer_email, customer_phone, status, payment_method, subtotal, shipping_fee, discount_amount, total_amount, created_at, updated_at');
+
+    dataQuery = applyFilters(dataQuery);
+    dataQuery = dataQuery.order('created_at', { ascending: false }).order('id', { ascending: false });
+
+    const to = from + pageSize - 1;
+    dataQuery = dataQuery.range(from, to);
+
+    const { data, error } = await dataQuery;
+    if (error) {
+      console.error('List all orders DB error:', error);
+      throw new ServiceError('ORDER_LIST_FAILED', 'Không thể tải danh sách đơn hàng.', 500);
+    }
+    resultData = data || [];
+  }
+
+  return {
+    data: resultData,
+    pagination: {
+      page,
+      pageSize,
+      totalItems,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages
+    }
+  };
 }
 
 async function getOrderById(orderId, user) {

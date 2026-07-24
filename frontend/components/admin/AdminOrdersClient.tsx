@@ -36,6 +36,17 @@ export const AdminOrdersClient = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 20,
+    totalItems: 0,
+    totalPages: 0,
+    hasPreviousPage: false,
+    hasNextPage: false,
+  });
+
   const [filters, setFilters] = useState<{ query?: string; orderStatus?: string; paymentMethod?: string }>({});
   const [draftFilters, setDraftFilters] = useState<{ query?: string; orderStatus?: string; paymentMethod?: string }>({});
 
@@ -45,11 +56,19 @@ export const AdminOrdersClient = () => {
     if (!isHydrated) return;
     
     if (isAuthenticated && isAdmin) {
-      listAllOrdersForAdmin(filters)
+      listAllOrdersForAdmin({ ...filters, page, pageSize })
         .then(res => {
           if (active) {
-            if (res.success && Array.isArray(res.data)) {
-              setOrders(res.data);
+            if (res.success && res.data && Array.isArray(res.data.data)) {
+              setOrders(res.data.data);
+              setPagination({
+                page: res.data.pagination?.page || 1,
+                pageSize: res.data.pagination?.pageSize || 20,
+                totalItems: res.data.pagination?.totalItems || 0,
+                totalPages: res.data.pagination?.totalPages || 0,
+                hasPreviousPage: res.data.pagination?.hasPreviousPage || false,
+                hasNextPage: res.data.pagination?.hasNextPage || false,
+              });
             } else {
               setErrorMsg(res.error?.message || 'Không thể tải danh sách đơn hàng.');
             }
@@ -75,15 +94,23 @@ export const AdminOrdersClient = () => {
     return () => {
       active = false;
     };
-  }, [isHydrated, isAuthenticated, isAdmin, filters]);
+  }, [isHydrated, isAuthenticated, isAdmin, filters, page, pageSize]);
 
   const retryLoadOrders = async () => {
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      const res = await listAllOrdersForAdmin(filters);
-      if (res.success && Array.isArray(res.data)) {
-        setOrders(res.data);
+      const res = await listAllOrdersForAdmin({ ...filters, page, pageSize });
+      if (res.success && res.data && Array.isArray(res.data.data)) {
+        setOrders(res.data.data);
+        setPagination({
+          page: res.data.pagination?.page || 1,
+          pageSize: res.data.pagination?.pageSize || 20,
+          totalItems: res.data.pagination?.totalItems || 0,
+          totalPages: res.data.pagination?.totalPages || 0,
+          hasPreviousPage: res.data.pagination?.hasPreviousPage || false,
+          hasNextPage: res.data.pagination?.hasNextPage || false,
+        });
       } else {
         setErrorMsg(res.error?.message || 'Không thể tải danh sách đơn hàng.');
       }
@@ -288,6 +315,7 @@ export const AdminOrdersClient = () => {
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          setPage(1);
           setFilters(draftFilters);
         }}
         className="mb-8 border border-neutral-200 bg-neutral-50 p-5 flex flex-col md:flex-row gap-4 items-end"
@@ -348,6 +376,7 @@ export const AdminOrdersClient = () => {
             onClick={() => {
               setDraftFilters({});
               setFilters({});
+              setPage(1);
             }}
             className="font-mono text-xs uppercase tracking-wider flex-1 md:flex-none"
           >
@@ -460,6 +489,63 @@ export const AdminOrdersClient = () => {
               </tbody>
             </table>
           </div>
+
+          <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="font-mono text-xs text-neutral-500">
+              {pagination.totalItems > 0 ? (
+                `Hiển thị ${(pagination.page - 1) * pagination.pageSize + 1}–${Math.min(pagination.page * pagination.pageSize, pagination.totalItems)} trong tổng số ${pagination.totalItems} đơn hàng`
+              ) : (
+                'Không có đơn hàng để hiển thị'
+              )}
+            </div>
+            {pagination.totalItems > 0 && (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="page-size" className="font-mono text-[10px] uppercase text-neutral-500">
+                    Số dòng:
+                  </label>
+                  <select
+                    id="page-size"
+                    value={pageSize}
+                    disabled={isLoading}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="border border-neutral-300 bg-white p-1 text-xs focus:outline-none focus:border-neutral-900"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!pagination.hasPreviousPage || isLoading}
+                    onClick={() => setPage(p => p - 1)}
+                    className="font-mono text-[10px] uppercase tracking-wider px-2 py-1 h-auto"
+                  >
+                    Trang trước
+                  </Button>
+                  <span className="font-mono text-xs text-neutral-500" aria-live="polite">
+                    Trang {pagination.page} / {pagination.totalPages}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!pagination.hasNextPage || isLoading}
+                    onClick={() => setPage(p => p + 1)}
+                    className="font-mono text-[10px] uppercase tracking-wider px-2 py-1 h-auto"
+                  >
+                    Trang sau
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
         </div>
       )}
     </Container>

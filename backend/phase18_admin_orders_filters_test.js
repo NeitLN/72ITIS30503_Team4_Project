@@ -64,7 +64,7 @@ async function createUser(label, role = 'customer') {
     const adminFetch = await api('/api/orders', { headers: headers(admin.token) });
     check('Admin access succeeds', adminFetch.status === 200);
 
-    const defaultOrders = adminFetch.body?.data || [];
+    const defaultOrders = adminFetch.body?.data?.data || [];
     check('No filters returns the existing default result set', Array.isArray(defaultOrders));
     
     if (defaultOrders.length >= 2) {
@@ -77,29 +77,29 @@ async function createUser(label, role = 'customer') {
       
       // Keyword matches an order code
       const codeMatch = await api(`/api/orders?query=${target.order_code}`, { headers: headers(admin.token) });
-      check('Keyword matches an order ID/order code', codeMatch.status === 200 && codeMatch.body.data.some(o => o.id === target.id));
+      check('Keyword matches an order ID/order code', codeMatch.status === 200 && codeMatch.body.data.data.some(o => o.id === target.id));
       
       if (target.customer_name) {
         const nameMatch = await api(`/api/orders?query=${encodeURIComponent(target.customer_name.substring(0, 5))}`, { headers: headers(admin.token) });
-        check('Keyword matches buyer name', nameMatch.status === 200 && nameMatch.body.data.some(o => o.id === target.id));
+        check('Keyword matches buyer name', nameMatch.status === 200 && nameMatch.body.data.data.some(o => o.id === target.id));
       } else {
         check('Keyword matches buyer name', true, 'Skipped (no name)');
       }
 
       if (target.customer_email) {
         const emailMatch = await api(`/api/orders?query=${encodeURIComponent(target.customer_email)}`, { headers: headers(admin.token) });
-        check('Keyword matches buyer email', emailMatch.status === 200 && emailMatch.body.data.some(o => o.id === target.id));
+        check('Keyword matches buyer email', emailMatch.status === 200 && emailMatch.body.data.data.some(o => o.id === target.id));
       } else {
         check('Keyword matches buyer email', true, 'Skipped (no email)');
       }
       
       // Whitespace
       const spaceMatch = await api(`/api/orders?query=${encodeURIComponent('  ' + target.order_code + '  ')}`, { headers: headers(admin.token) });
-      check('Leading/trailing whitespace is trimmed', spaceMatch.status === 200 && spaceMatch.body.data.some(o => o.id === target.id));
+      check('Leading/trailing whitespace is trimmed', spaceMatch.status === 200 && spaceMatch.body.data.data.some(o => o.id === target.id));
 
       // Order status
       const statusMatch = await api(`/api/orders?orderStatus=${target.status}`, { headers: headers(admin.token) });
-      check('Valid order status filters correctly', statusMatch.status === 200 && statusMatch.body.data.every(o => o.status === target.status));
+      check('Valid order status filters correctly', statusMatch.status === 200 && statusMatch.body.data.data.every(o => o.status === target.status));
       
       const invalidStatus = await api(`/api/orders?orderStatus=invalid_status`, { headers: headers(admin.token) });
       check('Invalid order status is rejected', invalidStatus.status === 400);
@@ -107,7 +107,7 @@ async function createUser(label, role = 'customer') {
       // Payment method
       if (target.payment_method) {
         const methodMatch = await api(`/api/orders?paymentMethod=${target.payment_method}`, { headers: headers(admin.token) });
-        check('Valid payment method filters correctly', methodMatch.status === 200 && methodMatch.body.data.every(o => o.payment_method === target.payment_method));
+        check('Valid payment method filters correctly', methodMatch.status === 200 && methodMatch.body.data.data.every(o => o.payment_method === target.payment_method));
       } else {
         check('Valid payment method filters correctly', true, 'Skipped');
       }
@@ -117,10 +117,10 @@ async function createUser(label, role = 'customer') {
 
       // Combined
       const combined = await api(`/api/orders?query=${target.order_code}&orderStatus=${target.status}`, { headers: headers(admin.token) });
-      check('Combined keyword and status filters compose correctly', combined.status === 200 && combined.body.data.some(o => o.id === target.id));
+      check('Combined keyword and status filters compose correctly', combined.status === 200 && combined.body.data.data.some(o => o.id === target.id));
 
-      if (combined.body.data.length >= 2) {
-        const isCombinedSorted = new Date(combined.body.data[0].created_at) >= new Date(combined.body.data[1].created_at);
+      if (combined.body.data.data.length >= 2) {
+        const isCombinedSorted = new Date(combined.body.data.data[0].created_at) >= new Date(combined.body.data.data[1].created_at);
         check('Filtered results preserve current sorting', isCombinedSorted);
       } else {
         check('Filtered results preserve current sorting', true, 'Skipped (too few results)');
@@ -128,7 +128,7 @@ async function createUser(label, role = 'customer') {
 
       // Empty keyword
       const emptyKeyword = await api(`/api/orders?query=   `, { headers: headers(admin.token) });
-      check('Empty keyword behaves as no keyword', emptyKeyword.status === 200 && emptyKeyword.body.data.length === defaultOrders.length);
+      check('Empty keyword behaves as no keyword', emptyKeyword.status === 200 && emptyKeyword.body.data.data.length === defaultOrders.length);
       
       // Special characters
       const specialChar = await api(`/api/orders?query=${encodeURIComponent('%_\\')}`, { headers: headers(admin.token) });

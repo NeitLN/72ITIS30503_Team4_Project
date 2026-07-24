@@ -84,8 +84,28 @@ router.get('/', requireAdmin, async (req, res) => {
       orderStatus: req.query.orderStatus,
       paymentMethod: req.query.paymentMethod,
     };
-    const orders = await orderService.listAllOrders(filters);
-    return success(res, orders);
+
+    let page = 1;
+    let pageSize = 20;
+
+    if (req.query.page !== undefined) {
+      const parsedPage = Number(req.query.page);
+      if (!Number.isInteger(parsedPage) || parsedPage < 1) {
+        return error(res, 400, 'Tham số page không hợp lệ.');
+      }
+      page = parsedPage;
+    }
+
+    if (req.query.pageSize !== undefined) {
+      const parsedSize = Number(req.query.pageSize);
+      if (![10, 20, 50].includes(parsedSize)) {
+        return error(res, 400, 'Tham số pageSize không hợp lệ.');
+      }
+      pageSize = parsedSize;
+    }
+
+    const result = await orderService.listAllOrders(filters, page, pageSize);
+    return success(res, result);
   } catch (err) {
     if (err.status) return error(res, err.status, err.message, err.details, err.code);
     console.error('List all orders error:', err);
