@@ -18,14 +18,26 @@ export const LoginForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const success = await login({ email, password });
+    const { success, user } = await login({ email, password });
 
-    if (success) {
+    if (success && user) {
       const redirectParam = searchParams.get('redirect');
-      if (redirectParam && redirectParam.startsWith('/')) {
-        router.push(redirectParam);
+
+      // Admin Priority Policy: Admin always goes to /admin by default or a valid /admin/* callback
+      if (user.role === 'admin') {
+        if (redirectParam && redirectParam.startsWith('/admin') && !redirectParam.startsWith('//')) {
+          router.replace(redirectParam);
+        } else {
+          router.replace(ROUTES.ADMIN_OVERVIEW);
+        }
+        return;
+      }
+
+      // Non-admin users follow valid internal redirects or fallback to Profile
+      if (redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')) {
+        router.replace(redirectParam);
       } else {
-        router.push(ROUTES.PROFILE);
+        router.replace(ROUTES.PROFILE);
       }
     }
   };

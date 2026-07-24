@@ -21,7 +21,7 @@ interface AuthContextType {
   isHydrated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (payload: Record<string, unknown>) => Promise<boolean>;
+  login: (payload: Record<string, unknown>) => Promise<{ success: boolean; user?: AuthUser | null }>;
   register: (payload: Record<string, unknown>) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -82,14 +82,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setToken(res.data.token);
         setUser(res.data.user);
         setStoredAuth(res.data.token, res.data.user);
-        return true;
+        return { success: true, user: res.data.user };
       } else {
         setError(res.error?.message || 'Login failed');
-        return false;
+        return { success: false };
       }
     } catch {
       setError('An unexpected error occurred');
-      return false;
+      return { success: false };
     } finally {
       setIsLoading(false);
     }

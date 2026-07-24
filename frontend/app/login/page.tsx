@@ -1,12 +1,43 @@
-import { Metadata } from 'next';
-import { Suspense } from 'react';
+'use client';
+
+import { Suspense, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LoginForm } from '../../components/auth/LoginForm';
 import { Container } from '../../components/ui/Container';
+import { useAuth } from '../../hooks/useAuth';
+import { ROUTES } from '../../constants/routes';
 
-export const metadata: Metadata = {
-  title: 'Đăng nhập',
-  description: 'Đăng nhập vào tài khoản StyleHub của bạn.',
-};
+function LoginContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isAuthenticated, isHydrated, user } = useAuth();
+
+  useEffect(() => {
+    if (isHydrated && isAuthenticated && user) {
+      const redirectParam = searchParams.get('redirect');
+
+      if (user.role === 'admin') {
+        if (redirectParam && redirectParam.startsWith('/admin') && !redirectParam.startsWith('//')) {
+          router.replace(redirectParam);
+        } else {
+          router.replace(ROUTES.ADMIN_OVERVIEW);
+        }
+      } else {
+        if (redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')) {
+          router.replace(redirectParam);
+        } else {
+          router.replace(ROUTES.PROFILE);
+        }
+      }
+    }
+  }, [isHydrated, isAuthenticated, user, router, searchParams]);
+
+  if (!isHydrated || isAuthenticated) {
+    return <div className="h-64 animate-pulse bg-neutral-50" aria-label="Đang kiểm tra trạng thái đăng nhập..."></div>;
+  }
+
+  return <LoginForm />;
+}
 
 export default function LoginPage() {
   return (
@@ -19,7 +50,7 @@ export default function LoginPage() {
           Chào mừng bạn trở lại chợ thời trang.
         </p>
         <Suspense fallback={<div className="h-64 animate-pulse bg-neutral-50"></div>}>
-          <LoginForm />
+          <LoginContent />
         </Suspense>
       </div>
 
