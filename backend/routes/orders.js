@@ -115,12 +115,10 @@ router.get('/', requireAdmin, async (req, res) => {
 
 // GET /api/orders/:id
 router.get('/:id', requireAuth, async (req, res) => {
-  console.log('DEBUG /:id called with user:', req.user?.role, 'id:', req.params.id);
   try {
     const order = await orderService.getOrderById(req.params.id, req.user);
     return success(res, order);
   } catch (err) {
-    console.error('DEBUG /:id error:', err);
     return handleOrderError(err, res, `Get order ${req.params.id} error:`);
   }
 });

@@ -6,10 +6,15 @@ import { useAuth } from '../../hooks/useAuth';
 import { listAllOrdersForAdmin } from '../../lib/orders';
 import { formatVND, formatVietnamDateTime } from '../../lib/format';
 import { ROUTES } from '../../constants/routes';
-import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
 import { vi, tStatus, tPaymentMethod } from '../../lib/i18n';
 import { OrderDetailDrawer } from './OrderDetailDrawer';
+import { AdminPageShell } from './ui/AdminPageShell';
+import { AdminPageHeader } from './ui/AdminPageHeader';
+import { AdminMetricCard } from './ui/AdminMetricCard';
+import { AdminEmptyState } from './ui/AdminEmptyState';
+import { AdminErrorState } from './ui/AdminErrorState';
+import { AdminStatusBadge } from './ui/AdminStatusBadge';
 
 type AdminOrder = {
   id: string;
@@ -134,39 +139,24 @@ export const AdminOrdersClient = () => {
     );
   };
 
-  const getStatusBadge = (status: AdminOrder['status']) => {
-    switch (status) {
-      case 'pending':
-        return <span className="inline-flex items-center border border-yellow-600 bg-yellow-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-yellow-800">{tStatus('pending')}</span>;
-      case 'processing':
-        return <span className="inline-flex items-center border border-blue-600 bg-blue-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-blue-800">{tStatus('processing')}</span>;
-      case 'completed':
-        return <span className="inline-flex items-center border border-green-600 bg-green-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-green-800">{tStatus('completed')}</span>;
-      case 'cancelled':
-        return <span className="inline-flex items-center border border-red-600 bg-red-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-red-800">{tStatus('cancelled')}</span>;
-      default:
-        return <span className="inline-flex items-center border border-neutral-600 bg-neutral-50 px-2 py-0.5 font-mono text-[10px] uppercase font-bold text-neutral-800">{tStatus(status)}</span>;
-    }
-  };
-
   const formatPaymentMethod = (method: string) => {
     return tPaymentMethod(method);
   };
 
   if (!isHydrated || isLoading) {
     return (
-      <Container className="py-16 text-center">
+      <AdminPageShell className="text-center">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 animate-pulse">
           {vi.common.loading}
         </p>
-      </Container>
+      </AdminPageShell>
     );
   }
 
   // If user is a guest, prompt them to login
   if (!isAuthenticated) {
     return (
-      <Container className="py-16 sm:py-24 max-w-md">
+      <AdminPageShell className="!py-16 sm:!py-24 max-w-md">
         <div className="border border-neutral-200 bg-white p-6 sm:p-10 text-center">
           <span className="text-4xl mb-4 block" aria-hidden="true">🔒</span>
           <h1 className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900 mb-2">
@@ -183,14 +173,14 @@ export const AdminOrdersClient = () => {
             </Link>
           </div>
         </div>
-      </Container>
+      </AdminPageShell>
     );
   }
 
   // If user is logged in but NOT an admin
   if (!isAdmin) {
     return (
-      <Container className="py-16 sm:py-24 max-w-md">
+      <AdminPageShell className="!py-16 sm:!py-24 max-w-md">
         <div className="border border-red-200 bg-red-50 p-6 sm:p-10 text-center">
           <span className="text-4xl mb-4 block" aria-hidden="true">⛔</span>
           <h1 className="font-display text-2xl font-black uppercase tracking-tight text-red-900 mb-2">
@@ -212,7 +202,7 @@ export const AdminOrdersClient = () => {
             </Link>
           </div>
         </div>
-      </Container>
+      </AdminPageShell>
     );
   }
 
@@ -222,23 +212,16 @@ export const AdminOrdersClient = () => {
   const completedCount = orders.filter(o => o.status === 'completed').length;
 
   return (
-    <Container className="py-10 sm:py-16 max-w-7xl">
-      <div className="border-b border-neutral-200 pb-5 mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
-        <div>
-          <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-neutral-500">
-            Trung tâm điều hành
-          </span>
-          <h1 className="font-display text-3xl font-black uppercase tracking-tight text-neutral-900 mt-1.5">
-            {vi.adminOrders.title}
-          </h1>
-          <p className="mt-2 text-sm text-neutral-500">
-            Quản lý và xem xét các giao dịch StyleHub.
-          </p>
-        </div>
-        <Button variant="outline" onClick={retryLoadOrders} className="font-mono text-xs uppercase tracking-wider">
-          Làm mới
-        </Button>
-      </div>
+    <AdminPageShell>
+      <AdminPageHeader
+        title={vi.adminOrders.title}
+        description="Quản lý và xem xét các giao dịch StyleHub."
+        action={
+          <Button variant="outline" onClick={retryLoadOrders} className="font-mono text-xs uppercase tracking-wider">
+            Làm mới
+          </Button>
+        }
+      />
 
       <form
         onSubmit={(e) => {
@@ -314,62 +297,22 @@ export const AdminOrdersClient = () => {
       </form>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="border border-neutral-200 bg-neutral-50 p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">Tổng cộng</p>
-          <p className="font-mono text-2xl font-bold text-neutral-900">{orders.length}</p>
-        </div>
-        <div className="border border-neutral-200 bg-white p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">{tStatus('pending')}</p>
-          <p className="font-mono text-2xl font-bold text-yellow-600">{pendingCount}</p>
-        </div>
-        <div className="border border-neutral-200 bg-white p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">{tStatus('processing')}</p>
-          <p className="font-mono text-2xl font-bold text-blue-600">{processingCount}</p>
-        </div>
-        <div className="border border-neutral-200 bg-white p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">{tStatus('completed')}</p>
-          <p className="font-mono text-2xl font-bold text-green-600">{completedCount}</p>
-        </div>
+        <AdminMetricCard label="Tổng cộng" value={orders.length} emphasized={true} />
+        <AdminMetricCard label={tStatus('pending')} value={<span className="text-yellow-600">{pendingCount}</span>} />
+        <AdminMetricCard label={tStatus('processing')} value={<span className="text-blue-600">{processingCount}</span>} />
+        <AdminMetricCard label={tStatus('completed')} value={<span className="text-green-600">{completedCount}</span>} />
       </div>
 
       {errorMsg ? (
-        <div className="mt-6 border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-sm text-red-800 font-medium mb-4">{errorMsg}</p>
-        </div>
+        <AdminErrorState message={errorMsg} />
       ) : orders.length === 0 ? (
-        <div className="mt-12 text-center border border-dashed border-neutral-300 py-16 px-4 bg-white">
-          <span className="text-3xl" aria-hidden="true">📭</span>
-          {Object.keys(filters).length > 0 ? (
-            <>
-              <h2 className="mt-4 font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
-                Không tìm thấy đơn hàng phù hợp
-              </h2>
-              <p className="mt-2 text-sm text-neutral-500 mb-6">
-                Hãy thay đổi từ khóa hoặc bộ lọc rồi thử lại.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setDraftFilters({});
-                  setFilters({});
-                }}
-                className="font-mono text-xs uppercase tracking-wider"
-              >
-                Đặt lại bộ lọc
-              </Button>
-            </>
-          ) : (
-            <>
-              <h2 className="mt-4 font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
-                Không tìm thấy đơn hàng
-              </h2>
-              <p className="mt-2 text-sm text-neutral-500">
-                Hiện chưa có đơn hàng nào trong hệ thống.
-              </p>
-            </>
-          )}
-        </div>
+        <AdminEmptyState
+          title={Object.keys(filters).length > 0 ? "Không tìm thấy đơn hàng phù hợp" : "Không tìm thấy đơn hàng"}
+          description={Object.keys(filters).length > 0 ? "Hãy thay đổi từ khóa hoặc bộ lọc rồi thử lại." : "Hiện chưa có đơn hàng nào trong hệ thống."}
+          actionLabel={Object.keys(filters).length > 0 ? "Đặt lại bộ lọc" : undefined}
+          onAction={Object.keys(filters).length > 0 ? () => { setDraftFilters({}); setFilters({}); } : undefined}
+          filtered={Object.keys(filters).length > 0}
+        />
       ) : (
         <div className="border border-neutral-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -407,7 +350,7 @@ export const AdminOrdersClient = () => {
                       {formatPaymentMethod(order.payment_method)}
                     </td>
                     <td className="px-5 py-5">
-                      {getStatusBadge(order.status)}
+                      <AdminStatusBadge status={order.status} />
                     </td>
                     <td className="px-5 py-5">
                       {renderStatusActions(order)}
@@ -478,6 +421,6 @@ export const AdminOrdersClient = () => {
       )}
 
       <OrderDetailDrawer orderId={selectedOrderId} onClose={() => setSelectedOrderId(null)} onUpdateSuccess={retryLoadOrders} />
-    </Container>
+    </AdminPageShell>
   );
 };

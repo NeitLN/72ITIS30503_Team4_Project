@@ -7,33 +7,11 @@ import { ROUTES } from '../../constants/routes';
 import { formatVND, formatVietnamDateTime } from '../../lib/format';
 import { AdminOverviewData, getAdminOverview } from '../../lib/adminOverview';
 import { Button } from '../ui/Button';
-import { AdminContainer } from './AdminContainer';
-
-const statusLabel = (value: string | null | undefined, method?: string | null | undefined) => {
-  const labels: Record<string, string> = {
-    pending: 'Chờ xử lý',
-    processing: 'Đang xử lý',
-    completed: 'Hoàn tất',
-    cancelled: 'Đã hủy',
-    held: 'Đang tạm giữ',
-    released: 'Đã giải ngân',
-    failed: 'Thất bại',
-    disputed: 'Đang tranh chấp',
-  };
-
-  if (value === ['re', 'funded'].join('')) return 'Đã hoàn lại';
-
-  if (value) {
-    return labels[value] || value.replaceAll('_', ' ');
-  }
-
-  // Context-aware empty state handling
-  if (method === 'cod') return 'Chưa thu tiền';
-  if (method === 'bank_transfer') return 'Chưa ghi nhận';
-  if (!method) return 'Chưa có bản ghi';
-
-  return 'Không áp dụng';
-};
+import { AdminPageShell } from './ui/AdminPageShell';
+import { AdminPageHeader } from './ui/AdminPageHeader';
+import { AdminMetricCard } from './ui/AdminMetricCard';
+import { AdminErrorState } from './ui/AdminErrorState';
+import { AdminStatusBadge } from './ui/AdminStatusBadge';
 
 const methodLabel = (value: string | null | undefined) => {
   if (!value) return 'Không áp dụng';
@@ -44,21 +22,8 @@ const methodLabel = (value: string | null | undefined) => {
   }[value] || value.replaceAll('_', ' ');
 };
 
-const badgeClass = (value: string | null | undefined) => {
-  if (['completed', 'released'].includes(value || '')) return 'border-emerald-200 bg-emerald-50 text-emerald-800';
-  if (['cancelled', 'failed'].includes(value || '')) return 'border-red-200 bg-red-50 text-red-800';
-  if (['processing', 'held'].includes(value || '')) return 'border-blue-200 bg-blue-50 text-blue-800';
-  return 'border-amber-200 bg-amber-50 text-amber-800';
-};
-
-const StateBadge = ({ value, method }: { value: string | null | undefined, method?: string | null | undefined }) => (
-  <span className={`inline-flex items-center justify-center border px-2.5 py-1 font-mono text-[11px] lg:text-[12px] font-bold uppercase tracking-wide rounded-sm ${badgeClass(value)}`}>
-    {statusLabel(value, method)}
-  </span>
-);
-
 const OverviewSkeleton = () => (
-  <AdminContainer className="py-8 sm:py-12" >
+  <AdminPageShell className="py-8 sm:py-12">
     <div data-state="skeleton" className="animate-pulse space-y-12" aria-label="Đang tải tổng quan">
       <div className="space-y-4">
         <div className="h-10 w-80 bg-neutral-100" />
@@ -75,28 +40,7 @@ const OverviewSkeleton = () => (
         <div className="h-64 bg-neutral-50" />
       </div>
     </div>
-  </AdminContainer>
-);
-
-const MetricCard = ({ label, value, featured = false, note = '', subLabel = '' }: { label: string; value: string | number; featured?: boolean; note?: string; subLabel?: string }) => (
-  <article className={`flex flex-col justify-between min-h-[150px] xl:min-h-[165px] border p-6 xl:p-7 ${featured ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-200 bg-white'}`}>
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <p className={`font-mono text-[12px] lg:text-[13px] uppercase tracking-widest leading-snug ${featured ? 'text-neutral-300' : 'text-neutral-500'}`}>
-          {label}
-          {featured && subLabel && (
-            <>
-              <br />
-              <span className="text-neutral-400 font-normal">{subLabel}</span>
-            </>
-          )}
-        </p>
-        {!featured && subLabel && <span className={`shrink-0 inline-flex items-center justify-center border px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-widest rounded-sm border-neutral-200 bg-neutral-100 text-neutral-500`}>{subLabel}</span>}
-      </div>
-      <p className="mt-4 font-mono text-[clamp(2.125rem,1.85rem+1.2vw,2.625rem)] leading-none font-bold tracking-tight whitespace-nowrap tabular-nums">{value}</p>
-    </div>
-    {note && <p className={`mt-4 text-[13px] ${featured ? 'text-neutral-400' : 'text-neutral-500'}`}>{note}</p>}
-  </article>
+  </AdminPageShell>
 );
 
 export function AdminOverviewClient() {
@@ -131,7 +75,7 @@ export function AdminOverviewClient() {
 
   if (!isAuthenticated || !isAdmin) {
     return (
-      <AdminContainer className="py-24 text-center max-w-2xl">
+      <AdminPageShell className="text-center max-w-2xl">
         <div className="border border-neutral-200 bg-white p-10 shadow-sm">
           <p className="font-mono text-[13px] uppercase tracking-widest text-neutral-500">Khu vực quản trị</p>
           <h1 className="mt-5 font-display text-[32px] font-black uppercase tracking-tight">Quyền truy cập bị từ chối</h1>
@@ -140,20 +84,18 @@ export function AdminOverviewClient() {
             Đăng nhập
           </Link>
         </div>
-      </AdminContainer>
+      </AdminPageShell>
     );
   }
 
   if (error) {
     return (
-      <AdminContainer className="py-24 text-center max-w-2xl">
-        <div className="border border-neutral-200 bg-white p-10 shadow-sm">
-          <p className="font-mono text-[13px] uppercase tracking-widest text-neutral-500">Lỗi hệ thống</p>
-          <h1 className="mt-5 font-display text-[32px] font-black uppercase tracking-tight">Không thể tải dữ liệu</h1>
-          <p className="mt-4 mb-8 text-[16px] leading-7 text-neutral-600">{error}</p>
+      <AdminPageShell className="text-center max-w-2xl">
+        <AdminErrorState message={error} />
+        <div className="mt-4">
           <Button onClick={() => window.location.reload()} variant="outline" className="min-w-40 min-h-12 px-8 text-[14px] font-semibold">Thử lại</Button>
         </div>
-      </AdminContainer>
+      </AdminPageShell>
     );
   }
 
@@ -166,36 +108,30 @@ export function AdminOverviewClient() {
 
   return (
     <div className="min-h-screen bg-[#F8F8F7]">
-      <AdminContainer className="py-8 pb-16 lg:py-10 lg:pb-20">
-        <header className="mb-10 lg:mb-12 flex flex-col gap-5 border-b border-neutral-200 pb-8 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-4xl">
-            <p className="font-mono text-[12px] font-semibold uppercase tracking-widest text-neutral-500">Trung tâm điều hành</p>
-            <h1 className="mt-3 font-display text-[38px] sm:text-[44px] font-black uppercase tracking-tight leading-tight text-neutral-900">Tổng quan hệ thống</h1>
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
-              <p className="text-[15px] sm:text-[16px] leading-relaxed text-neutral-600">
-                Theo dõi hoạt động mua bán, giao dịch và tình trạng vận hành của StyleHub.
-              </p>
-              <span className="hidden sm:inline-block h-5 w-px bg-neutral-300"></span>
-              <p className="font-mono text-[12px] sm:text-[13px] font-medium text-neutral-500 shrink-0">
-                Cập nhật lúc {formatVietnamDateTime(data.generatedAt).replace(' ', ' · ')}
-              </p>
-            </div>
-          </div>
-        </header>
+      <AdminPageShell className="!py-8 pb-16 lg:!py-10 lg:pb-20">
+        <AdminPageHeader
+          title="Tổng quan hệ thống"
+          description="Theo dõi hoạt động mua bán, giao dịch và tình trạng vận hành của StyleHub."
+          action={
+            <p className="font-mono text-[12px] sm:text-[13px] font-medium text-neutral-500 shrink-0">
+              Cập nhật lúc {formatVietnamDateTime(data.generatedAt).replace(' ', ' · ')}
+            </p>
+          }
+        />
 
         {/* KEY METRICS */}
         <section className="mb-14 xl:mb-16">
           <div className="grid gap-5 xl:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-            <MetricCard label="Tổng người dùng" value={data.metrics.totalUsers.toLocaleString('vi-VN')} />
-            <MetricCard label="Tổng người bán" value={data.metrics.activeSellers.toLocaleString('vi-VN')} note="Có tài khoản người bán" />
-            <MetricCard label="Sản phẩm đang bán" value={data.metrics.activeProducts.toLocaleString('vi-VN')} />
-            <MetricCard label="Tổng đơn hàng" value={data.metrics.totalOrders.toLocaleString('vi-VN')} />
-            <MetricCard label="Thanh toán đã ghi nhận" value={data.metrics.totalPayments.toLocaleString('vi-VN')} />
-            <MetricCard
+            <AdminMetricCard label="Tổng người dùng" value={data.metrics.totalUsers.toLocaleString('vi-VN')} />
+            <AdminMetricCard label="Tổng người bán" value={data.metrics.activeSellers.toLocaleString('vi-VN')} note="Có tài khoản người bán" />
+            <AdminMetricCard label="Sản phẩm đang bán" value={data.metrics.activeProducts.toLocaleString('vi-VN')} />
+            <AdminMetricCard label="Tổng đơn hàng" value={data.metrics.totalOrders.toLocaleString('vi-VN')} />
+            <AdminMetricCard label="Thanh toán đã ghi nhận" value={data.metrics.totalPayments.toLocaleString('vi-VN')} />
+            <AdminMetricCard
               label="Giá trị đơn hàng"
-              subLabel="Đã hoàn tất"
               value={formatVND(data.metrics.transactionValue)}
-              featured
+              note="Đã hoàn tất"
+              emphasized
             />
           </div>
         </section>
@@ -334,7 +270,7 @@ export function AdminOverviewClient() {
                             <p className="font-semibold text-neutral-900 truncate max-w-[200px]" title={o.buyer_name}>{o.buyer_name}</p>
                           </td>
                           <td className="px-6 py-5 text-right font-mono font-bold tabular-nums text-neutral-900">{formatVND(o.total_amount)}</td>
-                          <td className="px-6 py-5"><StateBadge value={o.status} /></td>
+                          <td className="px-6 py-5"><AdminStatusBadge status={o.status} /></td>
                         </tr>
                       ))}
                     </tbody>
@@ -372,7 +308,7 @@ export function AdminOverviewClient() {
                           </td>
                           <td className="px-6 py-5 text-[13px] font-medium text-neutral-600">{methodLabel(t.payment_method)}</td>
                           <td className="px-6 py-5 text-right font-mono font-bold tabular-nums text-neutral-900">{formatVND(t.amount)}</td>
-                          <td className="px-6 py-5"><StateBadge value={t.state} /></td>
+                          <td className="px-6 py-5"><AdminStatusBadge status={t.state} /></td>
                         </tr>
                       ))}
                     </tbody>
@@ -433,7 +369,7 @@ export function AdminOverviewClient() {
             </div>
           </section>
         </div>
-      </AdminContainer>
+      </AdminPageShell>
     </div>
   );
 }

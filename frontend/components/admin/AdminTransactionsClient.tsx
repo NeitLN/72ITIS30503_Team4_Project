@@ -19,7 +19,12 @@ import {
   runAdminTransactionAction,
 } from '../../lib/adminTransactions';
 import { Button } from '../ui/Button';
-import { AdminContainer } from './AdminContainer';
+import { AdminPageShell } from './ui/AdminPageShell';
+import { AdminPageHeader } from './ui/AdminPageHeader';
+import { AdminMetricCard } from './ui/AdminMetricCard';
+import { AdminEmptyState } from './ui/AdminEmptyState';
+import { AdminErrorState } from './ui/AdminErrorState';
+import { AdminStatusBadge } from './ui/AdminStatusBadge';
 
 const DEFAULT_FILTERS: AdminTransactionFilters = {
   page: 1,
@@ -76,26 +81,8 @@ const methodLabel = (value: string | null | undefined) => {
   }[value] || value.replaceAll('_', ' ');
 };
 
-const badgeClass = (value: string | null | undefined, method?: string | null | undefined) => {
-  if (['completed', 'released'].includes(value || '')) return 'border-emerald-200 bg-emerald-50 text-emerald-800';
-  if (['cancelled', 'failed'].includes(value || '')) return 'border-red-200 bg-red-50 text-red-800';
-  if (['processing', 'held'].includes(value || '')) return 'border-blue-200 bg-blue-50 text-blue-800';
-
-  if (value === 'pending' || (!value && ['cod', 'bank_transfer'].includes(method || ''))) {
-    return 'border-amber-200 bg-amber-50 text-amber-800';
-  }
-
-  return 'border-neutral-200 bg-neutral-50 text-neutral-600';
-};
-
-const StateBadge = ({ value, method }: { value: string | null | undefined, method?: string | null | undefined }) => (
-  <span className={`inline-flex items-center justify-center border px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-wide rounded-sm ${badgeClass(value, method)}`}>
-    {statusLabel(value, method)}
-  </span>
-);
-
 const TransactionSkeleton = () => (
-  <AdminContainer className="py-8 sm:py-12" >
+  <AdminPageShell className="py-8 sm:py-12" >
     <div data-state="skeleton" className="animate-pulse space-y-8" aria-label="Đang tải giao dịch">
       <div className="h-24 max-w-2xl bg-neutral-100" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -104,11 +91,11 @@ const TransactionSkeleton = () => (
       <div className="h-40 bg-neutral-100" />
       <div className="h-96 bg-neutral-100" />
     </div>
-  </AdminContainer>
+  </AdminPageShell>
 );
 
 const EmptyAccess = ({ adminOnly = false }: { adminOnly?: boolean }) => (
-  <AdminContainer className="max-w-lg py-20">
+  <AdminPageShell className="max-w-lg py-20">
     <section data-state={adminOnly ? 'unauthorized' : 'login-required'} className="border border-neutral-200 bg-white p-8 text-center shadow-sm">
       <p className="font-mono text-xs uppercase tracking-widest text-neutral-500">Khu vực quản trị</p>
       <h1 className="mt-4 font-display text-2xl font-black uppercase tracking-tight">
@@ -121,17 +108,7 @@ const EmptyAccess = ({ adminOnly = false }: { adminOnly?: boolean }) => (
         {adminOnly ? 'Về trang chủ' : 'Đăng nhập'}
       </Link>
     </section>
-  </AdminContainer>
-);
-
-const SummaryCard = ({ label, value, note, featured = false }: { label: string; value: string | number; note: string; featured?: boolean }) => (
-  <article className={`flex min-h-[140px] flex-col justify-between border p-5 lg:p-6 ${featured ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-200 bg-white'}`}>
-    <h3 className={`font-mono text-[11px] lg:text-xs uppercase tracking-widest ${featured ? 'text-neutral-300' : 'text-neutral-500'}`}>{label}</h3>
-    <div className="mt-4">
-      <p className="font-mono text-3xl lg:text-[34px] font-bold tracking-tight tabular-nums leading-none">{value}</p>
-      <p className={`mt-3 text-[13px] ${featured ? 'text-neutral-300' : 'text-neutral-500'}`}>{note}</p>
-    </div>
-  </article>
+  </AdminPageShell>
 );
 
 const Filters = ({ values, onChange, onSubmit, onReset }: {
@@ -235,10 +212,10 @@ const TransactionTable = ({
               </td>
               <td className="px-5 py-4 font-mono font-bold tabular-nums text-neutral-900">{formatVND(row.total_amount)}</td>
               <td className="px-5 py-4">
-                <StateBadge value={row.payment_state} method={row.payment_method} />
+                <AdminStatusBadge status={row.payment_state || ''} />
                 <p className="mt-2.5 text-xs text-neutral-500">{methodLabel(row.payment_method)}</p>
               </td>
-              <td className="px-5 py-4"><StateBadge value={row.order_status} /></td>
+              <td className="px-5 py-4"><AdminStatusBadge status={row.order_status} /></td>
               <td className="px-5 py-4 text-xs text-neutral-500 tabular-nums">{formatVietnamDateTime(row.created_at)}</td>
             </tr>
           ))}
@@ -254,7 +231,7 @@ const TransactionTable = ({
             <span className="font-mono text-sm font-bold tabular-nums text-neutral-900">{formatVND(row.total_amount)}</span>
           </div>
           <p className="mt-2 text-sm font-semibold text-neutral-800">{row.buyer?.full_name || row.buyer?.email || 'Khách hàng'}</p>
-          <div className="mt-4 flex flex-wrap gap-2"><StateBadge value={row.order_status} /><StateBadge value={row.payment_state} method={row.payment_method} /></div>
+          <div className="mt-4 flex flex-wrap gap-2"><AdminStatusBadge status={row.order_status} /><AdminStatusBadge status={row.payment_state || ''} /></div>
           <p className="mt-3 text-xs text-neutral-500 tabular-nums">{methodLabel(row.payment_method)} · {formatVietnamDateTime(row.created_at)}</p>
         </button>
       ))}
@@ -317,8 +294,8 @@ const DetailPanel = ({ detail, loading, action, reason, submitting, actionError,
           <section>
             <h3 className="font-mono text-[11px] font-bold uppercase tracking-widest text-neutral-500">Tổng quan</h3>
             <dl className="mt-4 grid grid-cols-2 gap-y-5 gap-x-4 text-[13px]">
-              <div><dt className="text-xs text-neutral-500 mb-1.5">Đơn hàng</dt><dd><StateBadge value={detail.order.status} /></dd></div>
-              <div><dt className="text-xs text-neutral-500 mb-1.5">Thanh toán</dt><dd><StateBadge value={detail.payment?.state || null} method={detail.payment?.method || null} /></dd></div>
+              <div><dt className="text-xs text-neutral-500 mb-1.5">Đơn hàng</dt><dd><AdminStatusBadge status={detail.order.status} /></dd></div>
+              <div><dt className="text-xs text-neutral-500 mb-1.5">Thanh toán</dt><dd><AdminStatusBadge status={detail.payment?.state || ''} /></dd></div>
               <div className="col-span-2 sm:col-span-1"><dt className="text-xs text-neutral-500 mb-1.5">Khách hàng</dt><dd className="font-semibold text-neutral-900">{detail.buyer?.full_name || 'Khách hàng'}</dd></div>
               <div className="col-span-2 sm:col-span-1"><dt className="text-xs text-neutral-500 mb-1.5">Tổng tiền</dt><dd className="font-mono text-sm font-bold tabular-nums">{formatVND(detail.order.total_amount)}</dd></div>
             </dl>
@@ -344,7 +321,7 @@ const DetailPanel = ({ detail, loading, action, reason, submitting, actionError,
                   <li key={item.id} className="border border-neutral-200 bg-neutral-50/50 p-4 text-[13px]">
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <span className="font-semibold text-neutral-900">{item.seller.full_name || (item.seller.username ? `@${item.seller.username}` : 'Người bán')}</span>
-                      <StateBadge value={item.state} />
+                      <AdminStatusBadge status={item.state} />
                     </div>
                     <div className="flex items-center justify-between text-xs text-neutral-600">
                       <span>Thực nhận</span>
@@ -485,26 +462,25 @@ export const AdminTransactionsClient = () => {
   if (loading) return <TransactionSkeleton />;
 
   return (
-    <AdminContainer className="py-8 sm:py-12">
-      <header className="flex flex-col gap-6 border-b border-neutral-200 pb-8 md:flex-row md:items-end md:justify-between">
-        <div className="max-w-3xl">
-          <p className="font-mono text-xs font-semibold uppercase tracking-widest text-neutral-500">Trung tâm điều hành</p>
-          <h1 className="mt-3 font-display text-[32px] sm:text-[40px] font-black uppercase tracking-tight leading-tight text-neutral-900">Quản lý giao dịch</h1>
-          <p className="mt-4 text-[15px] leading-relaxed text-neutral-600">Theo dõi đối soát đơn hàng, trạng thái thanh toán và phân bổ cho người bán. Mỗi hàng đại diện cho một bản ghi đối soát đơn hàng. Thông tin thanh toán chỉ hiển thị khi hệ thống đã ghi nhận bản ghi thanh toán tương ứng.</p>
-        </div>
-        <Button type="button" variant="outline" className="min-h-12 px-6 text-sm font-semibold shrink-0" onClick={() => void loadDashboard(appliedFilters)}>Làm mới dữ liệu</Button>
-      </header>
+    <AdminPageShell className="py-8 sm:py-12">
+      <AdminPageHeader
+        title="Quản lý giao dịch"
+        description="Theo dõi đối soát đơn hàng, trạng thái thanh toán và phân bổ cho người bán. Mỗi hàng đại diện cho một bản ghi đối soát đơn hàng. Thông tin thanh toán chỉ hiển thị khi hệ thống đã ghi nhận bản ghi thanh toán tương ứng."
+        action={
+          <Button type="button" variant="outline" className="min-h-12 px-6 text-sm font-semibold shrink-0" onClick={() => void loadDashboard(appliedFilters)}>Làm mới dữ liệu</Button>
+        }
+      />
 
       {error && (
-        <div className="mt-8 border border-red-200 bg-red-50 p-5 text-[14px] font-medium text-red-800 shadow-sm" role="alert" aria-live="assertive">{error}</div>
+        <AdminErrorState message={error} />
       )}
 
       {summary && (
         <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Tổng quan giao dịch">
-          <SummaryCard featured label="Tổng đơn đối soát" value={summary.total_transactions} note={`${summary.pending_orders} chờ xử lý · ${summary.processing_orders} đang xử lý`} />
-          <SummaryCard label="Tiền đang tạm giữ" value={formatVND(summary.held_amount)} note={`${summary.held_payments} thanh toán`} />
-          <SummaryCard label="Khoản đã giải ngân" value={summary.released_payments} note={`${summary.completed_orders} đơn hoàn tất`} />
-          <SummaryCard label="Đơn đã hủy" value={summary.cancelled_orders} note={`${summary.failed_payments} thanh toán thất bại`} />
+          <AdminMetricCard emphasized label="Tổng đơn đối soát" value={summary.total_transactions} note={`${summary.pending_orders} chờ xử lý · ${summary.processing_orders} đang xử lý`} />
+          <AdminMetricCard label="Tiền đang tạm giữ" value={formatVND(summary.held_amount)} note={`${summary.held_payments} thanh toán`} />
+          <AdminMetricCard label="Khoản đã giải ngân" value={summary.released_payments} note={`${summary.completed_orders} đơn hoàn tất`} />
+          <AdminMetricCard label="Đơn đã hủy" value={summary.cancelled_orders} note={`${summary.failed_payments} thanh toán thất bại`} />
         </section>
       )}
 
@@ -530,10 +506,11 @@ export const AdminTransactionsClient = () => {
               onPageChange={changePage}
             />
           ) : (
-            <div className="border border-dashed border-neutral-300 bg-neutral-50 p-16 text-center shadow-sm">
-              <p className="font-display text-xl font-black uppercase tracking-tight text-neutral-900">Không tìm thấy giao dịch</p>
-              <p className="mt-3 text-[14px] text-neutral-500">Thử thay đổi bộ lọc hoặc khoảng thời gian để xem kết quả.</p>
-            </div>
+            <AdminEmptyState
+              title="Không tìm thấy giao dịch"
+              description="Thử thay đổi bộ lọc hoặc khoảng thời gian để xem kết quả."
+              filtered={true}
+            />
           )}
         </section>
 
@@ -550,6 +527,6 @@ export const AdminTransactionsClient = () => {
           onSubmit={() => void submitAction()}
         />
       </div>
-    </AdminContainer>
+    </AdminPageShell>
   );
 };
