@@ -9,6 +9,7 @@ import { ROUTES } from '../../constants/routes';
 import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
 import { vi, tStatus, tPaymentMethod } from '../../lib/i18n';
+import { OrderDetailDrawer } from './OrderDetailDrawer';
 
 type AdminOrder = {
   id: string;
@@ -35,6 +36,7 @@ export const AdminOrdersClient = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -145,13 +147,28 @@ export const AdminOrdersClient = () => {
   const renderStatusActions = (order: AdminOrder) => {
     const isUpdating = updatingId === order.id;
 
+    const detailButton = (
+      <button
+        onClick={() => setSelectedOrderId(order.id)}
+        className="text-[10px] font-mono uppercase bg-neutral-100 text-neutral-700 px-2 py-1 hover:bg-neutral-200"
+      >
+        Xem chi tiết
+      </button>
+    );
+
     if (isUpdating) {
-      return <span className="font-mono text-[10px] text-neutral-400 italic">{vi.common.loading}</span>;
+      return (
+        <div className="flex gap-2">
+          {detailButton}
+          <span className="font-mono text-[10px] text-neutral-400 italic">{vi.common.loading}</span>
+        </div>
+      );
     }
 
     if (order.status === 'pending') {
       return (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {detailButton}
           <button 
             onClick={() => handleStatusChange(order.id, 'processing')}
             disabled={!!updatingId}
@@ -174,7 +191,8 @@ export const AdminOrdersClient = () => {
 
     if (order.status === 'processing') {
       return (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {detailButton}
           <button
             onClick={() => handleStatusChange(order.id, 'completed')}
             disabled={!!updatingId}
@@ -196,14 +214,24 @@ export const AdminOrdersClient = () => {
     }
 
     if (order.status === 'completed') {
-      return <span className="font-mono text-[10px] text-neutral-500 italic">Đã hoàn tất</span>;
+      return (
+        <div className="flex gap-2 items-center flex-wrap">
+          {detailButton}
+          <span className="font-mono text-[10px] text-neutral-500 italic">Đã hoàn tất</span>
+        </div>
+      );
     }
 
     if (order.status === 'cancelled') {
-      return <span className="font-mono text-[10px] text-red-500 italic">{tStatus('cancelled')}</span>;
+      return (
+        <div className="flex gap-2 items-center flex-wrap">
+          {detailButton}
+          <span className="font-mono text-[10px] text-red-500 italic">{tStatus('cancelled')}</span>
+        </div>
+      );
     }
 
-    return null;
+    return <div className="flex gap-2">{detailButton}</div>;
   };
 
   const getStatusBadge = (status: AdminOrder['status']) => {
@@ -548,6 +576,8 @@ export const AdminOrdersClient = () => {
 
         </div>
       )}
+
+      <OrderDetailDrawer orderId={selectedOrderId} onClose={() => setSelectedOrderId(null)} />
     </Container>
   );
 };

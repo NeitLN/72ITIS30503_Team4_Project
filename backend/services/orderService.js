@@ -322,25 +322,51 @@ async function getOrderById(orderId, user) {
     throw new ServiceError('ORDER_NOT_FOUND', 'Không tìm thấy đơn hàng.', 404);
   }
 
+  const isAdmin = user.role === 'admin';
+
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
     .select('id, order_code, user_id, customer_name, customer_email, customer_phone, shipping_address, city, status, payment_method, subtotal, shipping_fee, discount_amount, total_amount, created_at, updated_at')
     .eq('id', orderId)
     .maybeSingle();
 
-  if (orderError || !order || (user.role !== 'admin' && order.user_id !== user.id)) {
+  if (orderError || !order || (!isAdmin && order.user_id !== user.id)) {
     throw new ServiceError('ORDER_NOT_FOUND', 'Không tìm thấy đơn hàng.', 404);
   }
 
   const { data: items, error: itemsError } = await supabaseAdmin
     .from('order_items')
-    .select('id, product_id, variant_id, product_name, product_slug, variant_name, image_url, sku, size, condition, unit_price, price, quantity, line_total, fulfillment_status, lifecycle_type_snapshot, claim_source_snapshot, created_at')
+    .select('id, product_id, variant_id, product_name, product_slug, variant_name, image_url, sku, size, condition, unit_price, price, quantity, line_total, fulfillment_status, lifecycle_type_snapshot, claim_source_snapshot, created_at, seller_id')
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
   if (itemsError) throw new ServiceError('ORDER_LOAD_FAILED', 'Không thể tải chi tiết đơn hàng.', 500);
 
-  const payment = await getOrderPayment(orderId);
-  return { ...order, items: items || [], ...(payment ? { payment } : {}) };
+  let payments = [];
+  let paymentAllocations = [];
+  let paymentEvents = [];
+
+  if (isAdmin) {
+    const [payRes, allocRes, eventsRes] = await Promise.all([
+      supabaseAdmin.from('payments').select('id,state,payment_method,currency,gross_amount,platform_fee_total,seller_amount_total,card_brand,card_last_four,held_at,refunded_at,released_at').eq('order_id', orderId).order('created_at', { ascending: false }),
+      supabaseAdmin.from('payment_allocations').select('id,payment_id,seller_id,state,gross_amount,platform_fee,seller_net_amount,released_at,created_at').eq('order_id', orderId).order('created_at', { ascending: false }),
+      supabaseAdmin.from('payment_events').select('id,payment_id,event_type,previous_state,new_state,message,created_at').eq('order_id', orderId).order('created_at', { ascending: false }),
+    ]);
+
+    payments = payRes.data || [];
+    paymentAllocations = allocRes.data || [];
+    paymentEvents = eventsRes.data || [];
+
+    return {
+      ...order,
+      items: items || [],
+      payments,
+      paymentAllocations,
+      paymentEvents
+    };
+  } else {
+    const payment = await getOrderPayment(orderId);
+    return { ...order, items: items || [], ...(payment ? { payment } : {}) };
+  }
 }
 
 async function cancelOrder(user, orderId) {
