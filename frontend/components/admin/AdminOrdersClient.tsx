@@ -36,13 +36,16 @@ export const AdminOrdersClient = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  const [filters, setFilters] = useState<{ query?: string; orderStatus?: string; paymentMethod?: string }>({});
+  const [draftFilters, setDraftFilters] = useState<{ query?: string; orderStatus?: string; paymentMethod?: string }>({});
+
   useEffect(() => {
     let active = true;
 
     if (!isHydrated) return;
     
     if (isAuthenticated && isAdmin) {
-      listAllOrdersForAdmin()
+      listAllOrdersForAdmin(filters)
         .then(res => {
           if (active) {
             if (res.success && Array.isArray(res.data)) {
@@ -72,13 +75,13 @@ export const AdminOrdersClient = () => {
     return () => {
       active = false;
     };
-  }, [isHydrated, isAuthenticated, isAdmin]);
+  }, [isHydrated, isAuthenticated, isAdmin, filters]);
 
   const retryLoadOrders = async () => {
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      const res = await listAllOrdersForAdmin();
+      const res = await listAllOrdersForAdmin(filters);
       if (res.success && Array.isArray(res.data)) {
         setOrders(res.data);
       } else {
@@ -282,6 +285,77 @@ export const AdminOrdersClient = () => {
         </Button>
       </div>
 
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setFilters(draftFilters);
+        }}
+        className="mb-8 border border-neutral-200 bg-neutral-50 p-5 flex flex-col md:flex-row gap-4 items-end"
+      >
+        <div className="flex-1 w-full">
+          <label htmlFor="search-query" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
+            Tìm kiếm đơn hàng
+          </label>
+          <input
+            id="search-query"
+            type="text"
+            placeholder="Tìm theo mã đơn, người mua hoặc email"
+            value={draftFilters.query || ''}
+            onChange={(e) => setDraftFilters(prev => ({ ...prev, query: e.target.value }))}
+            className="w-full border border-neutral-300 p-2 text-sm focus:outline-none focus:border-neutral-900"
+          />
+        </div>
+        <div className="w-full md:w-48">
+          <label htmlFor="order-status" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
+            Trạng thái đơn hàng
+          </label>
+          <select
+            id="order-status"
+            value={draftFilters.orderStatus || ''}
+            onChange={(e) => setDraftFilters(prev => ({ ...prev, orderStatus: e.target.value }))}
+            className="w-full border border-neutral-300 p-2 text-sm focus:outline-none focus:border-neutral-900 bg-white"
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="pending">{tStatus('pending')}</option>
+            <option value="processing">{tStatus('processing')}</option>
+            <option value="completed">{tStatus('completed')}</option>
+            <option value="cancelled">{tStatus('cancelled')}</option>
+          </select>
+        </div>
+        <div className="w-full md:w-48">
+          <label htmlFor="payment-method" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
+            Phương thức thanh toán
+          </label>
+          <select
+            id="payment-method"
+            value={draftFilters.paymentMethod || ''}
+            onChange={(e) => setDraftFilters(prev => ({ ...prev, paymentMethod: e.target.value }))}
+            className="w-full border border-neutral-300 p-2 text-sm focus:outline-none focus:border-neutral-900 bg-white"
+          >
+            <option value="">Tất cả</option>
+            <option value="cod">{tPaymentMethod('cod')}</option>
+            <option value="bank_transfer">{tPaymentMethod('bank_transfer')}</option>
+            <option value="simulated_card">{tPaymentMethod('simulated_card')}</option>
+          </select>
+        </div>
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button type="submit" className="font-mono text-xs uppercase tracking-wider flex-1 md:flex-none">
+            Áp dụng
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setDraftFilters({});
+              setFilters({});
+            }}
+            className="font-mono text-xs uppercase tracking-wider flex-1 md:flex-none"
+          >
+            Đặt lại
+          </Button>
+        </div>
+      </form>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="border border-neutral-200 bg-neutral-50 p-4">
           <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">Tổng cộng</p>
@@ -308,12 +382,36 @@ export const AdminOrdersClient = () => {
       ) : orders.length === 0 ? (
         <div className="mt-12 text-center border border-dashed border-neutral-300 py-16 px-4 bg-white">
           <span className="text-3xl" aria-hidden="true">📭</span>
-          <h2 className="mt-4 font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
-            Không tìm thấy đơn hàng
-          </h2>
-          <p className="mt-2 text-sm text-neutral-500">
-            Hiện chưa có đơn hàng nào trong hệ thống.
-          </p>
+          {Object.keys(filters).length > 0 ? (
+            <>
+              <h2 className="mt-4 font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
+                Không tìm thấy đơn hàng phù hợp
+              </h2>
+              <p className="mt-2 text-sm text-neutral-500 mb-6">
+                Hãy thay đổi từ khóa hoặc bộ lọc rồi thử lại.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setDraftFilters({});
+                  setFilters({});
+                }}
+                className="font-mono text-xs uppercase tracking-wider"
+              >
+                Đặt lại bộ lọc
+              </Button>
+            </>
+          ) : (
+            <>
+              <h2 className="mt-4 font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
+                Không tìm thấy đơn hàng
+              </h2>
+              <p className="mt-2 text-sm text-neutral-500">
+                Hiện chưa có đơn hàng nào trong hệ thống.
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <div className="border border-neutral-200 bg-white shadow-sm overflow-hidden">

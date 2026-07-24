@@ -79,9 +79,15 @@ router.get('/my', requireAuth, async (req, res) => {
 // GET /api/orders
 router.get('/', requireAdmin, async (req, res) => {
   try {
-    const orders = await orderService.listAllOrders();
+    const filters = {
+      query: req.query.query,
+      orderStatus: req.query.orderStatus,
+      paymentMethod: req.query.paymentMethod,
+    };
+    const orders = await orderService.listAllOrders(filters);
     return success(res, orders);
   } catch (err) {
+    if (err.status) return error(res, err.status, err.message, err.details, err.code);
     console.error('List all orders error:', err);
     return error(res, 500, err.message || 'Không thể tải danh sách đơn hàng.');
   }

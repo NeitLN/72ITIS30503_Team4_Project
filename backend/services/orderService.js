@@ -232,12 +232,47 @@ async function listMyOrders(userId) {
   return data;
 }
 
-async function listAllOrders() {
+async function listAllOrders(filters = {}) {
   checkDb();
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('orders')
-    .select('id, order_code, user_id, customer_name, customer_email, customer_phone, status, payment_method, subtotal, shipping_fee, discount_amount, total_amount, created_at, updated_at')
-    .order('created_at', { ascending: false });
+    .select('id, order_code, user_id, customer_name, customer_email, customer_phone, status, payment_method, subtotal, shipping_fee, discount_amount, total_amount, created_at, updated_at');
+
+  if (filters.orderStatus) {
+    if (!['pending', 'processing', 'completed', 'cancelled'].includes(filters.orderStatus)) {
+      throw new ServiceError('INVALID_ORDER_STATUS', 'Trạng thái đơn hàng không hợp lệ.', 400);
+    }
+    query = query.eq('status', filters.orderStatus);
+  }
+
+  if (filters.paymentMethod) {
+    if (!['cod', 'bank_transfer', 'simulated_card'].includes(filters.paymentMethod)) {
+      throw new ServiceError('INVALID_PAYMENT_METHOD', 'Phương thức thanh toán không hợp lệ.', 400);
+    }
+    query = query.eq('payment_method', filters.paymentMethod);
+  }
+
+  if (filters.query && typeof filters.query === 'string') {
+    const q = filters.query.trim();
+    if (q.length > 0) {
+      if (q.length > 100) {
+        throw new ServiceError('INVALID_QUERY', 'Từ khóa tìm kiếm quá dài.', 400);
+      }
+
+      const isUuid = UUID_RE.test(q);
+      if (isUuid) {
+        query = query.eq('id', q);
+      } else {
+        // Sanitize for ilike
+        const safeQuery = q.replace(/[%_\\]/g, '\\$&');
+        query = query.or(`order_code.ilike.%${safeQuery}%,customer_name.ilike.%${safeQuery}%,customer_email.ilike.%${safeQuery}%`);
+      }
+    }
+  }
+
+  query = query.order('created_at', { ascending: false });
+
+  const { data, error } = await query;
   if (error) throw new ServiceError('ORDER_LIST_FAILED', 'Không thể tải danh sách đơn hàng.', 500);
   return data;
 }

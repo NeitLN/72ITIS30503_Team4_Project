@@ -64,8 +64,13 @@ export function cancelOrder(orderId: string) {
   return orderRequest(`/api/orders/${encodeURIComponent(orderId)}/cancel`, { method: 'POST' });
 }
 
-export function listAllOrdersForAdmin() {
-  return orderRequest('/api/orders');
+export function listAllOrdersForAdmin(filters?: { query?: string; orderStatus?: string; paymentMethod?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.query) params.append('query', filters.query);
+  if (filters?.orderStatus) params.append('orderStatus', filters.orderStatus);
+  if (filters?.paymentMethod) params.append('paymentMethod', filters.paymentMethod);
+  const queryStr = params.toString() ? `?${params.toString()}` : '';
+  return orderRequest(`/api/orders${queryStr}`);
 }
 
 export function updateOrderStatus(orderId: string, status: string) {
