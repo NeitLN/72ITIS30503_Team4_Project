@@ -7,7 +7,7 @@ interface AdminContainerProps {
 
 export const AdminContainer: React.FC<AdminContainerProps> = ({ children, className = '' }) => {
   return (
-    <div className={`w-full max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 ${className}`}>
+    <div className={`mx-auto w-[92vw] max-w-[1680px] px-5 sm:px-6 lg:px-8 xl:px-10 ${className}`}>
       {children}
     </div>
   );

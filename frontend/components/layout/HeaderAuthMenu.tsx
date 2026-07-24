@@ -17,29 +17,58 @@ export const HeaderAuthMenu = () => {
 
   if (isAuthenticated && user) {
     if (user.role === 'admin') {
+      const isAdminRoute = pathname?.startsWith('/admin');
+
+      if (isAdminRoute) {
+        return (
+          <div className="flex items-center gap-4 sm:gap-6 text-[13px] sm:text-[14px] font-medium whitespace-nowrap">
+            <Link
+              href={ROUTES.ADMIN_OVERVIEW}
+              className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_OVERVIEW ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
+            >
+              Tổng quan
+            </Link>
+
+            <Link
+              href={ROUTES.ADMIN_TRANSACTIONS}
+              className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_TRANSACTIONS ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
+            >
+              Quản lý giao dịch
+            </Link>
+
+            <Link
+              href={ROUTES.ADMIN_ORDERS}
+              className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_ORDERS ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
+            >
+              Quản lý đơn hàng
+            </Link>
+
+            <Link
+              href={ROUTES.HOME}
+              className="text-neutral-600 transition-colors hover:text-neutral-900"
+            >
+              Xem trang chủ sàn
+            </Link>
+
+            <button
+              onClick={() => logout()}
+              className="text-neutral-600 transition-colors hover:text-neutral-900 focus:outline-none"
+            >
+              Đăng xuất
+            </button>
+          </div>
+        );
+      }
+
+      // Admin user viewing a public route
       return (
-        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium whitespace-nowrap">
+        <div className="flex items-center gap-4 sm:gap-6 text-[13px] sm:text-[14px] font-medium whitespace-nowrap">
           <Link
             href={ROUTES.ADMIN_OVERVIEW}
-            className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_OVERVIEW ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
+            className="text-neutral-600 transition-colors hover:text-neutral-900 font-semibold"
           >
-            Tổng quan
+            Về trang quản trị
           </Link>
-
-          <Link
-            href={ROUTES.ADMIN_TRANSACTIONS}
-            className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_TRANSACTIONS ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
-          >
-            Quản lý giao dịch
-          </Link>
-
-          <Link
-            href={ROUTES.ADMIN_ORDERS}
-            className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_ORDERS ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
-          >
-            Quản lý đơn hàng
-          </Link>
-
           <button
             onClick={() => logout()}
             className="text-neutral-600 transition-colors hover:text-neutral-900 focus:outline-none"
