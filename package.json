@@ -14,5 +14,8 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.1",
     "@supabase/supabase-js": "^2.110.3"
+  },
+  "devDependencies": {
+    "proxyquire": "^2.1.3"
   }
 }

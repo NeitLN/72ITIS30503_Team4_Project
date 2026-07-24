@@ -8,7 +8,7 @@ export interface AdminOverviewData {
     activeSellers: number;
     activeProducts: number;
     totalOrders: number;
-    totalTransactions: number;
+    totalPayments: number;
     transactionValue: number;
   };
   attention: {

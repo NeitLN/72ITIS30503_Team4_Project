@@ -52,10 +52,13 @@ async function getOverview(user) {
     supabaseAdmin.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active').gte('created_at', sevenDaysAgo),
 
     supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }),
-    supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'completed').gte('created_at', sevenDaysAgo),
+    supabaseAdmin.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'completed').gte('updated_at', sevenDaysAgo),
 
     // Sum calculation for completed orders
-    supabaseAdmin.from('orders').select('total_amount').eq('status', 'completed')
+    supabaseAdmin.from('orders').select('total_amount').eq('status', 'completed'),
+
+    // Total actual payment records
+    supabaseAdmin.from('payments').select('id', { count: 'exact', head: true })
   ];
 
   const results = await Promise.all(queries);
@@ -76,6 +79,8 @@ async function getOverview(user) {
   // Calculate GMV
   const completedAmounts = results[9].data || [];
   const transactionValue = completedAmounts.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+
+  const totalPayments = results[10].count || 0;
 
   // 3. Fetch Recent Orders (limit 10)
   const { data: recentOrdersData, error: ordersError } = await supabaseAdmin
@@ -143,7 +148,7 @@ async function getOverview(user) {
       activeSellers,
       activeProducts,
       totalOrders,
-      totalTransactions: txSummary?.totalTransactions || 0,
+      totalPayments,
       transactionValue
     },
     attention: {

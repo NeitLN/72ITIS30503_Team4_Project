@@ -9,7 +9,7 @@ import { AdminOverviewData, getAdminOverview } from '../../lib/adminOverview';
 import { Button } from '../ui/Button';
 import { AdminContainer } from './AdminContainer';
 
-const statusLabel = (value: string | null | undefined) => {
+const statusLabel = (value: string | null | undefined, method?: string | null | undefined) => {
   const labels: Record<string, string> = {
     pending: 'Chờ xử lý',
     processing: 'Đang xử lý',
@@ -20,8 +20,19 @@ const statusLabel = (value: string | null | undefined) => {
     failed: 'Thất bại',
     disputed: 'Đang tranh chấp',
   };
+
   if (value === ['re', 'funded'].join('')) return 'Đã hoàn lại';
-  return value ? labels[value] || value.replaceAll('_', ' ') : 'Không áp dụng';
+
+  if (value) {
+    return labels[value] || value.replaceAll('_', ' ');
+  }
+
+  // Context-aware empty state handling
+  if (method === 'cod') return 'Chưa thu tiền';
+  if (method === 'bank_transfer') return 'Chưa ghi nhận';
+  if (!method) return 'Chưa có bản ghi';
+
+  return 'Không áp dụng';
 };
 
 const methodLabel = (value: string | null | undefined) => {
@@ -40,9 +51,9 @@ const badgeClass = (value: string | null | undefined) => {
   return 'border-amber-200 bg-amber-50 text-amber-800';
 };
 
-const StateBadge = ({ value }: { value: string | null | undefined }) => (
-  <span className={`inline-flex items-center justify-center border px-2.5 py-1 font-mono text-[12px] font-bold uppercase tracking-wide rounded-sm ${badgeClass(value)}`}>
-    {statusLabel(value)}
+const StateBadge = ({ value, method }: { value: string | null | undefined, method?: string | null | undefined }) => (
+  <span className={`inline-flex items-center justify-center border px-2.5 py-1 font-mono text-[11px] lg:text-[12px] font-bold uppercase tracking-wide rounded-sm ${badgeClass(value)}`}>
+    {statusLabel(value, method)}
   </span>
 );
 
@@ -179,7 +190,7 @@ export function AdminOverviewClient() {
             <MetricCard label="Tổng người bán" value={data.metrics.activeSellers.toLocaleString('vi-VN')} note="Có tài khoản người bán" />
             <MetricCard label="Sản phẩm đang bán" value={data.metrics.activeProducts.toLocaleString('vi-VN')} />
             <MetricCard label="Tổng đơn hàng" value={data.metrics.totalOrders.toLocaleString('vi-VN')} />
-            <MetricCard label="Tổng giao dịch" value={data.metrics.totalTransactions.toLocaleString('vi-VN')} />
+            <MetricCard label="Thanh toán đã ghi nhận" value={data.metrics.totalPayments.toLocaleString('vi-VN')} />
             <MetricCard
               label="Giá trị đơn hàng"
               subLabel="Đã hoàn tất"
@@ -249,7 +260,7 @@ export function AdminOverviewClient() {
         {/* TRANSACTION STATUS OVERVIEW */}
         <section className="mb-14 xl:mb-16">
           <div className="mb-6 flex items-end justify-between">
-            <h2 className="font-mono text-[14px] sm:text-[16px] font-bold uppercase tracking-widest text-neutral-900">Tình trạng giao dịch</h2>
+            <h2 className="mb-6 font-mono text-[14px] sm:text-[16px] font-bold uppercase tracking-widest text-neutral-900">Tình trạng giao dịch</h2>
             <Link href="/admin/transactions" className="font-mono text-[12px] font-bold uppercase tracking-widest text-neutral-500 transition-colors hover:text-neutral-900">Xem tất cả →</Link>
           </div>
           <div className="border border-neutral-200 bg-white p-7 sm:p-9 shadow-sm">
@@ -260,7 +271,7 @@ export function AdminOverviewClient() {
                 { label: 'Hoàn tất', key: 'completed', count: data.transactionStatuses.completed, color: 'bg-emerald-500' },
                 { label: 'Đã hủy', key: 'cancelled', count: data.transactionStatuses.cancelled, color: 'bg-red-500' },
               ].map((status) => {
-                const total = data.metrics.totalTransactions;
+                const total = data.metrics.totalOrders;
                 const percentage = total > 0 ? Math.round((status.count / total) * 100) : 0;
                 return (
                   <div key={status.key} className="grid grid-cols-1 sm:grid-cols-[140px_1fr] lg:grid-cols-[160px_110px_70px_minmax(0,1fr)] items-center gap-3 sm:gap-5">

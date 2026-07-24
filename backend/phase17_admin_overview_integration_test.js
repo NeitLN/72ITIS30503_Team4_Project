@@ -90,8 +90,13 @@ test('Admin Overview Integration Test', async (t) => {
     assert.ok(typeof data.metrics.activeSellers === 'number');
     assert.ok(typeof data.metrics.activeProducts === 'number');
     assert.ok(typeof data.metrics.totalOrders === 'number');
-    assert.ok(typeof data.metrics.totalTransactions === 'number');
+    assert.ok(typeof data.metrics.totalPayments === 'number', 'totalPayments should be a number, even if 0');
     assert.ok(typeof data.metrics.transactionValue === 'number');
+
+    // Explicit verification that totalPayments correctly handles 0 gracefully without blowing up
+    assert.ok(data.metrics.totalPayments >= 0, 'totalPayments gracefully returns 0 or a positive number on empty or filled payments table');
+    // We expect orders and payments to legitimately drift depending on DB state (e.g. COD orders without payments)
+    // There is no rigid assert.equal(totalOrders, totalPayments) requirement here.
 
     assert.ok(typeof data.attention.pendingTransactions === 'number');
     assert.ok(Array.isArray(data.recentOrders));
