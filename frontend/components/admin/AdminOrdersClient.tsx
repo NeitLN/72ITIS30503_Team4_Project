@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import { listAllOrdersForAdmin } from '../../lib/orders';
 import { formatVND, formatVietnamDateTime } from '../../lib/format';
@@ -15,6 +16,12 @@ import { AdminMetricCard } from './ui/AdminMetricCard';
 import { AdminEmptyState } from './ui/AdminEmptyState';
 import { AdminErrorState } from './ui/AdminErrorState';
 import { AdminStatusBadge } from './ui/AdminStatusBadge';
+import {
+  parseAdminOrdersSearchParams,
+  serializeAdminOrdersSearchParams,
+  AdminOrdersUrlState,
+  DEFAULT_ADMIN_ORDERS_STATE
+} from '../../lib/adminOrdersUrlState';
 
 type AdminOrder = {
   id: string;
@@ -31,87 +38,67 @@ type AdminOrder = {
   total_amount: number;
   created_at: string;
   updated_at?: string;
-  // Customer details usually joined, but fallback to raw structure for now since orders drops native names
 };
 
 export const AdminOrdersClient = () => {
   const { user, isAuthenticated, isHydrated, isAdmin } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   
+  const urlState = parseAdminOrdersSearchParams(new URLSearchParams(searchParams.toString()));
+
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
   const [pagination, setPagination] = useState({
-    page: 1,
-    pageSize: 20,
+    page: urlState.page,
+    pageSize: urlState.pageSize,
     totalItems: 0,
     totalPages: 0,
     hasPreviousPage: false,
     hasNextPage: false,
   });
 
-  const [filters, setFilters] = useState<{ query?: string; orderStatus?: string; paymentMethod?: string }>({});
-  const [draftFilters, setDraftFilters] = useState<{ query?: string; orderStatus?: string; paymentMethod?: string }>({});
+  const [draftFilters, setDraftFilters] = useState<AdminOrdersUrlState>(urlState);
+  const [prevSearchParamsStr, setPrevSearchParamsStr] = useState(searchParams.toString());
 
-  useEffect(() => {
-    let active = true;
+  // Sync draft filters with URL changes (e.g. Back/Forward) safely
+  if (prevSearchParamsStr !== searchParams.toString()) {
+    setPrevSearchParamsStr(searchParams.toString());
+    setDraftFilters(urlState);
+  }
 
-    if (!isHydrated) return;
-    
-    if (isAuthenticated && isAdmin) {
-      listAllOrdersForAdmin({ ...filters, page, pageSize })
-        .then(res => {
-          if (active) {
-            if (res.success && res.data && Array.isArray(res.data.data)) {
-              setOrders(res.data.data);
-              setPagination({
-                page: res.data.pagination?.page || 1,
-                pageSize: res.data.pagination?.pageSize || 20,
-                totalItems: res.data.pagination?.totalItems || 0,
-                totalPages: res.data.pagination?.totalPages || 0,
-                hasPreviousPage: res.data.pagination?.hasPreviousPage || false,
-                hasNextPage: res.data.pagination?.hasNextPage || false,
-              });
-            } else {
-              setErrorMsg(res.error?.message || 'Không thể tải danh sách đơn hàng.');
-            }
-          }
-        })
-        .catch((err) => {
-          if (active) {
-            const e = err as Error;
-            setErrorMsg(e?.message || 'Đã xảy ra lỗi kết nối không mong muốn.');
-          }
-        })
-        .finally(() => {
-          if (active) setIsLoading(false);
-        });
-    } else {
-      let mounted = true;
-      Promise.resolve().then(() => {
-        if (mounted) setIsLoading(false);
-      });
-      return () => { mounted = false; };
-    }
+  const listAbortController = useRef<AbortController | null>(null);
 
-    return () => {
-      active = false;
-    };
-  }, [isHydrated, isAuthenticated, isAdmin, filters, page, pageSize]);
-
-  const retryLoadOrders = async () => {
+  const loadOrders = useCallback(async (state: AdminOrdersUrlState) => {
     setIsLoading(true);
     setErrorMsg(null);
+
+    if (listAbortController.current) {
+      listAbortController.current.abort();
+    }
+    const controller = new AbortController();
+    listAbortController.current = controller;
+
     try {
-      const res = await listAllOrdersForAdmin({ ...filters, page, pageSize });
+      const res = await listAllOrdersForAdmin(state, controller.signal);
+      if (controller.signal.aborted) return;
+
       if (res.success && res.data && Array.isArray(res.data.data)) {
         setOrders(res.data.data);
+
+        // Out of range check
+        if (res.data.data.length === 0 && res.data.pagination?.totalPages > 0 && state.page > res.data.pagination.totalPages) {
+          const newState = { ...state, page: res.data.pagination.totalPages };
+          router.replace(`${ROUTES.ADMIN_ORDERS}?${serializeAdminOrdersSearchParams(newState)}`);
+          return;
+        }
+
         setPagination({
-          page: res.data.pagination?.page || 1,
-          pageSize: res.data.pagination?.pageSize || 20,
+          page: res.data.pagination?.page || state.page,
+          pageSize: res.data.pagination?.pageSize || state.pageSize,
           totalItems: res.data.pagination?.totalItems || 0,
           totalPages: res.data.pagination?.totalPages || 0,
           hasPreviousPage: res.data.pagination?.hasPreviousPage || false,
@@ -121,11 +108,61 @@ export const AdminOrdersClient = () => {
         setErrorMsg(res.error?.message || 'Không thể tải danh sách đơn hàng.');
       }
     } catch (err) {
+      if (controller.signal.aborted) return;
       const e = err as Error;
       setErrorMsg(e?.message || 'Đã xảy ra lỗi kết nối không mong muốn.');
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+      }
     }
+  }, [router]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (isAuthenticated && isAdmin) {
+      setTimeout(() => {
+        void loadOrders(urlState);
+      }, 0);
+    } else {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 0);
+    }
+
+    return () => {
+      if (listAbortController.current) {
+        listAbortController.current.abort();
+      }
+    };
+  }, [isHydrated, isAuthenticated, isAdmin, searchParams, loadOrders, urlState]); // Re-run when URL state changes
+
+  const retryLoadOrders = () => {
+    void loadOrders(urlState);
+  };
+
+  const handleApplyFilters = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newState = { ...draftFilters, page: 1 };
+    router.push(`${ROUTES.ADMIN_ORDERS}?${serializeAdminOrdersSearchParams(newState)}`);
+  };
+
+  const handleResetFilters = () => {
+    const newState = { ...DEFAULT_ADMIN_ORDERS_STATE, pageSize: urlState.pageSize };
+    setDraftFilters(newState);
+    router.push(`${ROUTES.ADMIN_ORDERS}?${serializeAdminOrdersSearchParams(newState)}`);
+  };
+
+  const changePage = (newPage: number) => {
+    const newState = { ...urlState, page: newPage };
+    router.push(`${ROUTES.ADMIN_ORDERS}?${serializeAdminOrdersSearchParams(newState)}`);
+  };
+
+  const changePageSize = (newPageSize: number) => {
+    const validSize = [10, 20, 50].includes(newPageSize) ? (newPageSize as 10 | 20 | 50) : 20;
+    const newState = { ...urlState, pageSize: validSize, page: 1 };
+    router.push(`${ROUTES.ADMIN_ORDERS}?${serializeAdminOrdersSearchParams(newState)}`);
   };
 
   const renderStatusActions = (order: AdminOrder) => {
@@ -224,11 +261,7 @@ export const AdminOrdersClient = () => {
       />
 
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          setPage(1);
-          setFilters(draftFilters);
-        }}
+        onSubmit={handleApplyFilters}
         className="mb-8 border border-neutral-200 bg-neutral-50 p-5 flex flex-col md:flex-row gap-4 items-end"
       >
         <div className="flex-1 w-full">
@@ -251,7 +284,7 @@ export const AdminOrdersClient = () => {
           <select
             id="order-status"
             value={draftFilters.orderStatus || ''}
-            onChange={(e) => setDraftFilters(prev => ({ ...prev, orderStatus: e.target.value }))}
+            onChange={(e) => setDraftFilters(prev => ({ ...prev, orderStatus: e.target.value as 'pending' | 'processing' | 'completed' | 'cancelled' | '' }))}
             className="w-full border border-neutral-300 p-2 text-sm focus:outline-none focus:border-neutral-900 bg-white"
           >
             <option value="">Tất cả trạng thái</option>
@@ -268,7 +301,7 @@ export const AdminOrdersClient = () => {
           <select
             id="payment-method"
             value={draftFilters.paymentMethod || ''}
-            onChange={(e) => setDraftFilters(prev => ({ ...prev, paymentMethod: e.target.value }))}
+            onChange={(e) => setDraftFilters(prev => ({ ...prev, paymentMethod: e.target.value as 'cod' | 'bank_transfer' | 'simulated_card' | '' }))}
             className="w-full border border-neutral-300 p-2 text-sm focus:outline-none focus:border-neutral-900 bg-white"
           >
             <option value="">Tất cả</option>
@@ -284,11 +317,7 @@ export const AdminOrdersClient = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              setDraftFilters({});
-              setFilters({});
-              setPage(1);
-            }}
+            onClick={handleResetFilters}
             className="font-mono text-xs uppercase tracking-wider flex-1 md:flex-none"
           >
             Đặt lại
@@ -307,11 +336,11 @@ export const AdminOrdersClient = () => {
         <AdminErrorState message={errorMsg} />
       ) : orders.length === 0 ? (
         <AdminEmptyState
-          title={Object.keys(filters).length > 0 ? "Không tìm thấy đơn hàng phù hợp" : "Không tìm thấy đơn hàng"}
-          description={Object.keys(filters).length > 0 ? "Hãy thay đổi từ khóa hoặc bộ lọc rồi thử lại." : "Hiện chưa có đơn hàng nào trong hệ thống."}
-          actionLabel={Object.keys(filters).length > 0 ? "Đặt lại bộ lọc" : undefined}
-          onAction={Object.keys(filters).length > 0 ? () => { setDraftFilters({}); setFilters({}); } : undefined}
-          filtered={Object.keys(filters).length > 0}
+          title={(urlState.query || urlState.orderStatus || urlState.paymentMethod) ? "Không tìm thấy đơn hàng phù hợp" : "Không tìm thấy đơn hàng"}
+          description={(urlState.query || urlState.orderStatus || urlState.paymentMethod) ? "Hãy thay đổi từ khóa hoặc bộ lọc rồi thử lại." : "Hiện chưa có đơn hàng nào trong hệ thống."}
+          actionLabel={(urlState.query || urlState.orderStatus || urlState.paymentMethod) ? "Đặt lại bộ lọc" : undefined}
+          onAction={(urlState.query || urlState.orderStatus || urlState.paymentMethod) ? handleResetFilters : undefined}
+          filtered={!!(urlState.query || urlState.orderStatus || urlState.paymentMethod)}
         />
       ) : (
         <div className="border border-neutral-200 bg-white shadow-sm overflow-hidden">
@@ -377,12 +406,9 @@ export const AdminOrdersClient = () => {
                   </label>
                   <select
                     id="page-size"
-                    value={pageSize}
+                    value={pagination.pageSize}
                     disabled={isLoading}
-                    onChange={(e) => {
-                      setPageSize(Number(e.target.value));
-                      setPage(1);
-                    }}
+                    onChange={(e) => changePageSize(Number(e.target.value))}
                     className="border border-neutral-300 bg-white p-1 text-xs focus:outline-none focus:border-neutral-900"
                   >
                     <option value={10}>10</option>
@@ -395,7 +421,7 @@ export const AdminOrdersClient = () => {
                     type="button"
                     variant="outline"
                     disabled={!pagination.hasPreviousPage || isLoading}
-                    onClick={() => setPage(p => p - 1)}
+                    onClick={() => changePage(pagination.page - 1)}
                     className="font-mono text-[10px] uppercase tracking-wider px-2 py-1 h-auto"
                   >
                     Trang trước
@@ -407,7 +433,7 @@ export const AdminOrdersClient = () => {
                     type="button"
                     variant="outline"
                     disabled={!pagination.hasNextPage || isLoading}
-                    onClick={() => setPage(p => p + 1)}
+                    onClick={() => changePage(pagination.page + 1)}
                     className="font-mono text-[10px] uppercase tracking-wider px-2 py-1 h-auto"
                   >
                     Trang sau

@@ -64,7 +64,7 @@ export function cancelOrder(orderId: string) {
   return orderRequest(`/api/orders/${encodeURIComponent(orderId)}/cancel`, { method: 'POST' });
 }
 
-export function listAllOrdersForAdmin(filters?: { query?: string; orderStatus?: string; paymentMethod?: string; page?: number; pageSize?: number }) {
+export function listAllOrdersForAdmin(filters?: { query?: string; orderStatus?: string; paymentMethod?: string; page?: number; pageSize?: number }, signal?: AbortSignal) {
   const params = new URLSearchParams();
   if (filters?.query) params.append('query', filters.query);
   if (filters?.orderStatus) params.append('orderStatus', filters.orderStatus);
@@ -72,7 +72,7 @@ export function listAllOrdersForAdmin(filters?: { query?: string; orderStatus?: 
   if (filters?.page !== undefined) params.append('page', String(filters.page));
   if (filters?.pageSize !== undefined) params.append('pageSize', String(filters.pageSize));
   const queryStr = params.toString() ? `?${params.toString()}` : '';
-  return orderRequest(`/api/orders${queryStr}`);
+  return orderRequest(`/api/orders${queryStr}`, { signal });
 }
 
 export function updateOrderStatus(orderId: string, status: string) {
