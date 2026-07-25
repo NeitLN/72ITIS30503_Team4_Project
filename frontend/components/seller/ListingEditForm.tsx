@@ -164,7 +164,7 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
     if (!f.category_slug) e.category_slug = 'Vui lòng chọn danh mục.';
     if (!f.condition) e.condition = 'Vui lòng chọn tình trạng sản phẩm.';
     if (!f.size) e.size = 'Vui lòng chọn kích thước.';
-    
+
     if (f.inventory_mode === 'simple') {
       const price = Number(f.price);
       if (!f.price || !Number.isFinite(price) || price <= 0) e.price = 'Nhập giá bán hợp lệ (VNĐ, lớn hơn 0).';
@@ -192,7 +192,7 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
         if (!hasStock) e.variants = 'Ít nhất một phân loại phải có số lượng > 0.';
       }
     }
-    
+
     if (!f.location.trim()) e.location = 'Vui lòng chọn một tỉnh/thành phố hợp lệ.';
     Object.assign(e, validateProductJourney(f.product_journey));
     return e;

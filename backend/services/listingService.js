@@ -96,7 +96,7 @@ function validateFields(raw, sellerName) {
   const salePriceNum = salePriceRaw === '' || salePriceRaw == null ? null : Number(salePriceRaw);
   const stockNum = raw.stock === '' || raw.stock == null ? 1 : Number(raw.stock);
   const isNegotiable = raw.is_negotiable === true || raw.is_negotiable === 'true' || raw.is_negotiable === '1';
-  
+
   const inventoryMode = raw.inventory_mode === 'variant' ? 'variant' : 'simple';
   let parsedVariants = [];
 

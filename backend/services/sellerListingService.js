@@ -140,7 +140,7 @@ async function listMyListings(userId, query = {}) {
   if (countErr) throw countErr;
 
   const dataQuery = applyListingFilters(ownedListingQuery(userId), query);
-  
+
   let q = dataQuery;
   const sort = query.sort || 'newest';
   if (sort === 'oldest') q = q.order('updated_at', { ascending: true });
@@ -393,49 +393,78 @@ async function updateMyListing(userId, id, rawFields) {
   if (parsedVariants) {
     // Determine target state
     const isVariantMode = updates.inventory_mode === 'variant' || (!updates.inventory_mode && existing.inventory_mode === 'variant');
-    
-    // Fetch existing variants to know what to update, delete, or deactivate
-    const { data: currentVariants, error: fetchErr } = await supabaseAdmin.from('product_variants').select('id, title').eq('product_id', id);
+
+    // Fetch FULL existing variants for compensating rollback
+    const { data: currentVariants, error: fetchErr } = await supabaseAdmin.from('product_variants').select('*').eq('product_id', id);
     if (!fetchErr && currentVariants) {
-      if (!isVariantMode || parsedVariants.length === 0) {
-        // We are switching to simple mode.
-        // We cannot blindly delete variants because active order_items might reference them via `on delete set null`.
-        // We must deactivate them safely. If they have no orders, we could delete, but deactivating is universally safe.
-        // To be thorough, we can try to delete, but fallback to deactivate. For simplicity and absolute safety against constraint breakage or snapshot loss, we will set them to out_of_stock and inactive.
-        await supabaseAdmin.from('product_variants').update({ status: 'inactive', stock: 0 }).eq('product_id', id);
-      } else {
-        // We are updating variant mode.
-        // We should try to update existing variants by title/id if they match, insert new ones, and deactivate missing ones.
-        const currentVariantTitles = new Set(currentVariants.map(v => v.title));
-        const newVariantTitles = new Set(parsedVariants.map(v => v.title.trim()));
-        
-        // Deactivate removed variants
-        const titlesToDeactivate = [...currentVariantTitles].filter(title => !newVariantTitles.has(title));
-        if (titlesToDeactivate.length > 0) {
-          await supabaseAdmin.from('product_variants').update({ status: 'inactive', stock: 0 }).eq('product_id', id).in('title', titlesToDeactivate);
-        }
-        
-        // Upsert variants
-        for (const v of parsedVariants) {
-          const title = v.title.trim();
-          const stock = Number(v.stock);
-          const variantPayload = {
-            product_id: id,
-            sku: v.sku || null,
-            title: title,
-            price: Number(v.price),
-            sale_price: null,
-            stock: stock,
-            status: stock > 0 ? 'active' : 'out_of_stock'
-          };
-          
-          const existingVariant = currentVariants.find(curr => curr.title === title);
-          if (existingVariant) {
-            await supabaseAdmin.from('product_variants').update(variantPayload).eq('id', existingVariant.id);
-          } else {
-            await supabaseAdmin.from('product_variants').insert(variantPayload);
+      try {
+        if (!isVariantMode || parsedVariants.length === 0) {
+          // We are switching to simple mode.
+          // We cannot blindly delete variants because active order_items might reference them via `on delete set null`.
+          // We must deactivate them safely. If they have no orders, we could delete, but deactivating is universally safe.
+          const { error: deactAllErr } = await supabaseAdmin.from('product_variants').update({ status: 'inactive', stock: 0 }).eq('product_id', id);
+          if (deactAllErr) throw new Error(`Deactivate all failed: ${deactAllErr.message}`);
+        } else {
+          // We are updating variant mode.
+          const currentVariantTitles = new Set(currentVariants.map(v => v.title));
+          const newVariantTitles = new Set(parsedVariants.map(v => v.title.trim()));
+
+          // Deactivate removed variants
+          const titlesToDeactivate = [...currentVariantTitles].filter(title => !newVariantTitles.has(title));
+          if (titlesToDeactivate.length > 0) {
+            const { error: deactErr } = await supabaseAdmin.from('product_variants').update({ status: 'inactive', stock: 0 }).eq('product_id', id).in('title', titlesToDeactivate);
+            if (deactErr) throw new Error(`Deactivate subset failed: ${deactErr.message}`);
+          }
+
+          // Upsert variants
+          for (const v of parsedVariants) {
+            const title = v.title.trim();
+            const stock = Number(v.stock);
+            const variantPayload = {
+              product_id: id,
+              sku: v.sku || null,
+              title: title,
+              price: Number(v.price),
+              sale_price: null,
+              stock: stock,
+              status: stock > 0 ? 'active' : 'out_of_stock'
+            };
+
+            const existingVariant = currentVariants.find(curr => curr.title === title);
+            if (existingVariant) {
+              const { error: upErr } = await supabaseAdmin.from('product_variants').update(variantPayload).eq('id', existingVariant.id);
+              if (upErr) throw new Error(`Update variant failed: ${upErr.message}`);
+            } else {
+              const { error: inErr } = await supabaseAdmin.from('product_variants').insert(variantPayload);
+              if (inErr) throw new Error(`Insert variant failed: ${inErr.message}`);
+            }
           }
         }
+      } catch (variantStepErr) {
+        // Compensating rollback (Class B Transaction Safety)
+        console.error(`Variant update failed for ${id}, rolling back:`, variantStepErr.message);
+
+        // 1. Revert product fields
+        if (Object.keys(updates).length > 0) {
+          const revertPayload = {};
+          for (const key of Object.keys(updates)) {
+            if (key !== 'updated_at') revertPayload[key] = existing[key] ?? null;
+          }
+          await supabaseAdmin.from('products').update(revertPayload).eq('id', id);
+        }
+
+        // 2. Revert variants
+        const currentVariantIds = currentVariants.map(v => v.id);
+        if (currentVariantIds.length > 0) {
+          // Delete any newly inserted variants that weren't in the original list
+          await supabaseAdmin.from('product_variants').delete().eq('product_id', id).not('id', 'in', `(${currentVariantIds.join(',')})`);
+          // Upsert the original variants back exactly as they were
+          await supabaseAdmin.from('product_variants').upsert(currentVariants);
+        } else {
+          // If there were no original variants, delete any that were just created
+          await supabaseAdmin.from('product_variants').delete().eq('product_id', id);
+        }
+        throw variantStepErr;
       }
     }
   }
