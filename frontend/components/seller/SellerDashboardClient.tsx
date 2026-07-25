@@ -11,7 +11,8 @@ import { LISTING_STATUS_LABELS, FULFILLMENT_STATUS_LABELS } from '../../lib/list
 import {
   SellerListing, SellerListingStats, SellerOrderItem,
   getMyListingStats, getMyListings, transitionListingStatus,
-  getMyOrderItems, updateFulfillmentStatus, deleteDraftListing, duplicateListing
+  getMyOrderItems, updateFulfillmentStatus, deleteDraftListing, duplicateListing,
+  SellerFinanceSummary, SellerFinanceLedgerEntry, getSellerFinanceSummary, getSellerFinanceLedger
 } from '../../lib/sellerDashboard';
 import { ListingEditForm } from './ListingEditForm';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -21,7 +22,7 @@ import { LifecycleBadge } from '../sustainability/LifecycleBadge';
 import { getMyImpact, ProfileImpact } from '../../lib/impact';
 import { PersonalImpactCard } from '../sustainability/PersonalImpactCard';
 
-type Tab = 'overview' | 'listings' | 'orders';
+type Tab = 'overview' | 'listings' | 'orders' | 'finance';
 
 const LISTING_STATUS_FILTERS = ['', 'draft', 'active', 'hidden', 'sold', 'archived'];
 const FULFILLMENT_FILTERS = ['', 'awaiting_confirmation', 'confirmed', 'preparing', 'shipped', 'completed', 'cancelled'];
@@ -229,6 +230,42 @@ export const SellerDashboardClient = () => {
       setFulfillmentBusyId(null);
     }
   };
+
+  // ---------- Finance ----------
+  const [financeSummary, setFinanceSummary] = useState<SellerFinanceSummary | null>(null);
+  const [financeLedger, setFinanceLedger] = useState<SellerFinanceLedgerEntry[]>([]);
+  const [financeLoading, setFinanceLoading] = useState(false);
+  const [financeError, setFinanceError] = useState<string | null>(null);
+  const [financePage, setFinancePage] = useState(1);
+  const [financeCount, setFinanceCount] = useState(0);
+  const FINANCE_PER_PAGE = 20;
+
+  const loadFinance = useCallback(async () => {
+    setFinanceLoading(true);
+    setFinanceError(null);
+    try {
+      const [sumRes, ledgerRes] = await Promise.all([
+        getSellerFinanceSummary(),
+        getSellerFinanceLedger({ page: financePage, limit: FINANCE_PER_PAGE })
+      ]);
+      if (sumRes.success && ledgerRes.success) {
+        setFinanceSummary(sumRes.data);
+        setFinanceLedger(ledgerRes.data);
+        setFinanceCount(ledgerRes.meta?.count ?? ledgerRes.data.length);
+      } else {
+        setFinanceError('Không thể tải dữ liệu tài chính.');
+      }
+    } catch {
+      setFinanceError('Lỗi kết nối — hệ thống có thể đang tạm ngưng.');
+    } finally {
+      setFinanceLoading(false);
+    }
+  }, [financePage]);
+
+  useEffect(() => {
+    if (!isAuthenticated || tab !== 'finance') return;
+    void (async () => { await loadFinance(); })();
+  }, [isAuthenticated, tab, loadFinance]);
 
   // ---------- Auth gate ----------
   if (!isHydrated) {
@@ -634,6 +671,111 @@ export const SellerDashboardClient = () => {
                 </Button>
               </div>
             </>
+          )}
+        </div>
+      )}
+
+      {/* ---------- Finance ---------- */}
+      {tab === 'finance' && (
+        <div data-testid="dashboard-finance">
+          {financeError && <p role="alert" className="text-sm text-red-600 mb-4">{financeError}</p>}
+          {financeLoading && !financeSummary && <p className="text-sm text-neutral-500 animate-pulse py-8 text-center">Đang tải dữ liệu tài chính…</p>}
+
+          {financeSummary && (
+            <div className="mb-8">
+              <h2 className="font-mono text-xs uppercase tracking-wider text-neutral-500 mb-4">Tổng quan tài chính</h2>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-6">
+                <div className="border border-neutral-200 bg-white p-4">
+                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Số dư có thể nhận</p>
+                  <p className="font-display text-2xl font-bold text-green-700" data-testid="finance-available">{formatVND(financeSummary.available_balance)}</p>
+                </div>
+                <div className="border border-neutral-200 bg-white p-4">
+                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Tiền đang tạm giữ</p>
+                  <p className="font-display text-2xl font-bold text-orange-600" data-testid="finance-escrow">{formatVND(financeSummary.escrow_amount)}</p>
+                </div>
+                <div className="border border-neutral-200 bg-white p-4">
+                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Doanh thu gộp</p>
+                  <p className="font-display text-xl font-bold" data-testid="finance-gross">{formatVND(financeSummary.gross_revenue)}</p>
+                </div>
+                <div className="border border-neutral-200 bg-white p-4">
+                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Phí nền tảng</p>
+                  <p className="font-display text-xl font-bold text-red-600" data-testid="finance-fees">-{formatVND(financeSummary.platform_fees)}</p>
+                </div>
+              </div>
+
+              <div className="border border-neutral-200 bg-white p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <p className="font-medium text-neutral-900">Tài khoản nhận tiền</p>
+                  <p className="text-sm text-neutral-500">{financeSummary.payout_method.label}</p>
+                </div>
+                <Button variant="outline" className="font-mono text-xs uppercase tracking-wider disabled:opacity-50" disabled>
+                  Cập nhật tài khoản
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {financeSummary && (
+            <div>
+              <h2 className="font-mono text-xs uppercase tracking-wider text-neutral-500 mb-4">Sổ cái giao dịch</h2>
+              {!financeLoading && financeLedger.length === 0 ? (
+                <div className="border border-dashed border-neutral-300 py-12 px-4 text-center">
+                  <p className="text-sm text-neutral-500">Chưa có giao dịch tài chính nào.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-neutral-200">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-neutral-200 bg-neutral-50 text-left font-mono text-[10px] uppercase tracking-wider text-neutral-500">
+                        <th className="px-4 py-3">Ngày</th>
+                        <th className="px-4 py-3">Mã đơn</th>
+                        <th className="px-4 py-3">Sản phẩm</th>
+                        <th className="px-4 py-3 text-right">Doanh thu gộp</th>
+                        <th className="px-4 py-3 text-right">Phí</th>
+                        <th className="px-4 py-3 text-right">Thực nhận</th>
+                        <th className="px-4 py-3">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {financeLedger.map((entry) => (
+                        <tr key={entry.id} className="border-b border-neutral-100 last:border-0" data-testid="finance-ledger-row">
+                          <td className="px-4 py-3 whitespace-nowrap text-neutral-500">{formatVietnamDateTime(entry.created_at)}</td>
+                          <td className="px-4 py-3 font-mono">{entry.order_code}</td>
+                          <td className="px-4 py-3">
+                            <span className="line-clamp-1">{entry.item_name}</span>
+                            <span className="text-[10px] text-neutral-500">SL: {entry.quantity}</span>
+                          </td>
+                          <td className="px-4 py-3 text-right">{formatVND(entry.gross_amount)}</td>
+                          <td className="px-4 py-3 text-right text-red-600">-{formatVND(entry.platform_fee)}</td>
+                          <td className="px-4 py-3 text-right font-bold">{formatVND(entry.net_amount)}</td>
+                          <td className="px-4 py-3">
+                            <span className={`font-mono text-[10px] uppercase tracking-wider border px-2 py-0.5 ${
+                              entry.state === 'released' ? 'border-green-300 text-green-700 bg-green-50' :
+                              entry.state === 'escrow' ? 'border-orange-300 text-orange-700 bg-orange-50' :
+                              'border-neutral-300 text-neutral-500 bg-neutral-50'
+                            }`}>
+                              {entry.state === 'released' ? 'Khả dụng' : entry.state === 'escrow' ? 'Tạm giữ' : entry.state === 'refunded' ? 'Đã hoàn tiền' : 'Đã hủy'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {financeCount > FINANCE_PER_PAGE && (
+                <div className="mt-6 flex items-center justify-between font-mono text-xs">
+                  <Button variant="outline" size="sm" disabled={financePage <= 1} onClick={() => setFinancePage((p) => p - 1)} className="uppercase tracking-wider">
+                    &larr; Trước
+                  </Button>
+                  <span className="text-neutral-500">Trang {financePage} / {Math.ceil(financeCount / FINANCE_PER_PAGE)}</span>
+                  <Button variant="outline" size="sm" disabled={financePage >= Math.ceil(financeCount / FINANCE_PER_PAGE)} onClick={() => setFinancePage((p) => p + 1)} className="uppercase tracking-wider">
+                    Sau &rarr;
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}

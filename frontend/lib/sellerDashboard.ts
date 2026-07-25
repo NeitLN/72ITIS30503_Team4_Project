@@ -164,3 +164,42 @@ export async function getMyOrder(orderId: string): Promise<ApiResult<{ order: Se
 export async function updateFulfillmentStatus(itemId: string, status: string): Promise<ApiResult<{ id: string; fulfillment_status: string }>> {
   return authedJson(`/api/seller/orders/items/${itemId}/fulfillment`, { method: 'PATCH', body: JSON.stringify({ status }) });
 }
+
+export interface SellerFinanceSummary {
+  gross_revenue: number;
+  escrow_amount: number;
+  available_balance: number;
+  paid_out_amount: number;
+  platform_fees: number;
+  pending_orders: number;
+  payout_method: {
+    status: string;
+    label: string;
+  };
+}
+
+export interface SellerFinanceLedgerEntry {
+  id: string;
+  order_code: string;
+  item_name: string;
+  quantity: number;
+  gross_amount: number;
+  platform_fee: number;
+  net_amount: number;
+  state: string;
+  payment_method: string;
+  created_at: string;
+  released_at: string | null;
+}
+
+export async function getSellerFinanceSummary(): Promise<ApiResult<SellerFinanceSummary>> {
+  return authedJson('/api/seller/finance/summary');
+}
+
+export async function getSellerFinanceLedger(params: { page?: number; limit?: number } = {}): Promise<ApiResult<SellerFinanceLedgerEntry[]>> {
+  const query = new URLSearchParams();
+  if (params.page) query.set('page', String(params.page));
+  if (params.limit) query.set('limit', String(params.limit));
+  const qs = query.toString();
+  return authedJson(`/api/seller/finance/ledger${qs ? `?${qs}` : ''}`);
+}
