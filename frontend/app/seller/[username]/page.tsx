@@ -10,6 +10,7 @@ import { formatVietnamDate } from '../../../lib/format';
 import { displayVnLocation } from '../../../lib/vnLocations';
 import { getPublicSellerImpact, PublicSellerImpact } from '../../../lib/impact';
 import { PublicSellerImpactCard } from '../../../components/sustainability/PublicSellerImpactCard';
+import { ShareStorefrontButton } from '../../../components/seller/ShareStorefrontButton';
 
 interface SellerPageProps {
   params: Promise<{
@@ -124,6 +125,7 @@ export default async function SellerPage({ params }: SellerPageProps) {
                     Người bán đã xác minh
                   </span>
                 )}
+                <ShareStorefrontButton storeUrl={`${SITE_URL}/seller/${seller.username}`} />
               </div>
 
               {seller.bio && (
