@@ -33,6 +33,7 @@ const {
   MIN_DESC_LEN,
   MAX_DESC_LEN,
   stripControlChars,
+  validateInventoryPayload,
   extFromMime,
   BUCKET,
 } = listingService;
@@ -265,32 +266,24 @@ function validatePartialFields(raw) {
     updates.is_negotiable = raw.is_negotiable === true || raw.is_negotiable === 'true' || raw.is_negotiable === '1';
   }
 
-  if (raw.inventory_mode !== undefined) {
-    updates.inventory_mode = raw.inventory_mode === 'variant' ? 'variant' : 'simple';
-  }
-
   let parsedVariants = null;
-  if (raw.variants !== undefined) {
-    try {
-      parsedVariants = typeof raw.variants === 'string' ? JSON.parse(raw.variants || '[]') : (raw.variants || []);
-      if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
-        errors.variants = 'Cần ít nhất một phân loại (size/màu).';
-      } else {
-        let hasStock = false;
-        parsedVariants.forEach((v, idx) => {
-          if (!v.title?.trim()) errors[`variants[${idx}].title`] = 'Tên phân loại không được trống.';
-          const vPrice = Number(v.price);
-          if (!Number.isFinite(vPrice) || vPrice < 0) errors[`variants[${idx}].price`] = 'Giá không hợp lệ.';
-          const vStock = Number(v.stock);
-          if (!Number.isInteger(vStock) || vStock < 0) errors[`variants[${idx}].stock`] = 'Kho không hợp lệ.';
-          else if (vStock > 0) hasStock = true;
-          if (v.sku && v.sku.length > 50) errors[`variants[${idx}].sku`] = 'SKU quá dài (tối đa 50 ký tự).';
-        });
-        if (!hasStock) errors.variants = 'Ít nhất một phân loại phải có số lượng > 0 để đăng bán.';
-      }
-    } catch (err) {
-      errors.variants = 'Dữ liệu phân loại không hợp lệ.';
-    }
+  const modeIsProvided = raw.inventory_mode !== undefined;
+  const allowPartial = true;
+
+  if (modeIsProvided || raw.stock !== undefined || raw.variants !== undefined) {
+    const { errors: inventoryErrors, inventoryMode, parsedVariants: pVariants, stock } = validateInventoryPayload({
+      inventoryMode: raw.inventory_mode,
+      stock: raw.stock,
+      variants: raw.variants,
+      modeIsProvided,
+      allowPartial
+    });
+
+    Object.assign(errors, inventoryErrors);
+
+    if (modeIsProvided) updates.inventory_mode = inventoryMode;
+    if (raw.stock !== undefined && inventoryMode === 'simple') updates.stock = stock;
+    if (raw.variants !== undefined) parsedVariants = pVariants;
   }
 
   // Shoe-size compatibility only checked when BOTH pieces are known for this
@@ -345,6 +338,18 @@ async function updateMyListing(userId, id, rawFields) {
     return existing; // nothing to change — not an error, just a no-op
   }
 
+  // 1. Fetch current variant snapshot before updating anything
+  const isTargetVariantMode = updates.inventory_mode === 'variant' || (!updates.inventory_mode && existing.inventory_mode === 'variant');
+  const modeIsSwitchingToSimple = (updates.inventory_mode === 'simple' && existing.inventory_mode === 'variant');
+  const needsVariantOperation = parsedVariants || modeIsSwitchingToSimple;
+
+  let currentVariants = null;
+  if (needsVariantOperation) {
+    const { data, error: fetchErr } = await supabaseAdmin.from('product_variants').select('*').eq('product_id', id);
+    if (fetchErr) throw new Error(`Could not fetch variants for safety snapshot: ${fetchErr.message}`);
+    currentVariants = data || [];
+  }
+
   let finalProductId = id;
 
   if (productJourney.provided) {
@@ -390,82 +395,78 @@ async function updateMyListing(userId, id, rawFields) {
     }
   }
 
-  if (parsedVariants) {
-    // Determine target state
-    const isVariantMode = updates.inventory_mode === 'variant' || (!updates.inventory_mode && existing.inventory_mode === 'variant');
+  if (needsVariantOperation) {
+    try {
+      if (modeIsSwitchingToSimple || !isTargetVariantMode) {
+        // We are switching to simple mode.
+        const { error: deactAllErr } = await supabaseAdmin.from('product_variants').update({ status: 'inactive', stock: 0 }).eq('product_id', id);
+        if (deactAllErr) throw new Error(`Deactivate all failed: ${deactAllErr.message}`);
+      } else if (parsedVariants) {
+        // We are updating variant mode.
+        const currentVariantTitles = new Set(currentVariants.map(v => v.title));
+        const newVariantTitles = new Set(parsedVariants.map(v => v.title.trim()));
 
-    // Fetch FULL existing variants for compensating rollback
-    const { data: currentVariants, error: fetchErr } = await supabaseAdmin.from('product_variants').select('*').eq('product_id', id);
-    if (!fetchErr && currentVariants) {
-      try {
-        if (!isVariantMode || parsedVariants.length === 0) {
-          // We are switching to simple mode.
-          // We cannot blindly delete variants because active order_items might reference them via `on delete set null`.
-          // We must deactivate them safely. If they have no orders, we could delete, but deactivating is universally safe.
-          const { error: deactAllErr } = await supabaseAdmin.from('product_variants').update({ status: 'inactive', stock: 0 }).eq('product_id', id);
-          if (deactAllErr) throw new Error(`Deactivate all failed: ${deactAllErr.message}`);
-        } else {
-          // We are updating variant mode.
-          const currentVariantTitles = new Set(currentVariants.map(v => v.title));
-          const newVariantTitles = new Set(parsedVariants.map(v => v.title.trim()));
-
-          // Deactivate removed variants
-          const titlesToDeactivate = [...currentVariantTitles].filter(title => !newVariantTitles.has(title));
-          if (titlesToDeactivate.length > 0) {
-            const { error: deactErr } = await supabaseAdmin.from('product_variants').update({ status: 'inactive', stock: 0 }).eq('product_id', id).in('title', titlesToDeactivate);
-            if (deactErr) throw new Error(`Deactivate subset failed: ${deactErr.message}`);
-          }
-
-          // Upsert variants
-          for (const v of parsedVariants) {
-            const title = v.title.trim();
-            const stock = Number(v.stock);
-            const variantPayload = {
-              product_id: id,
-              sku: v.sku || null,
-              title: title,
-              price: Number(v.price),
-              sale_price: null,
-              stock: stock,
-              status: stock > 0 ? 'active' : 'out_of_stock'
-            };
-
-            const existingVariant = currentVariants.find(curr => curr.title === title);
-            if (existingVariant) {
-              const { error: upErr } = await supabaseAdmin.from('product_variants').update(variantPayload).eq('id', existingVariant.id);
-              if (upErr) throw new Error(`Update variant failed: ${upErr.message}`);
-            } else {
-              const { error: inErr } = await supabaseAdmin.from('product_variants').insert(variantPayload);
-              if (inErr) throw new Error(`Insert variant failed: ${inErr.message}`);
-            }
-          }
-        }
-      } catch (variantStepErr) {
-        // Compensating rollback (Class B Transaction Safety)
-        console.error(`Variant update failed for ${id}, rolling back:`, variantStepErr.message);
-
-        // 1. Revert product fields
-        if (Object.keys(updates).length > 0) {
-          const revertPayload = {};
-          for (const key of Object.keys(updates)) {
-            if (key !== 'updated_at') revertPayload[key] = existing[key] ?? null;
-          }
-          await supabaseAdmin.from('products').update(revertPayload).eq('id', id);
+        // Deactivate removed variants
+        const titlesToDeactivate = [...currentVariantTitles].filter(title => !newVariantTitles.has(title));
+        if (titlesToDeactivate.length > 0) {
+          const { error: deactErr } = await supabaseAdmin.from('product_variants').update({ status: 'inactive', stock: 0 }).eq('product_id', id).in('title', titlesToDeactivate);
+          if (deactErr) throw new Error(`Deactivate subset failed: ${deactErr.message}`);
         }
 
-        // 2. Revert variants
-        const currentVariantIds = currentVariants.map(v => v.id);
-        if (currentVariantIds.length > 0) {
-          // Delete any newly inserted variants that weren't in the original list
-          await supabaseAdmin.from('product_variants').delete().eq('product_id', id).not('id', 'in', `(${currentVariantIds.join(',')})`);
-          // Upsert the original variants back exactly as they were
-          await supabaseAdmin.from('product_variants').upsert(currentVariants);
-        } else {
-          // If there were no original variants, delete any that were just created
-          await supabaseAdmin.from('product_variants').delete().eq('product_id', id);
+        // Upsert variants
+        for (const v of parsedVariants) {
+          const title = v.title.trim();
+          const stock = Number(v.stock);
+          const variantPayload = {
+            product_id: id,
+            sku: v.sku || null,
+            title: title,
+            price: Number(v.price),
+            sale_price: null,
+            stock: stock,
+            status: stock > 0 ? 'active' : 'out_of_stock'
+          };
+
+          const existingVariant = currentVariants.find(curr => curr.title === title);
+          if (existingVariant) {
+            const { error: upErr } = await supabaseAdmin.from('product_variants').update(variantPayload).eq('id', existingVariant.id);
+            if (upErr) throw new Error(`Update variant failed: ${upErr.message}`);
+          } else {
+            const { error: inErr } = await supabaseAdmin.from('product_variants').insert(variantPayload);
+            if (inErr) throw new Error(`Insert variant failed: ${inErr.message}`);
+          }
         }
-        throw variantStepErr;
       }
+    } catch (variantStepErr) {
+      // Compensating rollback (Class B Transaction Safety)
+      console.error(`Variant update failed for ${id}, rolling back:`, variantStepErr.message);
+
+      // 1. Revert product fields
+      if (Object.keys(updates).length > 0) {
+        const revertPayload = {};
+        for (const key of Object.keys(updates)) {
+          if (key !== 'updated_at') revertPayload[key] = existing[key] ?? null;
+        }
+        const { error: revProdErr } = await supabaseAdmin.from('products').update(revertPayload).eq('id', id);
+        if (revProdErr) console.error('Product rollback failed:', revProdErr.message);
+      }
+
+      // 2. Revert variants
+      const currentVariantIds = currentVariants.map(v => v.id);
+      if (currentVariantIds.length > 0) {
+        const { error: delNewErr } = await supabaseAdmin.from('product_variants').delete().eq('product_id', id).not('id', 'in', `(${currentVariantIds.join(',')})`);
+        if (delNewErr) console.error('Delete new variants rollback failed:', delNewErr.message);
+
+        const { error: upsertOldErr } = await supabaseAdmin.from('product_variants').upsert(currentVariants);
+        if (upsertOldErr) console.error('Restore old variants rollback failed:', upsertOldErr.message);
+      } else {
+        const { error: delAllErr } = await supabaseAdmin.from('product_variants').delete().eq('product_id', id);
+        if (delAllErr) console.error('Delete all variants rollback failed:', delAllErr.message);
+      }
+
+      const integrityErr = new Error(`Lỗi cập nhật. Vui lòng thử lại. (Mã lỗi: ${variantStepErr.message})`);
+      integrityErr.status = 500;
+      throw integrityErr;
     }
   }
 

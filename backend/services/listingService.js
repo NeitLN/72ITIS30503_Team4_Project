@@ -82,6 +82,98 @@ async function generateUniqueSlug(name) {
   throw new Error('Could not generate a unique slug after several attempts');
 }
 
+function validateInventoryPayload({ inventoryMode, stock, variants, modeIsProvided, allowPartial }) {
+  const errors = {};
+
+  if (modeIsProvided && inventoryMode !== 'simple' && inventoryMode !== 'variant') {
+    errors.inventory_mode = 'Loại kho hàng không hợp lệ. Chỉ chấp nhận simple hoặc variant.';
+    return { errors, inventoryMode: 'simple', parsedVariants: null }; // fast fail
+  }
+
+  const effectiveMode = inventoryMode === 'variant' ? 'variant' : 'simple';
+  let parsedVariants = null;
+
+  if (effectiveMode === 'simple') {
+    if (stock !== undefined && stock !== null && stock !== '') {
+      const stockNum = Number(stock);
+      if (!Number.isInteger(stockNum) || stockNum < 0) {
+        errors.stock = 'Số lượng phải là số nguyên và không âm.';
+      } else if (stockNum > MAX_STOCK) {
+        errors.stock = `Số lượng vượt quá mức cho phép (${MAX_STOCK}).`;
+      }
+    } else if (!allowPartial) {
+      errors.stock = 'Vui lòng nhập số lượng.';
+    }
+  } else {
+    // variant mode
+    if (variants !== undefined) {
+      try {
+        parsedVariants = typeof variants === 'string' ? JSON.parse(variants || '[]') : (variants || []);
+        if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
+          errors.variants = 'Cần ít nhất một phân loại (size/màu).';
+        } else {
+          let hasStock = false;
+          const seenTitles = new Set();
+          const seenSKUs = new Set();
+
+          parsedVariants.forEach((v, idx) => {
+            const title = v.title?.trim();
+            if (!title) {
+              errors[`variants[${idx}].title`] = 'Tên phân loại không được trống.';
+            } else if (title.length > 100) {
+              errors[`variants[${idx}].title`] = 'Tên phân loại tối đa 100 ký tự.';
+            } else {
+              const normTitle = title.toLowerCase();
+              if (seenTitles.has(normTitle)) {
+                errors[`variants[${idx}].title`] = 'Tên phân loại bị trùng lặp.';
+              }
+              seenTitles.add(normTitle);
+            }
+
+            const vPrice = Number(v.price);
+            if (!Number.isFinite(vPrice) || vPrice <= 0) {
+              errors[`variants[${idx}].price`] = 'Giá không hợp lệ.';
+            } else if (vPrice > MAX_PRICE) {
+              errors[`variants[${idx}].price`] = `Giá vượt quá ${MAX_PRICE}.`;
+            }
+
+            const vStock = Number(v.stock);
+            if (!Number.isInteger(vStock) || vStock < 0) {
+              errors[`variants[${idx}].stock`] = 'Kho không hợp lệ.';
+            } else if (vStock > MAX_STOCK) {
+              errors[`variants[${idx}].stock`] = `Kho vượt quá ${MAX_STOCK}.`;
+            } else if (vStock > 0) {
+              hasStock = true;
+            }
+
+            const sku = v.sku?.trim();
+            if (sku) {
+              if (sku.length > 50) {
+                errors[`variants[${idx}].sku`] = 'SKU quá dài (tối đa 50 ký tự).';
+              } else {
+                const normSku = sku.toLowerCase();
+                if (seenSKUs.has(normSku)) {
+                  errors[`variants[${idx}].sku`] = 'SKU bị trùng lặp.';
+                }
+                seenSKUs.add(normSku);
+              }
+            }
+          });
+          if (!allowPartial && !hasStock) {
+            errors.variants = 'Ít nhất một phân loại phải có số lượng > 0 để đăng bán.';
+          }
+        }
+      } catch (err) {
+        errors.variants = 'Dữ liệu phân loại không hợp lệ.';
+      }
+    } else if (!allowPartial) {
+      errors.variants = 'Cần danh sách phân loại.';
+    }
+  }
+
+  return { errors, inventoryMode: effectiveMode, parsedVariants, stock: effectiveMode === 'simple' ? Number(stock || 0) : 0 };
+}
+
 function validateFields(raw, sellerName) {
   const errors = {};
   const name = stripControlChars(raw.name || '');
@@ -94,11 +186,17 @@ function validateFields(raw, sellerName) {
   const priceNum = Number(raw.price);
   const salePriceRaw = raw.sale_price;
   const salePriceNum = salePriceRaw === '' || salePriceRaw == null ? null : Number(salePriceRaw);
-  const stockNum = raw.stock === '' || raw.stock == null ? 1 : Number(raw.stock);
   const isNegotiable = raw.is_negotiable === true || raw.is_negotiable === 'true' || raw.is_negotiable === '1';
 
-  const inventoryMode = raw.inventory_mode === 'variant' ? 'variant' : 'simple';
-  let parsedVariants = [];
+  const { errors: inventoryErrors, inventoryMode, parsedVariants, stock } = validateInventoryPayload({
+    inventoryMode: raw.inventory_mode,
+    stock: raw.stock,
+    variants: raw.variants,
+    modeIsProvided: raw.inventory_mode !== undefined,
+    allowPartial: false
+  });
+
+  Object.assign(errors, inventoryErrors);
 
   if (!name || name.length < MIN_NAME_LEN || name.length > MAX_NAME_LEN) {
     errors.name = `Tên sản phẩm phải có từ ${MIN_NAME_LEN} đến ${MAX_NAME_LEN} ký tự.`;
@@ -129,35 +227,6 @@ function validateFields(raw, sellerName) {
       errors.sale_price = 'Giá giảm phải lớn hơn 0, hoặc để trống.';
     } else if (Number.isFinite(priceNum) && !(salePriceNum < priceNum)) {
       errors.sale_price = 'Giá giảm phải thấp hơn giá gốc.';
-    }
-  }
-
-  if (inventoryMode === 'simple') {
-    if (!Number.isInteger(stockNum) || stockNum < 0) {
-      errors.stock = 'Số lượng phải là số nguyên và không âm.';
-    } else if (stockNum > MAX_STOCK) {
-      errors.stock = `Số lượng vượt quá mức cho phép (${MAX_STOCK}).`;
-    }
-  } else {
-    try {
-      parsedVariants = typeof raw.variants === 'string' ? JSON.parse(raw.variants || '[]') : (raw.variants || []);
-      if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
-        errors.variants = 'Cần ít nhất một phân loại (size/màu).';
-      } else {
-        let hasStock = false;
-        parsedVariants.forEach((v, idx) => {
-          if (!v.title?.trim()) errors[`variants[${idx}].title`] = 'Tên phân loại không được trống.';
-          const vPrice = Number(v.price);
-          if (!Number.isFinite(vPrice) || vPrice < 0) errors[`variants[${idx}].price`] = 'Giá không hợp lệ.';
-          const vStock = Number(v.stock);
-          if (!Number.isInteger(vStock) || vStock < 0) errors[`variants[${idx}].stock`] = 'Kho không hợp lệ.';
-          else if (vStock > 0) hasStock = true;
-          if (v.sku && v.sku.length > 50) errors[`variants[${idx}].sku`] = 'SKU quá dài (tối đa 50 ký tự).';
-        });
-        if (!hasStock) errors.variants = 'Ít nhất một phân loại phải có số lượng > 0 để đăng bán.';
-      }
-    } catch (err) {
-      errors.variants = 'Dữ liệu phân loại không hợp lệ.';
     }
   }
 
@@ -195,7 +264,7 @@ function validateFields(raw, sellerName) {
     location,
     price: Math.round(priceNum),
     sale_price: salePriceNum != null ? Math.round(salePriceNum) : null,
-    stock: stockNum,
+    stock: stock,
     is_negotiable: isNegotiable,
     inventory_mode: inventoryMode,
     parsed_variants: parsedVariants,
@@ -427,7 +496,10 @@ async function createListing(user, rawFields, files) {
     } catch (imgStepErr) {
       // Roll back the product row we just created (same request, brand new,
       // guaranteed no order/review references yet) and re-throw.
-      await supabaseAdmin.from('products').delete().eq('id', product.id);
+      const { error: delErr } = await supabaseAdmin.from('products').delete().eq('id', product.id);
+      if (delErr) {
+        console.error('Integrity cleanup failure: could not delete orphaned product row', delErr.message);
+      }
       throw imgStepErr;
     }
 
@@ -440,7 +512,10 @@ async function createListing(user, rawFields, files) {
     return product;
   } catch (err) {
     if (uploadedPaths.length) {
-      await supabaseAdmin.storage.from(BUCKET).remove(uploadedPaths).catch(() => {});
+      const { error: rmErr } = await supabaseAdmin.storage.from(BUCKET).remove(uploadedPaths);
+      if (rmErr) {
+        console.error('Orphan-storage cleanup warning: could not delete images', rmErr.message);
+      }
     }
     // Clear the pending reservation so a genuine failure doesn't block a
     // legitimate retry with the same fields for the rest of the window.
@@ -453,6 +528,7 @@ async function createListing(user, rawFields, files) {
 module.exports = {
   createListing,
   ListingValidationError,
+  validateInventoryPayload,
   ALLOWED_MIME,
   MAX_IMAGES,
   MAX_IMAGE_BYTES,

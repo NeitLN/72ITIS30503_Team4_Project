@@ -14,12 +14,13 @@ interface ProductActionsProps {
 
 interface VariantRow {
   id: string;
+  title?: string;
   sku: string;
   price: number;
   sale_price: number | null;
   stock_quantity: number;
   stock?: number;
-  stock_status: 'in_stock' | 'out_of_stock';
+  stock_status: 'in_stock' | 'out_of_stock' | 'inactive';
   variant_attribute_values?: Array<{
     attribute_value?: {
       value: string;
@@ -47,12 +48,14 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
   }));
   const isVariableProduct = (product.inventory_mode === 'variant' || product.product_type === 'variable') && normalizedVariants.length > 0;
 
-  // Initialize selected variant state to the first variant if variable product
-  const [selectedVariant, setSelectedVariant] = useState<VariantRow | null>(
-    isVariableProduct ? normalizedVariants[0] : null
-  );
+  // Initialize selected variant state to null for variable products so the user must explicitly select one
+  const [selectedVariant, setSelectedVariant] = useState<VariantRow | null>(null);
+
+  const requiresVariantSelection = isVariableProduct;
+  const hasSelectedVariant = selectedVariant !== null;
 
   const getVariantLabel = (v: VariantRow) => {
+    if (v.title?.trim()) return v.title.trim();
     return (
       v.variant_attribute_values?.map((vav) => vav.attribute_value?.value).filter(Boolean).join(' / ') ||
       v.sku ||
@@ -61,11 +64,11 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
   };
 
   // Determine active SKU, stock, and price
-  const activeSKU = selectedVariant ? selectedVariant.sku : product.sku;
-  const activeStock = selectedVariant ? selectedVariant.stock_quantity : product.stock_quantity;
-  const isOutOfStock = selectedVariant
+  const activeSKU = requiresVariantSelection && !hasSelectedVariant ? 'Chưa chọn' : (selectedVariant ? selectedVariant.sku : product.sku);
+  const activeStock = requiresVariantSelection && !hasSelectedVariant ? 'Chọn phân loại để xem tồn kho' : (selectedVariant ? selectedVariant.stock_quantity : product.stock_quantity);
+  const isOutOfStock = requiresVariantSelection && !hasSelectedVariant ? false : (selectedVariant
     ? selectedVariant.stock_quantity === 0 || selectedVariant.stock_status === 'out_of_stock'
-    : listing.isSoldOut;
+    : listing.isSoldOut);
 
   const currentPrice = selectedVariant
     ? (selectedVariant.sale_price ?? selectedVariant.price)
@@ -75,7 +78,10 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
     ? (selectedVariant.sale_price != null ? selectedVariant.price : null)
     : (listing.salePrice != null ? listing.price : null);
 
+  const actionDisabled = isOutOfStock || !isCartHydrated || (requiresVariantSelection && !hasSelectedVariant);
+
   const handleAddToCart = () => {
+    if (requiresVariantSelection && !hasSelectedVariant) return;
     const cartItem = {
       id: selectedVariant ? `${product.id}-${selectedVariant.id}` : product.id,
       productId: product.id,
@@ -97,6 +103,7 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
   };
 
   const handleBuyNow = () => {
+    if (requiresVariantSelection && !hasSelectedVariant) return;
     const cartItem = {
       id: selectedVariant ? `${product.id}-${selectedVariant.id}` : product.id,
       productId: product.id,
@@ -150,6 +157,7 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
                 <button
                   key={v.id}
                   type="button"
+                  data-testid={`product-variant-option-${v.id}`}
                   disabled={isVarOut}
                   onClick={() => setSelectedVariant(v)}
                   className={`border px-4 py-2 font-mono text-xs uppercase transition-all min-w-[50px] text-center cursor-pointer ${
@@ -165,6 +173,11 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
               );
             })}
           </div>
+          {requiresVariantSelection && !hasSelectedVariant && (
+            <p className="mt-2 text-xs text-red-600 font-mono tracking-wider animate-pulse" data-testid="product-variant-required" role="alert">
+              Vui lòng chọn phân loại.
+            </p>
+          )}
         </div>
       )}
 
@@ -172,14 +185,14 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
       <div className="border border-neutral-200 p-4 bg-neutral-50 grid grid-cols-2 gap-y-2 text-xs">
         <div>
           <span className="text-neutral-400 font-mono text-[9px] uppercase block">Mã SKU</span>
-          <span className="font-mono font-bold text-neutral-900 select-all">{activeSKU || 'Không có'}</span>
+          <span className="font-mono font-bold text-neutral-900 select-all" data-testid="product-active-sku">{activeSKU || 'Không có'}</span>
         </div>
         <div>
           <span className="text-neutral-400 font-mono text-[9px] uppercase block">Tình trạng hàng</span>
           {isOutOfStock ? (
-            <span className="text-red-800 font-bold font-mono">🔴 HẾT HÀNG</span>
+            <span className="text-red-800 font-bold font-mono" data-testid="product-active-stock">🔴 HẾT HÀNG</span>
           ) : (
-            <span className="text-green-800 font-bold font-mono">🟢 CÒN {activeStock}</span>
+            <span className="text-green-800 font-bold font-mono" data-testid="product-active-stock">🟢 CÒN {activeStock}</span>
           )}
         </div>
 
@@ -204,19 +217,21 @@ export const ProductActions = ({ product }: ProductActionsProps) => {
           <Button
             size="lg"
             className="flex-1 text-sm font-bold uppercase font-mono tracking-wider"
-            disabled={isOutOfStock || !isCartHydrated}
+            data-testid="product-buy-now"
+            disabled={actionDisabled}
             onClick={handleBuyNow}
           >
-            {isOutOfStock ? 'Hết hàng' : isCartHydrated ? 'Mua ngay' : 'Đang tải giỏ hàng…'}
+            {isOutOfStock ? 'Hết hàng' : !isCartHydrated ? 'Đang tải giỏ hàng…' : (requiresVariantSelection && !hasSelectedVariant) ? 'Chọn phân loại' : 'Mua ngay'}
           </Button>
           <Button
             size="lg"
             variant="secondary"
             className="flex-1 font-mono text-xs uppercase tracking-wider"
-            disabled={isOutOfStock || !isCartHydrated}
+            data-testid="product-add-to-cart"
+            disabled={actionDisabled}
             onClick={handleAddToCart}
           >
-            {!isCartHydrated ? 'Đang tải giỏ hàng…' : added ? '✓ Đã thêm vào giỏ' : 'Thêm vào giỏ hàng'}
+            {!isCartHydrated ? 'Đang tải giỏ hàng…' : added ? '✓ Đã thêm vào giỏ' : (requiresVariantSelection && !hasSelectedVariant) ? 'Chọn phân loại' : 'Thêm vào giỏ hàng'}
           </Button>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
