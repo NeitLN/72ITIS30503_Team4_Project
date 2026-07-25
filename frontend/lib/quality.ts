@@ -36,6 +36,6 @@ export function computeQualityScore(input: QualityInput): QualityScoreResult {
   ];
   const passedCount = checks.filter((c) => c.passed).length;
   const score = checks.length > 0 ? Math.round((passedCount / checks.length) * 100) : 0;
-  
+
   return { score, checks };
 }

@@ -384,7 +384,7 @@ export const SellListingClient = () => {
     else if (form.brand.trim()) fd.append('new_brand_name', form.brand.trim());
     fd.append('condition', form.condition);
     fd.append('size', form.size);
-    
+
     fd.append('inventory_mode', form.inventory_mode);
     if (form.inventory_mode === 'simple') {
       fd.append('price', form.price);
@@ -396,7 +396,7 @@ export const SellListingClient = () => {
       fd.append('stock', '0'); // Will be computed
       fd.append('variants', JSON.stringify(form.variants));
     }
-    
+
     fd.append('location', form.location.trim());
     fd.append('is_negotiable', String(form.is_negotiable));
     fd.append('sustainability', JSON.stringify(prepareProductJourney(form.product_journey)));
@@ -668,7 +668,7 @@ export const SellListingClient = () => {
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-2">
                   Bước 4 — GIÁ & VẬN CHUYỂN
                 </h2>
-                
+
                 <div className="mb-6">
                   <label className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-3">Loại kho hàng *</label>
                   <div className="flex gap-4">
@@ -808,7 +808,7 @@ export const SellListingClient = () => {
                     >
                       + Thêm phân loại
                     </button>
-                    
+
                     {/* Fake basic price field for the backend to use as a fallback summary price */}
                     <div className="hidden">
                       <input
