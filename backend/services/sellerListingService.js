@@ -58,14 +58,14 @@ const LISTING_COLUMNS = [
   'id', 'name', 'slug', 'description', 'category_slug', 'brand', 'brand_id',
   'condition', 'size', 'price', 'sale_price', 'stock', 'location',
   'is_negotiable', 'status', 'image_url', 'thumbnail', 'is_featured',
-  'listing_source', 'seller_id', 'created_at', 'updated_at',
-].join(', ');
+  'listing_source', 'seller_id', 'created_at', 'updated_at', 'inventory_mode'
+];
 
 async function attachImages(products) {
   if (!products.length) return products;
   const ids = products.map((p) => p.id);
   const brandIds = [...new Set(products.map((p) => p.brand_id).filter(Boolean))];
-  const [{ data: images }, { data: sustainabilityRows }, { data: brandRows }] = await Promise.all([
+  const [{ data: images }, { data: sustainabilityRows }, { data: brandRows }, { data: variantsRows }] = await Promise.all([
     supabaseAdmin
       .from('product_images')
       .select('id, product_id, url, alt_text, sort_order, is_primary')
@@ -78,12 +78,17 @@ async function attachImages(products) {
     brandIds.length
       ? supabaseAdmin.from('brands').select('id, source, verification_status').in('id', brandIds)
       : Promise.resolve({ data: [] }),
+    supabaseAdmin
+      .from('product_variants')
+      .select('id, product_id, sku, title, price, stock, status')
+      .in('product_id', ids),
   ]);
   return products.map((p) => {
     const brandRow = (brandRows || []).find((b) => b.id === p.brand_id);
     return {
       ...p,
       images: (images || []).filter((img) => img.product_id === p.id),
+      variants: (variantsRows || []).filter((v) => v.product_id === p.id),
       sustainability: sustainability.toPublicSustainability(
         (sustainabilityRows || []).find((row) => row.product_id === p.id),
       ),
@@ -260,10 +265,38 @@ function validatePartialFields(raw) {
     updates.is_negotiable = raw.is_negotiable === true || raw.is_negotiable === 'true' || raw.is_negotiable === '1';
   }
 
+  if (raw.inventory_mode !== undefined) {
+    updates.inventory_mode = raw.inventory_mode === 'variant' ? 'variant' : 'simple';
+  }
+
+  let parsedVariants = null;
+  if (raw.variants !== undefined) {
+    try {
+      parsedVariants = typeof raw.variants === 'string' ? JSON.parse(raw.variants || '[]') : (raw.variants || []);
+      if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
+        errors.variants = 'Cần ít nhất một phân loại (size/màu).';
+      } else {
+        let hasStock = false;
+        parsedVariants.forEach((v, idx) => {
+          if (!v.title?.trim()) errors[`variants[${idx}].title`] = 'Tên phân loại không được trống.';
+          const vPrice = Number(v.price);
+          if (!Number.isFinite(vPrice) || vPrice < 0) errors[`variants[${idx}].price`] = 'Giá không hợp lệ.';
+          const vStock = Number(v.stock);
+          if (!Number.isInteger(vStock) || vStock < 0) errors[`variants[${idx}].stock`] = 'Kho không hợp lệ.';
+          else if (vStock > 0) hasStock = true;
+          if (v.sku && v.sku.length > 50) errors[`variants[${idx}].sku`] = 'SKU quá dài (tối đa 50 ký tự).';
+        });
+        if (!hasStock) errors.variants = 'Ít nhất một phân loại phải có số lượng > 0 để đăng bán.';
+      }
+    } catch (err) {
+      errors.variants = 'Dữ liệu phân loại không hợp lệ.';
+    }
+  }
+
   // Shoe-size compatibility only checked when BOTH pieces are known for this
   // request — either just-submitted or already on the row (caller passes
   // the effective category/size in via `context` below).
-  return { updates, errors, categorySlug, size };
+  return { updates, errors, categorySlug, size, parsedVariants };
 }
 
 async function updateMyListing(userId, id, rawFields) {
@@ -271,7 +304,7 @@ async function updateMyListing(userId, id, rawFields) {
 
   const existing = await getMyListingById(userId, id); // throws 404 if not owned/seed
 
-  const { updates, errors, categorySlug, size } = validatePartialFields(rawFields);
+  const { updates, errors, categorySlug, size, parsedVariants } = validatePartialFields(rawFields);
   const productJourney = sustainability.validateSustainability(rawFields);
 
   // Cross-field shoe-size rule, evaluated against the EFFECTIVE (post-update)
@@ -308,9 +341,11 @@ async function updateMyListing(userId, id, rawFields) {
     updates.brand_id = brandId;
   }
 
-  if (Object.keys(updates).length === 0 && !productJourney.provided) {
+  if (Object.keys(updates).length === 0 && !productJourney.provided && !parsedVariants) {
     return existing; // nothing to change — not an error, just a no-op
   }
+
+  let finalProductId = id;
 
   if (productJourney.provided) {
     const { error: rpcError } = await supabaseAdmin.rpc('stylehub_update_listing_with_sustainability', {
@@ -331,34 +366,52 @@ async function updateMyListing(userId, id, rawFields) {
       }
       throw rpcError;
     }
+  } else if (Object.keys(updates).length > 0) {
+    updates.updated_at = new Date().toISOString();
 
-    return getMyListingById(userId, id);
-  }
-
-  updates.updated_at = new Date().toISOString();
-
-  // Optimistic concurrency: the client sends back the `updated_at` it last
-  // saw when it loaded the editor. Require the row's CURRENT `updated_at`
-  // to still equal that client-supplied value before writing — if another
-  // tab/session saved a change in between, the row's real `updated_at` has
-  // since moved on and this equality fails, so the stale write is rejected
-  // as a conflict instead of silently overwriting the newer edit.
-  let query = supabaseAdmin.from('products').update(updates).eq('id', id).eq('seller_id', userId).eq('listing_source', 'user');
-  if (rawFields.expected_updated_at) {
-    query = query.eq('updated_at', rawFields.expected_updated_at);
-  }
-
-  const { data: updated, error } = await query.select(LISTING_COLUMNS).maybeSingle();
-  if (error) throw error;
-  if (!updated) {
+    // Optimistic concurrency: the client sends back the `updated_at` it last
+    // saw when it loaded the editor. Require the row's CURRENT `updated_at`
+    // to still equal that client-supplied value before writing — if another
+    // tab/session saved a change in between, the row's real `updated_at` has
+    // since moved on and this equality fails, so the stale write is rejected
+    // as a conflict instead of silently overwriting the newer edit.
+    let query = supabaseAdmin.from('products').update(updates).eq('id', id).eq('seller_id', userId).eq('listing_source', 'user');
     if (rawFields.expected_updated_at) {
-      throw new SellerListingError('Sản phẩm đã được cập nhật ở một nơi khác. Vui lòng tải lại trang.', 409);
+      query = query.eq('updated_at', rawFields.expected_updated_at);
     }
-    throw new SellerListingError('Không tìm thấy sản phẩm.', 404);
+
+    const { data: updated, error } = await query.select('id').maybeSingle();
+    if (error) throw error;
+    if (!updated) {
+      if (rawFields.expected_updated_at) {
+        throw new SellerListingError('Sản phẩm đã được cập nhật ở một nơi khác. Vui lòng tải lại trang.', 409);
+      }
+      throw new SellerListingError('Không tìm thấy sản phẩm.', 404);
+    }
   }
 
-  const [withImages] = await attachImages([updated]);
-  return withImages;
+  if (parsedVariants) {
+    // Delete existing variants
+    await supabaseAdmin.from('product_variants').delete().eq('product_id', id);
+
+    // Insert new variants
+    if (updates.inventory_mode === 'variant' || (!updates.inventory_mode && existing.inventory_mode === 'variant')) {
+      const variantsToInsert = parsedVariants.map(v => ({
+        product_id: id,
+        sku: v.sku || null,
+        title: v.title.trim(),
+        price: Number(v.price),
+        sale_price: null,
+        stock: Number(v.stock),
+        status: Number(v.stock) > 0 ? 'active' : 'out_of_stock'
+      }));
+      if (variantsToInsert.length > 0) {
+        await supabaseAdmin.from('product_variants').insert(variantsToInsert);
+      }
+    }
+  }
+
+  return getMyListingById(userId, id);
 }
 
 async function transitionStatus(userId, id, action) {

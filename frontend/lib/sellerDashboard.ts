@@ -35,6 +35,8 @@ export interface SellerListing {
   updated_at: string;
   images: SellerListingImage[];
   sustainability: ProductSustainability;
+  inventory_mode?: 'simple' | 'variant';
+  variants?: Array<{ id: string; title: string; price: number; stock: number; sku: string | null }>;
 }
 
 export interface SellerListingStats {

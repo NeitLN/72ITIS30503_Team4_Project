@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Combobox } from '../ui/Combobox';
 import { BrandField } from '../sell/BrandField';
 import { ROUTES } from '../../constants/routes';
+import { computeQualityScore } from '../../lib/quality';
 import { getCategoryTree } from '../../lib/catalog';
 import { Category } from '../../types/category';
 import { getBrands, BrandOption, findEquivalentBrand, normalizeBrandText } from '../../lib/brands';
@@ -41,6 +42,8 @@ type FormState = {
   price: string;
   sale_price: string;
   stock: string;
+  inventory_mode: 'simple' | 'variant';
+  variants: Array<{ id?: string, title: string, price: string, stock: string, sku: string }>;
   location: string;
   is_negotiable: boolean;
   product_journey: ProductJourneyFormState;
@@ -58,6 +61,14 @@ function toForm(listing: SellerListing): FormState {
     price: String(listing.price),
     sale_price: listing.sale_price != null ? String(listing.sale_price) : '',
     stock: String(listing.stock),
+    inventory_mode: listing.inventory_mode === 'variant' ? 'variant' : 'simple',
+    variants: listing.variants?.map((v) => ({
+      id: v.id,
+      title: v.title || '',
+      price: String(v.price || 0),
+      stock: String(v.stock || 0),
+      sku: v.sku || ''
+    })) || [],
     location: listing.location,
     is_negotiable: listing.is_negotiable,
     product_journey: toProductJourneyForm(listing.sustainability),
@@ -113,7 +124,7 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
   const isShoeLike = form ? SHOE_LIKE_CATEGORIES.has(form.category_slug) : false;
   const sizeOptions = isShoeLike ? SHOE_SIZES : CLOTHING_SIZES;
 
-  const setField = (field: keyof FormState, value: string | boolean) => {
+  const setField = (field: keyof FormState, value: FormState[keyof FormState]) => {
     setForm((prev) => (prev ? { ...prev, [field]: value } : prev));
     setErrors((prev) => {
       if (!prev[field as string]) return prev;
@@ -153,16 +164,35 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
     if (!f.category_slug) e.category_slug = 'Vui lòng chọn danh mục.';
     if (!f.condition) e.condition = 'Vui lòng chọn tình trạng sản phẩm.';
     if (!f.size) e.size = 'Vui lòng chọn kích thước.';
-    const price = Number(f.price);
-    if (!f.price || !Number.isFinite(price) || price <= 0) e.price = 'Nhập giá bán hợp lệ (VNĐ, lớn hơn 0).';
-    else if (price > 500_000_000) e.price = 'Giá bán quá cao so với thị trường đồ cũ.';
-    if (f.sale_price) {
-      const sale = Number(f.sale_price);
-      if (!Number.isFinite(sale) || sale <= 0) e.sale_price = 'Giá giảm phải lớn hơn 0.';
-      else if (Number.isFinite(price) && sale >= price) e.sale_price = 'Giá giảm phải thấp hơn giá gốc.';
+    
+    if (f.inventory_mode === 'simple') {
+      const price = Number(f.price);
+      if (!f.price || !Number.isFinite(price) || price <= 0) e.price = 'Nhập giá bán hợp lệ (VNĐ, lớn hơn 0).';
+      else if (price > 500_000_000) e.price = 'Giá bán quá cao so với thị trường đồ cũ.';
+      if (f.sale_price) {
+        const sale = Number(f.sale_price);
+        if (!Number.isFinite(sale) || sale <= 0) e.sale_price = 'Giá giảm phải lớn hơn 0.';
+        else if (Number.isFinite(price) && sale >= price) e.sale_price = 'Giá giảm phải thấp hơn giá gốc.';
+      }
+      const stock = Number(f.stock);
+      if (!Number.isInteger(stock) || stock < 0) e.stock = 'Số lượng phải là số nguyên và không âm.';
+    } else {
+      if (f.variants.length === 0) {
+        e.variants = 'Cần ít nhất một phân loại.';
+      } else {
+        let hasStock = false;
+        f.variants.forEach((v, idx) => {
+          if (!v.title?.trim()) e[`variants[${idx}].title`] = 'Nhập tên phân loại.';
+          const vPrice = Number(v.price);
+          if (!Number.isFinite(vPrice) || vPrice < 0) e[`variants[${idx}].price`] = 'Giá hợp lệ.';
+          const vStock = Number(v.stock);
+          if (!Number.isInteger(vStock) || vStock < 0) e[`variants[${idx}].stock`] = 'Kho hợp lệ.';
+          else if (vStock > 0) hasStock = true;
+        });
+        if (!hasStock) e.variants = 'Ít nhất một phân loại phải có số lượng > 0.';
+      }
     }
-    const stock = Number(f.stock);
-    if (!Number.isInteger(stock) || stock < 0) e.stock = 'Số lượng phải là số nguyên và không âm.';
+    
     if (!f.location.trim()) e.location = 'Vui lòng chọn một tỉnh/thành phố hợp lệ.';
     Object.assign(e, validateProductJourney(f.product_journey));
     return e;
@@ -196,9 +226,11 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
           : { new_brand_name: form.brand.trim() }),
         condition: form.condition,
         size: form.size,
-        price: form.price,
-        sale_price: form.sale_price || null,
-        stock: form.stock,
+        inventory_mode: form.inventory_mode,
+        price: form.inventory_mode === 'simple' ? form.price : (form.variants[0]?.price || '0'),
+        sale_price: form.inventory_mode === 'simple' ? (form.sale_price || null) : null,
+        stock: form.inventory_mode === 'simple' ? form.stock : '0',
+        variants: form.inventory_mode === 'variant' ? JSON.stringify(form.variants) : undefined,
         location: form.location.trim(),
         is_negotiable: form.is_negotiable,
         sustainability: prepareProductJourney(form.product_journey),
@@ -294,24 +326,16 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
     && normalizeBrandText(form.brand) !== normalizeBrandText(UNBRANDED_LABEL)
     && (!matchedBrand || matchedBrand.verification_status !== 'verified');
 
-  const computeQualityScore = () => {
-    if (!listing || !form) return { score: 0, checks: [] };
-    const checks = [
-      { key: 'name', label: 'Tên sản phẩm', passed: form.name.trim().length >= 3 },
-      { key: 'description', label: 'Mô tả chi tiết', passed: form.description.trim().length >= 50 },
-      { key: 'category', label: 'Có danh mục', passed: !!form.category_slug },
-      { key: 'brand', label: 'Có thương hiệu', passed: !!form.brand && form.brand !== UNBRANDED_LABEL },
-      { key: 'condition', label: 'Tình trạng', passed: !!form.condition },
-      { key: 'size', label: 'Kích thước', passed: !!form.size },
-      { key: 'price', label: 'Giá bán hợp lệ', passed: !!form.price && Number(form.price) > 0 },
-      { key: 'images', label: 'Ít nhất 3 ảnh', passed: listing.images.length >= 3 },
-      { key: 'cover', label: 'Ảnh bìa', passed: listing.images.length > 0 },
-    ];
-    const passedCount = checks.filter(c => c.passed).length;
-    return { score: Math.round((passedCount / checks.length) * 100), checks };
-  };
-
-  const { score, checks } = computeQualityScore();
+  const { score, checks } = computeQualityScore({
+    name: form.name,
+    description: form.description,
+    category_slug: form.category_slug,
+    brand: form.brand,
+    condition: form.condition,
+    size: form.size,
+    price: form.price,
+    imageCount: listing.images.length,
+  });
 
   return (
     <div>
@@ -432,45 +456,164 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="edit-price" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Giá bán (VNĐ) *</label>
-            <input
-              id="edit-price" type="number" min="1" value={form.price} onChange={(e) => setField('price', e.target.value)}
-              aria-invalid={!!errors.price}
-              className={`w-full border ${errClass('price')} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
-            />
-            {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
-          </div>
-          <div>
-            <label htmlFor="edit-sale_price" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Giá giảm (không bắt buộc)</label>
-            <input
-              id="edit-sale_price" type="number" min="1" value={form.sale_price} onChange={(e) => setField('sale_price', e.target.value)}
-              aria-invalid={!!errors.sale_price}
-              className={`w-full border ${errClass('sale_price')} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
-            />
-            {errors.sale_price && <p className="text-red-500 text-xs mt-1">{errors.sale_price}</p>}
-          </div>
-          <div>
-            <label htmlFor="edit-stock" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Số lượng *</label>
-            <input
-              id="edit-stock" type="number" min="0" value={form.stock} onChange={(e) => setField('stock', e.target.value)}
-              aria-invalid={!!errors.stock}
-              className={`w-full border ${errClass('stock')} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
-            />
-            {errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock}</p>}
-          </div>
-          <div>
-            <label htmlFor="edit-location" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Tỉnh/Thành phố *</label>
-            <Combobox
-              id="edit-location" value={form.location} onChange={(v) => setField('location', v)}
-              getOptions={searchVnLocations} placeholder="Tìm tỉnh/thành phố..."
-              ariaInvalid={!!errors.location}
-              emptyMessage="Không tìm thấy tỉnh/thành phố phù hợp."
-            />
-            {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+        <div>
+          <label className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-3">Loại kho hàng *</label>
+          <div className="flex gap-4 mb-6">
+            <label className="flex items-center gap-2 text-sm text-neutral-900 cursor-pointer">
+              <input
+                type="radio" name="edit_inventory_mode" value="simple"
+                checked={form.inventory_mode === 'simple'}
+                onChange={() => setField('inventory_mode', 'simple')}
+                className="h-4 w-4 border-neutral-300 text-neutral-900"
+              />
+              Đơn giản (Một tùy chọn)
+            </label>
+            <label className="flex items-center gap-2 text-sm text-neutral-900 cursor-pointer">
+              <input
+                type="radio" name="edit_inventory_mode" value="variant"
+                checked={form.inventory_mode === 'variant'}
+                onChange={() => setField('inventory_mode', 'variant')}
+                className="h-4 w-4 border-neutral-300 text-neutral-900"
+              />
+              Nhiều phân loại (Size/Màu)
+            </label>
           </div>
         </div>
+
+        {form.inventory_mode === 'simple' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="edit-price" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Giá bán (VNĐ) *</label>
+              <input
+                id="edit-price" type="number" min="1" value={form.price} onChange={(e) => setField('price', e.target.value)}
+                aria-invalid={!!errors.price}
+                className={`w-full border ${errClass('price')} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
+              />
+              {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
+            </div>
+            <div>
+              <label htmlFor="edit-sale_price" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Giá giảm (không bắt buộc)</label>
+              <input
+                id="edit-sale_price" type="number" min="1" value={form.sale_price} onChange={(e) => setField('sale_price', e.target.value)}
+                aria-invalid={!!errors.sale_price}
+                className={`w-full border ${errClass('sale_price')} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
+              />
+              {errors.sale_price && <p className="text-red-500 text-xs mt-1">{errors.sale_price}</p>}
+            </div>
+            <div>
+              <label htmlFor="edit-stock" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Số lượng *</label>
+              <input
+                id="edit-stock" type="number" min="0" value={form.stock} onChange={(e) => setField('stock', e.target.value)}
+                aria-invalid={!!errors.stock}
+                className={`w-full border ${errClass('stock')} px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none`}
+              />
+              {errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock}</p>}
+            </div>
+            <div>
+              <label htmlFor="edit-location" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Tỉnh/Thành phố *</label>
+              <Combobox
+                id="edit-location" value={form.location} onChange={(v) => setField('location', v)}
+                getOptions={searchVnLocations} placeholder="Tìm tỉnh/thành phố..."
+                ariaInvalid={!!errors.location}
+                emptyMessage="Không tìm thấy tỉnh/thành phố phù hợp."
+              />
+              {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 border border-neutral-200 bg-neutral-50 p-4 sm:p-6 mb-6">
+            <p className="font-mono text-xs uppercase tracking-wider text-neutral-900 font-bold mb-2">Danh sách phân loại</p>
+            {errors.variants && <p className="text-red-500 text-xs mb-4">{errors.variants}</p>}
+            {form.variants.map((v, idx) => (
+              <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start border-b border-neutral-200 pb-4 mb-4 last:border-0 last:pb-0 last:mb-0">
+                <div className="sm:col-span-4">
+                  <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">Tên (Size/Màu) *</label>
+                  <input
+                    type="text" value={v.title}
+                    placeholder="VD: Size L - Đen"
+                    onChange={(e) => {
+                      const next = [...form.variants];
+                      next[idx].title = e.target.value;
+                      setField('variants', next as FormState['variants']);
+                    }}
+                    className={`w-full border ${errors[`variants[${idx}].title`] ? 'border-red-500' : 'border-neutral-300'} px-2 py-1.5 text-sm focus:border-neutral-900 focus:outline-none`}
+                  />
+                  {errors[`variants[${idx}].title`] && <p className="text-red-500 text-[10px] mt-1">{errors[`variants[${idx}].title`]}</p>}
+                </div>
+                <div className="sm:col-span-3">
+                  <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">Giá *</label>
+                  <input
+                    type="number" min="0" value={v.price}
+                    onChange={(e) => {
+                      const next = [...form.variants];
+                      next[idx].price = e.target.value;
+                      setField('variants', next as FormState['variants']);
+                    }}
+                    className={`w-full border ${errors[`variants[${idx}].price`] ? 'border-red-500' : 'border-neutral-300'} px-2 py-1.5 text-sm focus:border-neutral-900 focus:outline-none`}
+                  />
+                  {errors[`variants[${idx}].price`] && <p className="text-red-500 text-[10px] mt-1">{errors[`variants[${idx}].price`]}</p>}
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">Kho *</label>
+                  <input
+                    type="number" min="0" value={v.stock}
+                    onChange={(e) => {
+                      const next = [...form.variants];
+                      next[idx].stock = e.target.value;
+                      setField('variants', next as FormState['variants']);
+                    }}
+                    className={`w-full border ${errors[`variants[${idx}].stock`] ? 'border-red-500' : 'border-neutral-300'} px-2 py-1.5 text-sm focus:border-neutral-900 focus:outline-none`}
+                  />
+                  {errors[`variants[${idx}].stock`] && <p className="text-red-500 text-[10px] mt-1">{errors[`variants[${idx}].stock`]}</p>}
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-1">SKU</label>
+                  <input
+                    type="text" value={v.sku}
+                    onChange={(e) => {
+                      const next = [...form.variants];
+                      next[idx].sku = e.target.value;
+                      setField('variants', next as FormState['variants']);
+                    }}
+                    className={`w-full border ${errors[`variants[${idx}].sku`] ? 'border-red-500' : 'border-neutral-300'} px-2 py-1.5 text-sm focus:border-neutral-900 focus:outline-none`}
+                  />
+                  {errors[`variants[${idx}].sku`] && <p className="text-red-500 text-[10px] mt-1">{errors[`variants[${idx}].sku`]}</p>}
+                </div>
+                <div className="sm:col-span-1 pt-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = [...form.variants];
+                      next.splice(idx, 1);
+                      setField('variants', next as FormState['variants']);
+                    }}
+                    className="text-red-500 hover:text-red-700 text-sm font-bold w-full text-center py-1"
+                    title="Xóa phân loại"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setField('variants', [...form.variants, { title: '', price: form.price || '0', stock: '1', sku: '' }] as FormState['variants'])}
+              className="text-sm font-mono uppercase tracking-wider text-neutral-700 hover:text-neutral-900 underline"
+            >
+              + Thêm phân loại
+            </button>
+            <div className="mt-6">
+              <label htmlFor="edit-location" className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-1.5">Tỉnh/Thành phố *</label>
+              <Combobox
+                id="edit-location" value={form.location} onChange={(v) => setField('location', v)}
+                getOptions={searchVnLocations} placeholder="Tìm tỉnh/thành phố..."
+                ariaInvalid={!!errors.location}
+                emptyMessage="Không tìm thấy tỉnh/thành phố phù hợp."
+              />
+              {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+            </div>
+          </div>
+        )}
 
         <label className="flex items-center gap-2 text-sm text-neutral-700">
           <input

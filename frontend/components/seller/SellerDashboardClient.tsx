@@ -31,7 +31,9 @@ const FULFILLMENT_FILTERS = ['', 'awaiting_confirmation', 'confirmed', 'preparin
 // Only actions valid FROM the listing's current status — mirrors
 // backend/constants/listingStatus.js's ALLOWED_TRANSITIONS exactly so the
 // UI never offers a button the server would reject.
-const LISTING_ACTIONS: Record<string, { action: string; label: string; danger?: boolean }[]> = {
+import { computeQualityScore } from '../../lib/quality';
+
+const LISTING_ACTIONS: Record<string, Array<{ action: string; label: string; danger?: boolean }>> = {
   draft: [{ action: 'active', label: 'Đăng bán' }, { action: 'archived', label: 'Lưu trữ' }],
   active: [{ action: 'hidden', label: 'Tạm ẩn' }, { action: 'sold', label: 'Đánh dấu đã bán' }, { action: 'archived', label: 'Lưu trữ', danger: true }],
   hidden: [{ action: 'active', label: 'Đăng bán lại' }, { action: 'archived', label: 'Lưu trữ', danger: true }],
@@ -465,6 +467,7 @@ export const SellerDashboardClient = () => {
                           <th scope="col" className="px-4 py-3">Sản phẩm</th>
                           <th scope="col" className="px-4 py-3">Giá</th>
                           <th scope="col" className="px-4 py-3">Kho</th>
+                          <th scope="col" className="px-4 py-3">Chất lượng</th>
                           <th scope="col" className="px-4 py-3">Trạng thái</th>
                           <th scope="col" className="px-4 py-3">Cập nhật</th>
                           <th scope="col" className="px-4 py-3">Hành động</th>
@@ -486,6 +489,40 @@ export const SellerDashboardClient = () => {
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">{formatVND(listing.sale_price ?? listing.price)}</td>
                             <td className="px-4 py-3">{listing.stock}</td>
+                            <td className="px-4 py-3">
+                              <span className={`font-mono text-[10px] uppercase font-bold tracking-wider ${
+                                computeQualityScore({
+                                  name: listing.name,
+                                  description: listing.description,
+                                  category_slug: listing.category_slug,
+                                  brand: listing.brand || undefined,
+                                  condition: listing.condition,
+                                  size: listing.size,
+                                  price: listing.price,
+                                  imageCount: listing.images?.length || 0,
+                                }).score === 100 ? 'text-green-600' : computeQualityScore({
+                                  name: listing.name,
+                                  description: listing.description,
+                                  category_slug: listing.category_slug,
+                                  brand: listing.brand || undefined,
+                                  condition: listing.condition,
+                                  size: listing.size,
+                                  price: listing.price,
+                                  imageCount: listing.images?.length || 0,
+                                }).score > 60 ? 'text-neutral-900' : 'text-orange-600'
+                              }`}>
+                                {computeQualityScore({
+                                  name: listing.name,
+                                  description: listing.description,
+                                  category_slug: listing.category_slug,
+                                  brand: listing.brand || undefined,
+                                  condition: listing.condition,
+                                  size: listing.size,
+                                  price: listing.price,
+                                  imageCount: listing.images?.length || 0,
+                                }).score}%
+                              </span>
+                            </td>
                             <td className="px-4 py-3">
                               <span className="font-mono text-[10px] uppercase tracking-wider border border-neutral-300 px-2 py-0.5" data-testid="listing-status">
                                 {LISTING_STATUS_LABELS[listing.status] || listing.status}

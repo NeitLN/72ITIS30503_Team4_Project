@@ -96,6 +96,9 @@ function validateFields(raw, sellerName) {
   const salePriceNum = salePriceRaw === '' || salePriceRaw == null ? null : Number(salePriceRaw);
   const stockNum = raw.stock === '' || raw.stock == null ? 1 : Number(raw.stock);
   const isNegotiable = raw.is_negotiable === true || raw.is_negotiable === 'true' || raw.is_negotiable === '1';
+  
+  const inventoryMode = raw.inventory_mode === 'variant' ? 'variant' : 'simple';
+  let parsedVariants = [];
 
   if (!name || name.length < MIN_NAME_LEN || name.length > MAX_NAME_LEN) {
     errors.name = `Tên sản phẩm phải có từ ${MIN_NAME_LEN} đến ${MAX_NAME_LEN} ký tự.`;
@@ -129,10 +132,33 @@ function validateFields(raw, sellerName) {
     }
   }
 
-  if (!Number.isInteger(stockNum) || stockNum < 1) {
-    errors.stock = 'Số lượng phải là số nguyên và ít nhất là 1.';
-  } else if (stockNum > MAX_STOCK) {
-    errors.stock = `Số lượng vượt quá mức cho phép (${MAX_STOCK}).`;
+  if (inventoryMode === 'simple') {
+    if (!Number.isInteger(stockNum) || stockNum < 0) {
+      errors.stock = 'Số lượng phải là số nguyên và không âm.';
+    } else if (stockNum > MAX_STOCK) {
+      errors.stock = `Số lượng vượt quá mức cho phép (${MAX_STOCK}).`;
+    }
+  } else {
+    try {
+      parsedVariants = typeof raw.variants === 'string' ? JSON.parse(raw.variants || '[]') : (raw.variants || []);
+      if (!Array.isArray(parsedVariants) || parsedVariants.length === 0) {
+        errors.variants = 'Cần ít nhất một phân loại (size/màu).';
+      } else {
+        let hasStock = false;
+        parsedVariants.forEach((v, idx) => {
+          if (!v.title?.trim()) errors[`variants[${idx}].title`] = 'Tên phân loại không được trống.';
+          const vPrice = Number(v.price);
+          if (!Number.isFinite(vPrice) || vPrice < 0) errors[`variants[${idx}].price`] = 'Giá không hợp lệ.';
+          const vStock = Number(v.stock);
+          if (!Number.isInteger(vStock) || vStock < 0) errors[`variants[${idx}].stock`] = 'Kho không hợp lệ.';
+          else if (vStock > 0) hasStock = true;
+          if (v.sku && v.sku.length > 50) errors[`variants[${idx}].sku`] = 'SKU quá dài (tối đa 50 ký tự).';
+        });
+        if (!hasStock) errors.variants = 'Ít nhất một phân loại phải có số lượng > 0 để đăng bán.';
+      }
+    } catch (err) {
+      errors.variants = 'Dữ liệu phân loại không hợp lệ.';
+    }
   }
 
   if (!location) {
@@ -171,6 +197,8 @@ function validateFields(raw, sellerName) {
     sale_price: salePriceNum != null ? Math.round(salePriceNum) : null,
     stock: stockNum,
     is_negotiable: isNegotiable,
+    inventory_mode: inventoryMode,
+    parsed_variants: parsedVariants,
     seller_name: sellerName,
   };
 }
@@ -341,7 +369,8 @@ async function createListing(user, rawFields, files) {
       image_url: primaryUrl,
       thumbnail: primaryUrl,
       description: fields.description,
-      stock: fields.stock,
+      stock: fields.inventory_mode === 'variant' ? 0 : fields.stock, // total stock computed by triggers or updated by variants
+      inventory_mode: fields.inventory_mode,
       condition: fields.condition,
       size: fields.size,
       location: fields.location,
@@ -365,6 +394,20 @@ async function createListing(user, rawFields, files) {
     if (prodErr) throw new Error(`Product creation failed: ${prodErr.message}`);
 
     try {
+      if (fields.inventory_mode === 'variant' && fields.parsed_variants?.length > 0) {
+        const variantsToInsert = fields.parsed_variants.map(v => ({
+          product_id: product.id,
+          sku: v.sku || null,
+          title: v.title.trim(),
+          price: Number(v.price),
+          sale_price: null,
+          stock: Number(v.stock),
+          status: Number(v.stock) > 0 ? 'active' : 'out_of_stock'
+        }));
+        const { error: variantErr } = await supabaseAdmin.from('product_variants').insert(variantsToInsert);
+        if (variantErr) throw new Error(`Variants creation failed: ${variantErr.message}`);
+      }
+
       if (productJourney.provided) {
         const { error: sustainabilityErr } = await supabaseAdmin
           .from('product_sustainability')
