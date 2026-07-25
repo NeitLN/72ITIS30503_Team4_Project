@@ -62,7 +62,7 @@ export const EN = {
   },
   brand: {
     name: 'StyleHub',
-    tagline: 'Shop the drop. Sell the archive.',
+    tagline: 'Săn đồ mới. Bán đồ cũ.',
     howItWorks: 'How the marketplace works',
   },
   nav: {
@@ -71,8 +71,8 @@ export const EN = {
     sell: 'Sell',
   },
   home: {
-    newArrivals: 'New Arrivals',
-    onSale: 'On Sale',
+    newArrivals: 'Hàng Mới Về',
+    onSale: 'Đang Giảm Giá',
     viewAllProducts: 'XEM TẤT CẢ SẢN PHẨM',
   },
   sell: {

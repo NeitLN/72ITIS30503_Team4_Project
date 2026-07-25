@@ -317,7 +317,7 @@ try:
         error_page = error_context.new_page()
         error_page.goto(WEB, wait_until="domcontentloaded")
         expect(error_page.locator("[data-testid=platform-impact-error]")).to_be_visible(timeout=15000)
-        check("Homepage impact failure does not fail the commerce page", error_page.get_by_role("heading", name=re.compile("Shop the drop", re.I)).is_visible())
+        check("Homepage impact failure does not fail the commerce page", error_page.get_by_role("heading", name=re.compile("Săn đồ mới", re.I)).is_visible())
         error_context.close()
 
         for width, height, route in ((390, 844, "/sustainability"), (768, 1024, "/sustainability"), (1024, 768, "/"), (1440, 900, "/sustainability")):

@@ -114,11 +114,11 @@ with sync_playwright() as p:
 
     # Headings render through `uppercase` CSS, so compare lower-cased.
     body_text = page.locator("body").inner_text().lower()
-    check("Homepage hero shows 'Shop the drop.'", "shop the drop" in body_text)
-    check("Homepage hero shows 'Sell the archive.'", "sell the archive" in body_text)
-    check("Homepage shows 'New Arrivals' section (English)", "new arrivals" in body_text)
-    check("Homepage shows 'On Sale' section (English)", "on sale" in body_text)
-    check("Homepage 'Shop by category' spotlight includes 'Shoes'", "shoes" in body_text)
+    check("Homepage hero shows 'Săn đồ mới.'", "săn đồ mới" in body_text)
+    check("Homepage hero shows 'Bán đồ cũ.'", "bán đồ cũ" in body_text)
+    check("Homepage shows 'Hàng Mới Về' section (Vietnamese)", "hàng mới về" in body_text)
+    check("Homepage shows 'Đang Giảm Giá' section (Vietnamese)", "đang giảm giá" in body_text)
+    check("Homepage 'Mua sắm theo danh mục' spotlight includes 'Shoes'", "shoes" in body_text)
 
     page.goto(f"{BASE}/about", wait_until="load")
     about_text = page.locator("body").inner_text().lower()

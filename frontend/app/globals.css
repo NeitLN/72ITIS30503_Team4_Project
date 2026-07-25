@@ -22,6 +22,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  zoom: 1.5;
 }
 
 ::selection {
@@ -29,6 +30,27 @@ body {
   color: var(--background);
 }
 
+/* Scoped size boost for specific pages only (currently /profile, /orders,
+   /seller/dashboard). Layered on top of the site-wide body{zoom:1.5} and the
+   html{zoom} rules below, this nets out to ~125% effective scale at desktop
+   widths on exactly the pages that opt in — every other page is untouched. */
+.page-zoom-boost {
+  zoom: 1.1111;
+}
+
+/*
+ * Motion convention (StyleHub-wide, no animation library):
+ *   duration-150            instant feedback  — color/icon/checkbox states
+ *   duration-200             standard          — hover, dropdown, tab, small reveal
+ *   duration-300             large surface     — drawer, modal, mobile menu
+ *   ease-out                 entering/interactive (default browser easing is close enough
+ *                             to the editorial 0.16,1,0.3,1 curve; keep it, don't invent bezier per-file)
+ *   ease-in                  exiting
+ *   motion-safe:/motion-reduce: on anything that scales or translates, so reduced-motion
+ *   users always land on the resting state without playing the movement.
+ * The @media block below is the hard backstop: it collapses every transition/animation
+ * duration to near-zero for prefers-reduced-motion, regardless of per-component classes.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

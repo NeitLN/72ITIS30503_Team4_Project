@@ -25,7 +25,7 @@ export const CartClient = () => {
   return (
     <Container className="py-10 sm:py-16">
       <PageHeader
-        eyebrow="Marketplace"
+        eyebrow="Sàn giao dịch"
         title={vi.cart.title}
         lede=""
       />

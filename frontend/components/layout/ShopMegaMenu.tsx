@@ -57,7 +57,7 @@ const shopMenuGroups = [
 
 export const ShopMegaMenu = () => {
   return (
-    <div className="group static">
+    <div className="group static focus-within:outline-none">
       <div className="flex h-16 items-center">
         <Link
           href={ROUTES.SHOP}
@@ -67,7 +67,7 @@ export const ShopMegaMenu = () => {
         </Link>
       </div>
 
-      <div className="invisible absolute left-0 top-[calc(100%-1px)] w-full opacity-0 shadow-sm transition-all duration-200 group-hover:visible group-hover:opacity-100 z-50 bg-white border-y border-neutral-200 hidden lg:block">
+      <div className="invisible absolute left-0 top-[calc(100%-1px)] w-full opacity-0 shadow-sm transition-opacity duration-200 ease-out group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 z-50 bg-white border-y border-neutral-200 hidden lg:block">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           <div className="grid grid-cols-5 gap-8">
             {shopMenuGroups.map((group) => (

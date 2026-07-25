@@ -155,6 +155,7 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
     if (!f.size) e.size = 'Vui lòng chọn kích thước.';
     const price = Number(f.price);
     if (!f.price || !Number.isFinite(price) || price <= 0) e.price = 'Nhập giá bán hợp lệ (VNĐ, lớn hơn 0).';
+    else if (price > 500_000_000) e.price = 'Giá bán quá cao so với thị trường đồ cũ.';
     if (f.sale_price) {
       const sale = Number(f.sale_price);
       if (!Number.isFinite(sale) || sale <= 0) e.sale_price = 'Giá giảm phải lớn hơn 0.';

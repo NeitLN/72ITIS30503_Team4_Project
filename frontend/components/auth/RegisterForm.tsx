@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../constants/routes';
@@ -9,6 +9,7 @@ import { Button } from '../ui/Button';
 
 export const RegisterForm = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { register, isLoading, error } = useAuth();
 
   const [name, setName] = useState('');
@@ -29,7 +30,22 @@ export const RegisterForm = () => {
     });
 
     if (success) {
-      router.push(ROUTES.PROFILE);
+      const redirectParam = searchParams.get('redirect');
+
+      if (role === 'admin') {
+        if (redirectParam && redirectParam.startsWith('/admin') && !redirectParam.startsWith('//')) {
+          router.push(redirectParam);
+        } else {
+          router.push(ROUTES.ADMIN_OVERVIEW);
+        }
+        return;
+      }
+
+      if (redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')) {
+        router.push(redirectParam);
+      } else {
+        router.push(ROUTES.PROFILE);
+      }
     }
   };
 

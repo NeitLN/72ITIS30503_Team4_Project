@@ -36,7 +36,21 @@ export const Combobox = ({
   const [lastSyncedValue, setLastSyncedValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [openUpward, setOpenUpward] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Flip the listbox above the input when there isn't enough room below —
+  // otherwise it can visually overlap whatever sits right after the field
+  // (e.g. a wizard's "Next" button on a short form).
+  useEffect(() => {
+    if (!isOpen || !wrapperRef.current) return;
+    const rect = wrapperRef.current.getBoundingClientRect();
+    const LIST_MAX_HEIGHT = 168; // matches max-h-40 (160px) + a small margin
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    setOpenUpward(spaceBelow < LIST_MAX_HEIGHT && spaceAbove > spaceBelow);
+  }, [isOpen]);
 
   // Mirrors an externally-changed `value` prop (e.g. a form reset) into the
   // editable input state. Adjusted during render rather than in an effect —
@@ -108,7 +122,7 @@ export const Combobox = ({
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div ref={wrapperRef} className={`relative ${className}`}>
       {description && <p id={descId} className="text-[11px] text-neutral-500 mb-1">{description}</p>}
       <div className="relative">
         <input
@@ -147,7 +161,9 @@ export const Combobox = ({
         <ul
           id={listboxId}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto border border-neutral-300 bg-white shadow-lg"
+          className={`absolute z-20 max-h-40 w-full overflow-y-auto border border-neutral-300 bg-white shadow-lg motion-safe:transition-[opacity,transform] motion-safe:duration-150 motion-safe:ease-out motion-safe:starting:opacity-0 ${
+            openUpward ? 'bottom-full mb-1 motion-safe:starting:translate-y-1' : 'top-full mt-1 motion-safe:starting:-translate-y-1'
+          }`}
         >
           {options.length === 0 ? (
             <li role="presentation" className="px-3.5 py-2 text-sm text-neutral-500">{emptyMessage}</li>

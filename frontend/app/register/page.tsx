@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 import { RegisterForm } from '../../components/auth/RegisterForm';
 import { Container } from '../../components/ui/Container';
 
@@ -17,7 +18,9 @@ export default function RegisterPage() {
         <p className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-8">
           Tạo tài khoản để thanh toán và quản lý đơn hàng.
         </p>
-        <RegisterForm />
+        <Suspense fallback={<div className="h-64 animate-pulse bg-neutral-50"></div>}>
+          <RegisterForm />
+        </Suspense>
       </div>
     </Container>
   );

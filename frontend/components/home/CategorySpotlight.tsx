@@ -45,7 +45,7 @@ export const CategorySpotlight = () => {
               KHÁM PHÁ SẢN PHẨM
             </p>
             <h2 className="font-display text-3xl font-black uppercase tracking-tight sm:text-4xl">
-              Shop by category
+              Mua sắm theo danh mục
             </h2>
           </div>
         </div>

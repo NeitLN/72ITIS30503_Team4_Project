@@ -1,6 +1,6 @@
 import { Container } from '../ui/Container';
 
-const trustBadges = ['Verified sellers', 'Condition checked', 'VNĐ pricing', 'New & pre-loved'];
+const trustBadges = ['Người bán đã xác thực', 'Tình trạng rõ ràng', 'Giá bằng VNĐ', 'Mới & đã qua sử dụng'];
 
 export const ShopHero = () => {
   return (
@@ -12,13 +12,13 @@ export const ShopHero = () => {
       <div className="relative z-20">
         <Container className="py-14 sm:py-20">
           <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-400">
-            MỖI SẢN PHẨM ĐỀU CÓ NGƯỜI BÁN
+            THỜI TRANG TỪ CỘNG ĐỒNG
           </p>
           <h1 className="font-display text-5xl font-black uppercase tracking-tight sm:text-6xl text-white">
-            SÀN MUA BÁN
+            MUA SẮM THEO GU
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-200 sm:text-lg">
-            Khám phá thời trang mới và đã qua sử dụng — đa dạng thương hiệu, phong cách — từ người bán trên khắp Việt Nam.
+            Khám phá thời trang mới và đã qua sử dụng — đa dạng thương hiệu, phong cách và mức giá.
           </p>
           <ul className="mt-8 flex flex-wrap gap-2">
             {trustBadges.map((badge) => (

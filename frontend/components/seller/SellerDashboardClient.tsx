@@ -248,13 +248,21 @@ export const SellerDashboardClient = () => {
         <div>
           <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">Kênh người bán</p>
           <h1 className="font-display text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-900">
-            SELLER DASHBOARD
+            TỔNG QUAN BÁN HÀNG
           </h1>
         </div>
-        <div className="flex gap-3">
-          {user?.username && (
+        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+          {user?.username ? (
             <Link href={ROUTES.SELLER_PROFILE(user.username)} data-testid="dashboard-public-profile-link">
               <Button variant="outline" className="font-mono text-xs uppercase tracking-wider">Hồ sơ công khai</Button>
+            </Link>
+          ) : (
+            <Link
+              href={ROUTES.PROFILE}
+              data-testid="dashboard-set-username-hint"
+              className="text-right text-[11px] text-neutral-500 underline hover:text-neutral-900 sm:text-left"
+            >
+              Đặt tên người dùng để mở gian hàng công khai
             </Link>
           )}
           <Link href={ROUTES.SELL} data-testid="dashboard-sell-link">

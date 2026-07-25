@@ -33,7 +33,7 @@ export const ConfirmDialog = ({
       ref={ref}
       onCancel={(e) => { e.preventDefault(); onCancel(); }}
       onClose={onCancel}
-      className="m-auto max-w-sm w-[90vw] border border-neutral-900 p-0 backdrop:bg-neutral-950/50"
+      className="m-auto max-w-sm w-[90vw] border border-neutral-900 p-0 opacity-0 scale-[0.98] open:opacity-100 open:scale-100 motion-safe:transition-[opacity,transform] motion-safe:duration-200 motion-safe:ease-out motion-reduce:transition-none backdrop:bg-neutral-950/50 backdrop:opacity-0 open:backdrop:opacity-100 motion-safe:[&::backdrop]:transition-opacity motion-safe:[&::backdrop]:duration-200 motion-reduce:[&::backdrop]:transition-none"
       aria-labelledby="confirm-dialog-title"
     >
       <div className="p-6">

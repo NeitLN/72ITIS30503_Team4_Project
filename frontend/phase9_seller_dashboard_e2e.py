@@ -180,7 +180,7 @@ with sync_playwright() as p:
 
     # ========== 2. Dashboard load ==========
     page.goto(f"{BASE}/seller/dashboard", wait_until="load")
-    expect(page.get_by_text("SELLER DASHBOARD")).to_be_visible(timeout=10000)
+    expect(page.get_by_text("TỔNG QUAN BÁN HÀNG")).to_be_visible(timeout=10000)
     check("Seller dashboard loads for an authenticated seller", True)
 
     # ========== 3. Real statistics match API ==========

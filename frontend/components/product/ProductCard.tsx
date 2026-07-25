@@ -17,13 +17,13 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     <Link
       href={ROUTES.PRODUCT(product.slug)}
       data-testid="product-card"
-      className="group block border border-[var(--border)] bg-[var(--background)] rounded-[var(--radius-card)] overflow-hidden transition-colors hover:border-[var(--brand-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-accent)]"
+      className="group block border border-[var(--border)] bg-[var(--background)] rounded-[var(--radius-card)] overflow-hidden transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--brand-accent)] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-accent)]"
     >
       <div className="relative aspect-square overflow-hidden border-b border-[var(--border)] bg-[var(--muted)]">
         <ListingImage
           src={listing.imageUrl}
           alt={listing.imageAlt}
-          className={`h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] ${listing.isSoldOut ? 'opacity-60 grayscale' : ''}`}
+          className={`h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-out motion-safe:group-hover:scale-[1.02] ${listing.isSoldOut ? 'opacity-60 grayscale' : ''}`}
         />
         <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
           {listing.isSoldOut && <ListingBadge variant="sold">Đã bán</ListingBadge>}

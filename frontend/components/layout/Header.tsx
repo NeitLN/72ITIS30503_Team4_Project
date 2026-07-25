@@ -41,7 +41,7 @@ export const Header = () => {
           <div className="flex min-h-[68px] lg:min-h-[76px] items-center justify-between gap-4">
             <Link
               href={logoHref}
-              className="flex items-center gap-2 font-display text-2xl font-black uppercase tracking-tight text-neutral-900 hover:opacity-90 transition-opacity"
+              className="flex shrink-0 items-center gap-2 whitespace-nowrap font-display text-2xl font-black uppercase tracking-tight text-neutral-900 hover:opacity-90 transition-opacity"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -64,7 +64,7 @@ export const Header = () => {
           <div className="flex min-h-[64px] lg:min-h-[72px] items-center justify-between gap-4">
             <Link
               href={logoHref}
-              className="flex items-center gap-2 font-display text-[22px] font-black uppercase tracking-tight text-neutral-900 hover:opacity-90 transition-opacity"
+              className="flex shrink-0 items-center gap-2 whitespace-nowrap font-display text-[22px] font-black uppercase tracking-tight text-neutral-900 hover:opacity-90 transition-opacity"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img

@@ -39,7 +39,7 @@ export default async function Home() {
         emptyMessage="Hiện chưa có tin đăng nào. Quay lại sau — hoặc là người đầu tiên đăng bán."
       />
       <ProductRow
-        eyebrow="Limited price drops"
+        eyebrow="Ưu đãi có hạn"
         title={EN.home.onSale}
         description="Các sản phẩm đang được bán với giá thấp hơn giá gốc"
         products={onSale}

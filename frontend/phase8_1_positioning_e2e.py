@@ -106,8 +106,8 @@ with sync_playwright() as p:
     # ========== 7. English editorial anchors still present ==========
     page.goto(f"{BASE}/", wait_until="load")
     home_lower = page.locator("body").inner_text().lower()
-    check("Homepage still shows 'Shop the drop.'", "shop the drop" in home_lower)
-    check("Homepage still shows 'Sell the archive.'", "sell the archive" in home_lower)
+    check("Homepage still shows 'Săn đồ mới.'", "săn đồ mới" in home_lower)
+    check("Homepage still shows 'Bán đồ cũ.'", "bán đồ cũ" in home_lower)
     page.goto(f"{BASE}/about", wait_until="load")
     check("About page still shows 'HOW THE MARKETPLACE WORKS'", "how the marketplace works" in page.locator("body").inner_text().lower())
     page.goto(f"{BASE}/sell", wait_until="load")

@@ -15,12 +15,12 @@ export const HeroSection = () => {
       <div className="relative z-10">
         <Container className="py-20 sm:py-28">
           <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.24em] text-neutral-400">
-            C2C fashion marketplace — Vietnam
+            Sàn thương mại điện tử C2C — Việt Nam
           </p>
-          <h1 className="max-w-4xl font-display text-5xl font-black uppercase leading-[0.95] tracking-tight sm:text-7xl lg:text-8xl">
-            Shop the drop.
+          <h1 className="max-w-4xl font-display text-5xl font-black uppercase leading-[1.2] tracking-tight sm:text-7xl lg:text-8xl">
+            Săn đồ mới.
             <br />
-            Sell the archive.
+            Bán đồ cũ.
           </h1>
           <p className="mt-8 max-w-xl text-lg leading-relaxed text-neutral-300 sm:text-xl">
             Khám phá thời trang mới và đã qua sử dụng — từ trang phục hằng ngày, streetwear, giày dép đến nhiều phong cách khác. Sản phẩm đến từ các thương hiệu trong nước và quốc tế, được đăng bán bởi người dùng trên khắp Việt Nam với giá niêm yết bằng VNĐ.

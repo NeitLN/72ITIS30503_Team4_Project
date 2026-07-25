@@ -436,7 +436,7 @@ export const OrderDetailDrawer = ({ orderId, onClose, onUpdateSuccess }: OrderDe
       ref={dialogRef}
       onCancel={handleClose}
       onClick={handleBackdropClick}
-      className="p-0 m-0 fixed right-0 top-0 h-full max-h-screen w-full sm:w-[500px] md:w-[600px] border-l border-neutral-300 shadow-2xl bg-white backdrop:bg-black/40 outline-none transform motion-safe:transition-transform motion-reduce:transition-none duration-300 open:translate-x-0 translate-x-full ml-auto"
+      className="p-0 m-0 fixed right-0 top-0 h-full max-h-screen w-full sm:w-[500px] md:w-[600px] border-l border-neutral-300 shadow-2xl bg-white outline-none transform motion-safe:transition-transform motion-reduce:transition-none duration-300 ease-out open:translate-x-0 translate-x-full ml-auto backdrop:bg-black/40 backdrop:opacity-0 open:backdrop:opacity-100 motion-safe:[&::backdrop]:transition-opacity motion-safe:[&::backdrop]:duration-300 motion-reduce:[&::backdrop]:transition-none"
       aria-labelledby="drawer-title"
     >
       <div className="flex flex-col h-full w-full max-w-full">
