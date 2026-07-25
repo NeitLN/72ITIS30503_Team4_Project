@@ -102,7 +102,7 @@ async function attachImages(products) {
 function ownedListingQuery(userId) {
   return supabaseAdmin
     .from('products')
-    .select(LISTING_COLUMNS)
+    .select(LISTING_COLUMNS.join(','))
     .eq('seller_id', userId)
     .eq('listing_source', 'user');
 }
@@ -391,22 +391,51 @@ async function updateMyListing(userId, id, rawFields) {
   }
 
   if (parsedVariants) {
-    // Delete existing variants
-    await supabaseAdmin.from('product_variants').delete().eq('product_id', id);
-
-    // Insert new variants
-    if (updates.inventory_mode === 'variant' || (!updates.inventory_mode && existing.inventory_mode === 'variant')) {
-      const variantsToInsert = parsedVariants.map(v => ({
-        product_id: id,
-        sku: v.sku || null,
-        title: v.title.trim(),
-        price: Number(v.price),
-        sale_price: null,
-        stock: Number(v.stock),
-        status: Number(v.stock) > 0 ? 'active' : 'out_of_stock'
-      }));
-      if (variantsToInsert.length > 0) {
-        await supabaseAdmin.from('product_variants').insert(variantsToInsert);
+    // Determine target state
+    const isVariantMode = updates.inventory_mode === 'variant' || (!updates.inventory_mode && existing.inventory_mode === 'variant');
+    
+    // Fetch existing variants to know what to update, delete, or deactivate
+    const { data: currentVariants, error: fetchErr } = await supabaseAdmin.from('product_variants').select('id, title').eq('product_id', id);
+    if (!fetchErr && currentVariants) {
+      if (!isVariantMode || parsedVariants.length === 0) {
+        // We are switching to simple mode.
+        // We cannot blindly delete variants because active order_items might reference them via `on delete set null`.
+        // We must deactivate them safely. If they have no orders, we could delete, but deactivating is universally safe.
+        // To be thorough, we can try to delete, but fallback to deactivate. For simplicity and absolute safety against constraint breakage or snapshot loss, we will set them to out_of_stock and inactive.
+        await supabaseAdmin.from('product_variants').update({ status: 'inactive', stock: 0 }).eq('product_id', id);
+      } else {
+        // We are updating variant mode.
+        // We should try to update existing variants by title/id if they match, insert new ones, and deactivate missing ones.
+        const currentVariantTitles = new Set(currentVariants.map(v => v.title));
+        const newVariantTitles = new Set(parsedVariants.map(v => v.title.trim()));
+        
+        // Deactivate removed variants
+        const titlesToDeactivate = [...currentVariantTitles].filter(title => !newVariantTitles.has(title));
+        if (titlesToDeactivate.length > 0) {
+          await supabaseAdmin.from('product_variants').update({ status: 'inactive', stock: 0 }).eq('product_id', id).in('title', titlesToDeactivate);
+        }
+        
+        // Upsert variants
+        for (const v of parsedVariants) {
+          const title = v.title.trim();
+          const stock = Number(v.stock);
+          const variantPayload = {
+            product_id: id,
+            sku: v.sku || null,
+            title: title,
+            price: Number(v.price),
+            sale_price: null,
+            stock: stock,
+            status: stock > 0 ? 'active' : 'out_of_stock'
+          };
+          
+          const existingVariant = currentVariants.find(curr => curr.title === title);
+          if (existingVariant) {
+            await supabaseAdmin.from('product_variants').update(variantPayload).eq('id', existingVariant.id);
+          } else {
+            await supabaseAdmin.from('product_variants').insert(variantPayload);
+          }
+        }
       }
     }
   }
@@ -436,7 +465,7 @@ async function transitionStatus(userId, id, action) {
     .from('products')
     .update({ status: target, updated_at: new Date().toISOString() })
     .eq('id', id).eq('seller_id', userId).eq('listing_source', 'user')
-    .select(LISTING_COLUMNS)
+    .select(LISTING_COLUMNS.join(','))
     .maybeSingle();
   if (error) throw error;
   if (!updated) throw new SellerListingError('Không tìm thấy sản phẩm.', 404);
@@ -724,7 +753,7 @@ async function duplicateListing(userId, id) {
     thumbnail: existing.thumbnail,
   };
 
-  const { data: inserted, error } = await supabaseAdmin.from('products').insert(newProduct).select(LISTING_COLUMNS).single();
+  const { data: inserted, error } = await supabaseAdmin.from('products').insert(newProduct).select(LISTING_COLUMNS.join(',')).single();
   if (error) throw error;
 
   // Any owned Storage object copied for this attempt — rolled back if
