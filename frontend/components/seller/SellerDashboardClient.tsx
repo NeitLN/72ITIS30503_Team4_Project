@@ -16,6 +16,7 @@ import {
 import { ListingEditForm } from './ListingEditForm';
 import { ConfirmDialog } from './ConfirmDialog';
 import { SellerReadinessWidget } from './SellerReadinessWidget';
+import { SellerOrderDetailDrawer } from './SellerOrderDetailDrawer';
 import { LifecycleBadge } from '../sustainability/LifecycleBadge';
 import { getMyImpact, ProfileImpact } from '../../lib/impact';
 import { PersonalImpactCard } from '../sustainability/PersonalImpactCard';
@@ -182,6 +183,7 @@ export const SellerDashboardClient = () => {
   const [orderPage, setOrderPage] = useState(1);
   const [fulfillmentFilter, setFulfillmentFilter] = useState('');
   const [fulfillmentBusyId, setFulfillmentBusyId] = useState<string | null>(null);
+  const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
   const ORDERS_PER_PAGE = 10;
   const ordersRequestRef = useRef(0); // same out-of-order-response guard as loadListings
 
@@ -594,6 +596,12 @@ export const SellerDashboardClient = () => {
                         <span className="font-mono text-[10px] uppercase tracking-wider border border-neutral-300 px-2 py-0.5" data-testid="order-item-fulfillment-status">
                           {FULFILLMENT_STATUS_LABELS[item.fulfillment_status] || item.fulfillment_status}
                         </span>
+                        <button
+                          onClick={() => setDetailOrderId(item.order_id)}
+                          className="font-mono text-[10px] uppercase tracking-wider underline text-neutral-700 hover:text-neutral-900"
+                        >
+                          Xem chi tiết
+                        </button>
                         {(FULFILLMENT_ACTIONS[item.fulfillment_status] || []).map((a) => (
                           <button
                             key={a.action}
@@ -629,6 +637,11 @@ export const SellerDashboardClient = () => {
           )}
         </div>
       )}
+
+      <SellerOrderDetailDrawer
+        orderId={detailOrderId}
+        onClose={() => setDetailOrderId(null)}
+      />
 
       <ConfirmDialog
         open={!!pendingAction}
