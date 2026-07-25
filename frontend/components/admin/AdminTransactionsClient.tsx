@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../constants/routes';
 import { formatVND, formatVietnamDateTime } from '../../lib/format';
@@ -401,18 +401,34 @@ export const AdminTransactionsClient = () => {
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const listAbortController = useRef<AbortController | null>(null);
+
   const loadDashboard = useCallback(async (currentFilters: AdminTransactionFilters) => {
     setLoading(true);
     setError(null);
+
+    if (listAbortController.current) {
+      listAbortController.current.abort();
+    }
+    const controller = new AbortController();
+    listAbortController.current = controller;
+
     try {
-      const [summaryData, listData] = await Promise.all([getAdminTransactionSummary(), listAdminTransactions(currentFilters)]);
+      const [summaryData, listData] = await Promise.all([
+        getAdminTransactionSummary(controller.signal),
+        listAdminTransactions(currentFilters, controller.signal)
+      ]);
+      if (controller.signal.aborted) return;
       setSummary(summaryData);
       setTransactions(listData.transactions);
       setMeta(listData.meta);
     } catch (caught) {
+      if (controller.signal.aborted) return;
       setError(caught instanceof Error ? caught.message : 'Không thể tải giao dịch.');
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -420,6 +436,11 @@ export const AdminTransactionsClient = () => {
     if (isHydrated && isAuthenticated && isAdmin) {
       void Promise.resolve().then(() => loadDashboard(appliedFilters));
     }
+    return () => {
+      if (listAbortController.current) {
+        listAbortController.current.abort();
+      }
+    };
   }, [isHydrated, isAuthenticated, isAdmin, appliedFilters, loadDashboard]);
 
   const selectTransaction = async (id: string) => {

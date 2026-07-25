@@ -90,8 +90,14 @@ export const AdminOrdersClient = () => {
         setOrders(res.data.data);
 
         // Out of range check
-        if (res.data.data.length === 0 && res.data.pagination?.totalPages > 0 && state.page > res.data.pagination.totalPages) {
+        if (res.data.pagination?.totalPages > 0 && state.page > res.data.pagination.totalPages) {
           const newState = { ...state, page: res.data.pagination.totalPages };
+          router.replace(`${ROUTES.ADMIN_ORDERS}?${serializeAdminOrdersSearchParams(newState)}`);
+          return;
+        }
+
+        if (res.data.pagination?.totalPages === 0 && state.page !== 1) {
+          const newState = { ...state, page: 1 };
           router.replace(`${ROUTES.ADMIN_ORDERS}?${serializeAdminOrdersSearchParams(newState)}`);
           return;
         }
@@ -122,13 +128,9 @@ export const AdminOrdersClient = () => {
     if (!isHydrated) return;
 
     if (isAuthenticated && isAdmin) {
-      setTimeout(() => {
-        void loadOrders(urlState);
-      }, 0);
+      void Promise.resolve().then(() => loadOrders(urlState));
     } else {
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 0);
+      void Promise.resolve().then(() => setIsLoading(false));
     }
 
     return () => {
@@ -136,7 +138,7 @@ export const AdminOrdersClient = () => {
         listAbortController.current.abort();
       }
     };
-  }, [isHydrated, isAuthenticated, isAdmin, searchParams, loadOrders, urlState]); // Re-run when URL state changes
+  }, [isHydrated, isAuthenticated, isAdmin, urlState, loadOrders]); // Re-run when URL state changes
 
   const retryLoadOrders = () => {
     void loadOrders(urlState);
@@ -169,6 +171,7 @@ export const AdminOrdersClient = () => {
     return (
       <button
         onClick={() => setSelectedOrderId(order.id)}
+        aria-label={`Xem chi tiết đơn hàng ${order.order_code}`}
         className="text-[10px] font-mono uppercase bg-neutral-100 text-neutral-700 px-2 py-1 hover:bg-neutral-200"
       >
         Xem chi tiết
@@ -343,26 +346,26 @@ export const AdminOrdersClient = () => {
           filtered={!!(urlState.query || urlState.orderStatus || urlState.paymentMethod)}
         />
       ) : (
-        <div className="border border-neutral-200 bg-white shadow-sm overflow-hidden">
+        <div className="border border-neutral-200 bg-white shadow-sm overflow-hidden" aria-busy={isLoading}>
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse" aria-label="Danh sách đơn hàng quản trị">
               <thead>
                 <tr className="border-b border-neutral-200 font-mono text-[10px] uppercase tracking-wider text-neutral-500 bg-neutral-50">
-                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.orderCode}</th>
-                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.customer}</th>
-                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.createdAt}</th>
-                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.total}</th>
-                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.paymentMethod}</th>
-                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.status}</th>
-                  <th className="px-5 py-4 font-semibold">{vi.adminOrders.actions}</th>
+                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.orderCode}</th>
+                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.customer}</th>
+                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.createdAt}</th>
+                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.total}</th>
+                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.paymentMethod}</th>
+                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.status}</th>
+                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 text-sm">
                 {orders.map((order) => (
                   <tr key={order.id} className="hover:bg-neutral-50 transition-colors">
-                    <td className="px-5 py-5 font-mono text-xs font-bold text-neutral-900">
+                    <th scope="row" className="px-5 py-5 font-mono text-xs font-bold text-neutral-900 text-left">
                       {order.order_code}
-                    </td>
+                    </th>
                     <td className="px-5 py-5">
                       <p className="font-semibold text-neutral-900">{order.customer_name || `Người dùng: ${order.user_id}`}</p>
                       {order.customer_email && <p className="text-xs text-neutral-500">{order.customer_email}</p>}

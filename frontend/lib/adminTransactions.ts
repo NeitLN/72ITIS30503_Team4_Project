@@ -147,12 +147,12 @@ async function adminTransactionRequest<T>(path: string, options: RequestInit = {
   return payload as T;
 }
 
-export async function getAdminTransactionSummary() {
-  const response = await adminTransactionRequest<{ success: true; data: AdminTransactionSummary }>('/api/admin/transactions/summary');
+export async function getAdminTransactionSummary(signal?: AbortSignal) {
+  const response = await adminTransactionRequest<{ success: true; data: AdminTransactionSummary }>('/api/admin/transactions/summary', { signal });
   return response.data;
 }
 
-export async function listAdminTransactions(filters: AdminTransactionFilters) {
+export async function listAdminTransactions(filters: AdminTransactionFilters, signal?: AbortSignal) {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
@@ -161,7 +161,7 @@ export async function listAdminTransactions(filters: AdminTransactionFilters) {
     success: true;
     data: AdminTransactionRow[];
     meta: AdminTransactionMeta;
-  }>(`/api/admin/transactions?${params.toString()}`);
+  }>(`/api/admin/transactions?${params.toString()}`, { signal });
   return { transactions: response.data, meta: response.meta };
 }
 

@@ -20,12 +20,14 @@ api = files["api"].read_text(encoding="utf-8")
 # 2. Page-size state exists.
 # ...
 for token in [
-    "page", "pageSize", "setPage", "setPageSize", "pagination", "setPagination",
+    "page", "pageSize", "urlState", "router.push", "router.replace",
     "totalItems", "totalPages", "hasPreviousPage", "hasNextPage",
     "Trang trước", "Trang sau", "Số dòng:",
     "Hiển thị", "Không có đơn hàng để hiển thị", "10", "20", "50",
-    "setPage(1)" # Changing page size or applying filters resets page to 1
 ]:
     assert token in f"{page}\n{client}\n{api}", f"Phase 19 UI/API contract is missing: {token}"
 
-print("[PASS] Phase 19 Admin Orders Pagination UI contract includes state, controls, result summary, and page reset logic.")
+# Verify URL driven state reset is present instead of setPage(1)
+assert "page: 1" in client, "Phase 19 UI/API contract is missing page reset to 1 on filter/size changes"
+
+print("[PASS] Phase 19 Admin Orders Pagination UI contract includes URL-driven state, controls, result summary, and page reset logic.")

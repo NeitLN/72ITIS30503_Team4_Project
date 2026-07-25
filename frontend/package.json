@@ -26,6 +26,9 @@
   },
   "overrides": {
     "postcss": "^8.5.18",
-    "sharp": "^0.35.0"
+    "sharp": "^0.35.0",
+    "minimatch": {
+      "brace-expansion": "^1.1.11"
+    }
   }
 }
