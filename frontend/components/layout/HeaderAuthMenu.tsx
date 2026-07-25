@@ -21,11 +21,11 @@ export const HeaderAuthMenu = () => {
 
       if (isAdminRoute) {
         return (
-          <div className="flex items-center gap-4 sm:gap-6 text-[13px] sm:text-[14px] font-medium whitespace-nowrap">
+          <div className="flex items-center gap-5 sm:gap-8 text-sm sm:text-[15px] font-medium whitespace-nowrap">
             <Link
               href={ROUTES.ADMIN_OVERVIEW}
               aria-current={pathname === ROUTES.ADMIN_OVERVIEW ? 'page' : undefined}
-              className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_OVERVIEW ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
+              className={`flex items-center min-h-[44px] transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_OVERVIEW ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
             >
               Tổng quan
             </Link>
@@ -33,7 +33,7 @@ export const HeaderAuthMenu = () => {
             <Link
               href={ROUTES.ADMIN_TRANSACTIONS}
               aria-current={pathname === ROUTES.ADMIN_TRANSACTIONS ? 'page' : undefined}
-              className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_TRANSACTIONS ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
+              className={`flex items-center min-h-[44px] transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_TRANSACTIONS ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
             >
               Quản lý giao dịch
             </Link>
@@ -41,21 +41,21 @@ export const HeaderAuthMenu = () => {
             <Link
               href={ROUTES.ADMIN_ORDERS}
               aria-current={pathname === ROUTES.ADMIN_ORDERS ? 'page' : undefined}
-              className={`transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_ORDERS ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
+              className={`flex items-center min-h-[44px] transition-colors hover:text-neutral-900 ${pathname === ROUTES.ADMIN_ORDERS ? 'text-neutral-900 font-bold' : 'text-neutral-600'}`}
             >
               Quản lý đơn hàng
             </Link>
 
             <Link
               href={ROUTES.HOME}
-              className="text-neutral-600 transition-colors hover:text-neutral-900"
+              className="flex items-center min-h-[44px] text-neutral-600 transition-colors hover:text-neutral-900"
             >
               Xem trang chủ sàn
             </Link>
 
             <button
               onClick={() => logout()}
-              className="text-neutral-600 transition-colors hover:text-neutral-900 focus:outline-none"
+              className="flex items-center min-h-[44px] text-neutral-600 transition-colors hover:text-neutral-900 focus:outline-none"
             >
               Đăng xuất
             </button>

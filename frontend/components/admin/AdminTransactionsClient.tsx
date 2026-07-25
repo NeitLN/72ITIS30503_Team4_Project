@@ -183,14 +183,14 @@ const TransactionTable = ({
   <div className="flex flex-col border border-neutral-200 bg-white shadow-sm overflow-hidden">
     <div className="hidden md:block overflow-x-auto">
       <table className="w-full min-w-[860px] border-collapse text-left">
-        <thead className="bg-neutral-50 font-mono text-[11px] lg:text-xs uppercase tracking-widest text-neutral-500 border-b border-neutral-200">
+        <thead className="bg-neutral-50 font-mono text-xs sm:text-[13px] uppercase tracking-widest text-neutral-500 border-b border-neutral-200">
           <tr>
-            <th className="px-5 py-4 font-semibold">Giao dịch</th>
-            <th className="px-5 py-4 font-semibold">Khách hàng</th>
-            <th className="px-5 py-4 font-semibold">Giá trị</th>
-            <th className="px-5 py-4 font-semibold">Thanh toán</th>
-            <th className="px-5 py-4 font-semibold">Đơn hàng</th>
-            <th className="px-5 py-4 font-semibold">Thời gian</th>
+            <th className="px-6 py-5 font-semibold">Giao dịch</th>
+            <th className="px-6 py-5 font-semibold">Khách hàng</th>
+            <th className="px-6 py-5 font-semibold">Giá trị</th>
+            <th className="px-6 py-5 font-semibold">Thanh toán</th>
+            <th className="px-6 py-5 font-semibold">Đơn hàng</th>
+            <th className="px-6 py-5 font-semibold">Thời gian</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-neutral-200">
@@ -198,25 +198,25 @@ const TransactionTable = ({
             <tr
               key={row.id}
               onClick={() => onSelect(row.id)}
-              className={`cursor-pointer text-[13px] lg:text-sm transition-colors hover:bg-neutral-50 focus-visible:outline-neutral-900 ${selectedId === row.id ? 'bg-neutral-50 border-l-[3px] border-l-neutral-900' : 'border-l-[3px] border-l-transparent'}`}
+              className={`cursor-pointer text-[14px] sm:text-[15px] transition-colors hover:bg-neutral-50 focus-visible:outline-neutral-900 ${selectedId === row.id ? 'bg-neutral-50 border-l-[4px] border-l-neutral-900' : 'border-l-[4px] border-l-transparent'}`}
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(row.id); }}
             >
-              <td className="px-5 py-4">
-                <p className="font-mono text-[13px] font-bold text-neutral-900">{row.order_code}</p>
-                <p className="mt-1.5 max-w-[160px] truncate font-mono text-[11px] text-neutral-400" title={row.payment_id || row.order_id}>{row.payment_id || row.order_id}</p>
+              <td className="px-6 py-5">
+                <p className="font-mono text-[14px] sm:text-[15px] font-bold text-neutral-900">{row.order_code}</p>
+                <p className="mt-2 max-w-[180px] truncate font-mono text-xs text-neutral-400" title={row.payment_id || row.order_id}>{row.payment_id || row.order_id}</p>
               </td>
-              <td className="px-5 py-4">
+              <td className="px-6 py-5">
                 <p className="font-semibold text-neutral-900">{row.buyer?.full_name || 'Khách hàng'}</p>
-                <p className="mt-1.5 text-xs text-neutral-500">{row.buyer?.email || '—'}</p>
+                <p className="mt-2 text-[13px] text-neutral-500">{row.buyer?.email || '—'}</p>
               </td>
-              <td className="px-5 py-4 font-mono font-bold tabular-nums text-neutral-900">{formatVND(row.total_amount)}</td>
-              <td className="px-5 py-4">
+              <td className="px-6 py-5 font-mono font-bold tabular-nums text-neutral-900">{formatVND(row.total_amount)}</td>
+              <td className="px-6 py-5">
                 <AdminStatusBadge status={row.payment_state || ''} />
-                <p className="mt-2.5 text-xs text-neutral-500">{methodLabel(row.payment_method)}</p>
+                <p className="mt-3 text-[13px] text-neutral-500">{methodLabel(row.payment_method)}</p>
               </td>
-              <td className="px-5 py-4"><AdminStatusBadge status={row.order_status} /></td>
-              <td className="px-5 py-4 text-xs text-neutral-500 tabular-nums">{formatVietnamDateTime(row.created_at)}</td>
+              <td className="px-6 py-5"><AdminStatusBadge status={row.order_status} /></td>
+              <td className="px-6 py-5 text-[13px] text-neutral-500 tabular-nums">{formatVietnamDateTime(row.created_at)}</td>
             </tr>
           ))}
         </tbody>
@@ -225,30 +225,30 @@ const TransactionTable = ({
 
     <div className="md:hidden flex flex-col divide-y divide-neutral-200">
       {rows.map((row) => (
-        <button key={row.id} type="button" onClick={() => onSelect(row.id)} className={`w-full p-5 text-left transition-colors hover:bg-neutral-50 ${selectedId === row.id ? 'bg-neutral-50 border-l-[3px] border-l-neutral-900' : 'border-l-[3px] border-l-transparent'}`}>
+        <button key={row.id} type="button" onClick={() => onSelect(row.id)} className={`w-full p-6 text-left transition-colors hover:bg-neutral-50 ${selectedId === row.id ? 'bg-neutral-50 border-l-[4px] border-l-neutral-900' : 'border-l-[4px] border-l-transparent'}`}>
           <div className="flex items-start justify-between gap-4">
-            <span className="font-mono text-sm font-bold text-neutral-900">{row.order_code}</span>
-            <span className="font-mono text-sm font-bold tabular-nums text-neutral-900">{formatVND(row.total_amount)}</span>
+            <span className="font-mono text-[15px] font-bold text-neutral-900">{row.order_code}</span>
+            <span className="font-mono text-[15px] font-bold tabular-nums text-neutral-900">{formatVND(row.total_amount)}</span>
           </div>
-          <p className="mt-2 text-sm font-semibold text-neutral-800">{row.buyer?.full_name || row.buyer?.email || 'Khách hàng'}</p>
-          <div className="mt-4 flex flex-wrap gap-2"><AdminStatusBadge status={row.order_status} /><AdminStatusBadge status={row.payment_state || ''} /></div>
-          <p className="mt-3 text-xs text-neutral-500 tabular-nums">{methodLabel(row.payment_method)} · {formatVietnamDateTime(row.created_at)}</p>
+          <p className="mt-3 text-[15px] font-semibold text-neutral-800">{row.buyer?.full_name || row.buyer?.email || 'Khách hàng'}</p>
+          <div className="mt-5 flex flex-wrap gap-3"><AdminStatusBadge status={row.order_status} /><AdminStatusBadge status={row.payment_state || ''} /></div>
+          <p className="mt-4 text-[13px] text-neutral-500 tabular-nums">{methodLabel(row.payment_method)} · {formatVietnamDateTime(row.created_at)}</p>
         </button>
       ))}
     </div>
 
     {/* Table Footer Pagination */}
-    <div className="flex items-center justify-between border-t border-neutral-200 bg-neutral-50 px-5 py-4">
-      <p className="text-[13px] text-neutral-600 font-medium">
+    <div className="flex items-center justify-between border-t border-neutral-200 bg-neutral-50 px-6 py-5">
+      <p className="text-[14px] sm:text-[15px] text-neutral-600 font-medium">
         {meta ? `Hiển thị ${(meta.page - 1) * meta.pageSize + (rows.length > 0 ? 1 : 0)}–${(meta.page - 1) * meta.pageSize + rows.length} trong ${meta.total} giao dịch` : 'Không có dữ liệu'}
       </p>
       {meta && meta.totalPages > 1 && (
-        <nav className="flex items-center gap-4" aria-label="Phân trang giao dịch">
-          <Button type="button" size="sm" variant="outline" className="min-h-10 px-4" disabled={meta.page <= 1} onClick={() => onPageChange(meta.page - 1)}>Trang trước</Button>
-          <span className="font-mono text-xs text-neutral-600 tabular-nums font-medium">
+        <nav className="flex items-center gap-5" aria-label="Phân trang giao dịch">
+          <Button type="button" size="sm" variant="outline" className="min-h-[44px] px-5 text-[14px]" disabled={meta.page <= 1} onClick={() => onPageChange(meta.page - 1)}>Trang trước</Button>
+          <span className="font-mono text-[13px] sm:text-[14px] text-neutral-600 tabular-nums font-medium">
             Trang {meta.page} / {meta.totalPages}
           </span>
-          <Button type="button" size="sm" variant="outline" className="min-h-10 px-4" disabled={meta.page >= meta.totalPages} onClick={() => onPageChange(meta.page + 1)}>Trang sau</Button>
+          <Button type="button" size="sm" variant="outline" className="min-h-[44px] px-5 text-[14px]" disabled={meta.page >= meta.totalPages} onClick={() => onPageChange(meta.page + 1)}>Trang sau</Button>
         </nav>
       )}
     </div>
@@ -268,15 +268,15 @@ const DetailPanel = ({ detail, loading, action, reason, submitting, actionError,
   onSubmit: () => void;
 }) => {
   if (loading) return (
-    <aside className="self-start sticky top-8 w-full border border-neutral-200 bg-white p-8 shadow-sm" aria-live="polite">
-      <p className="font-mono text-xs font-medium uppercase tracking-widest text-neutral-500">Đang tải chi tiết…</p>
+    <aside className="self-start sticky top-8 w-full border border-neutral-200 bg-white p-8 lg:p-10 shadow-sm" aria-live="polite">
+      <p className="font-mono text-[13px] font-medium uppercase tracking-widest text-neutral-500">Đang tải chi tiết…</p>
     </aside>
   );
 
   if (!detail) return (
-    <aside className="self-start sticky top-8 w-full border border-dashed border-neutral-300 bg-neutral-50/50 p-10 text-center shadow-sm">
-      <h3 className="font-display text-base font-bold uppercase tracking-tight text-neutral-900">CHƯA CHỌN GIAO DỊCH</h3>
-      <p className="mt-3 text-[13px] leading-relaxed text-neutral-500">Chọn một giao dịch trong danh sách để xem thông tin đối soát, thanh toán và lịch sử xử lý.</p>
+    <aside className="self-start sticky top-8 w-full border border-dashed border-neutral-300 bg-neutral-50/50 p-10 lg:p-12 text-center shadow-sm">
+      <h3 className="font-display text-lg font-bold uppercase tracking-tight text-neutral-900">CHƯA CHỌN GIAO DỊCH</h3>
+      <p className="mt-4 text-[14px] sm:text-[15px] leading-relaxed text-neutral-500">Chọn một giao dịch trong danh sách để xem thông tin đối soát, thanh toán và lịch sử xử lý.</p>
     </aside>
   );
 
@@ -284,95 +284,95 @@ const DetailPanel = ({ detail, loading, action, reason, submitting, actionError,
 
   return (
     <aside className="self-start sticky top-8 w-full border border-neutral-900 bg-white shadow-sm overflow-hidden" aria-label="Chi tiết giao dịch">
-      <div className="bg-neutral-900 p-6 text-white">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-neutral-400">Chi tiết giao dịch</p>
-        <h2 className="mt-3 font-mono text-xl font-bold tracking-tight">{detail.order.order_code}</h2>
-        <p className="mt-2 break-all font-mono text-[11px] text-neutral-400 opacity-80">{detail.id}</p>
+      <div className="bg-neutral-900 p-7 sm:p-8 text-white">
+        <p className="font-mono text-xs uppercase tracking-widest text-neutral-400">Chi tiết giao dịch</p>
+        <h2 className="mt-3 font-mono text-[22px] sm:text-2xl font-bold tracking-tight">{detail.order.order_code}</h2>
+        <p className="mt-2.5 break-all font-mono text-xs text-neutral-400 opacity-80">{detail.id}</p>
       </div>
       <div className="max-h-[calc(100vh-140px)] overflow-y-auto">
-        <div className="space-y-7 p-6">
+        <div className="space-y-8 p-7 sm:p-8">
           <section>
-            <h3 className="font-mono text-[11px] font-bold uppercase tracking-widest text-neutral-500">Tổng quan</h3>
-            <dl className="mt-4 grid grid-cols-2 gap-y-5 gap-x-4 text-[13px]">
-              <div><dt className="text-xs text-neutral-500 mb-1.5">Đơn hàng</dt><dd><AdminStatusBadge status={detail.order.status} /></dd></div>
-              <div><dt className="text-xs text-neutral-500 mb-1.5">Thanh toán</dt><dd><AdminStatusBadge status={detail.payment?.state || ''} /></dd></div>
-              <div className="col-span-2 sm:col-span-1"><dt className="text-xs text-neutral-500 mb-1.5">Khách hàng</dt><dd className="font-semibold text-neutral-900">{detail.buyer?.full_name || 'Khách hàng'}</dd></div>
-              <div className="col-span-2 sm:col-span-1"><dt className="text-xs text-neutral-500 mb-1.5">Tổng tiền</dt><dd className="font-mono text-sm font-bold tabular-nums">{formatVND(detail.order.total_amount)}</dd></div>
+            <h3 className="font-mono text-[13px] sm:text-[14px] font-bold uppercase tracking-widest text-neutral-500">Tổng quan</h3>
+            <dl className="mt-5 grid grid-cols-2 gap-y-6 gap-x-5 text-[14px] sm:text-[15px]">
+              <div><dt className="text-[13px] sm:text-[14px] text-neutral-500 mb-2">Đơn hàng</dt><dd><AdminStatusBadge status={detail.order.status} /></dd></div>
+              <div><dt className="text-[13px] sm:text-[14px] text-neutral-500 mb-2">Thanh toán</dt><dd><AdminStatusBadge status={detail.payment?.state || ''} /></dd></div>
+              <div className="col-span-2 sm:col-span-1"><dt className="text-[13px] sm:text-[14px] text-neutral-500 mb-2">Khách hàng</dt><dd className="font-semibold text-neutral-900">{detail.buyer?.full_name || 'Khách hàng'}</dd></div>
+              <div className="col-span-2 sm:col-span-1"><dt className="text-[13px] sm:text-[14px] text-neutral-500 mb-2">Tổng tiền</dt><dd className="font-mono text-[15px] font-bold tabular-nums">{formatVND(detail.order.total_amount)}</dd></div>
             </dl>
           </section>
 
           {detail.payment && (
-            <section className="border-t border-neutral-200 pt-6">
-              <h3 className="font-mono text-[11px] font-bold uppercase tracking-widest text-neutral-500">Thanh toán an toàn</h3>
-              <dl className="mt-4 grid grid-cols-2 gap-y-5 gap-x-4 text-[13px]">
-                <div><dt className="text-xs text-neutral-500 mb-1.5">Phương thức</dt><dd className="font-medium">{methodLabel(detail.payment.method)}</dd></div>
-                <div><dt className="text-xs text-neutral-500 mb-1.5">Thẻ</dt><dd className="font-mono font-medium tabular-nums">{detail.payment.card_brand ? `${detail.payment.card_brand} •••• ${detail.payment.last_four}` : '—'}</dd></div>
-                <div><dt className="text-xs text-neutral-500 mb-1.5">Phí nền tảng</dt><dd className="font-mono font-medium tabular-nums">{formatVND(detail.payment.platform_fee_total)}</dd></div>
-                <div><dt className="text-xs text-neutral-500 mb-1.5">Cho người bán</dt><dd className="font-mono font-medium tabular-nums">{formatVND(detail.payment.seller_amount_total)}</dd></div>
+            <section className="border-t border-neutral-200 pt-7">
+              <h3 className="font-mono text-[13px] sm:text-[14px] font-bold uppercase tracking-widest text-neutral-500">Thanh toán an toàn</h3>
+              <dl className="mt-5 grid grid-cols-2 gap-y-6 gap-x-5 text-[14px] sm:text-[15px]">
+                <div><dt className="text-[13px] sm:text-[14px] text-neutral-500 mb-2">Phương thức</dt><dd className="font-medium">{methodLabel(detail.payment.method)}</dd></div>
+                <div><dt className="text-[13px] sm:text-[14px] text-neutral-500 mb-2">Thẻ</dt><dd className="font-mono font-medium tabular-nums">{detail.payment.card_brand ? `${detail.payment.card_brand} •••• ${detail.payment.last_four}` : '—'}</dd></div>
+                <div><dt className="text-[13px] sm:text-[14px] text-neutral-500 mb-2">Phí nền tảng</dt><dd className="font-mono font-medium tabular-nums">{formatVND(detail.payment.platform_fee_total)}</dd></div>
+                <div><dt className="text-[13px] sm:text-[14px] text-neutral-500 mb-2">Cho người bán</dt><dd className="font-mono font-medium tabular-nums">{formatVND(detail.payment.seller_amount_total)}</dd></div>
               </dl>
             </section>
           )}
 
-          <section className="border-t border-neutral-200 pt-6">
-            <h3 className="font-mono text-[11px] font-bold uppercase tracking-widest text-neutral-500">Phân bổ người bán</h3>
+          <section className="border-t border-neutral-200 pt-7">
+            <h3 className="font-mono text-[13px] sm:text-[14px] font-bold uppercase tracking-widest text-neutral-500">Phân bổ người bán</h3>
             {detail.allocations.length ? (
-              <ul className="mt-4 space-y-3">
+              <ul className="mt-5 space-y-4">
                 {detail.allocations.map((item) => (
-                  <li key={item.id} className="border border-neutral-200 bg-neutral-50/50 p-4 text-[13px]">
-                    <div className="flex items-center justify-between gap-3 mb-3">
+                  <li key={item.id} className="border border-neutral-200 bg-neutral-50/50 p-5 text-[14px] sm:text-[15px]">
+                    <div className="flex items-center justify-between gap-4 mb-4">
                       <span className="font-semibold text-neutral-900">{item.seller.full_name || (item.seller.username ? `@${item.seller.username}` : 'Người bán')}</span>
                       <AdminStatusBadge status={item.state} />
                     </div>
-                    <div className="flex items-center justify-between text-xs text-neutral-600">
+                    <div className="flex items-center justify-between text-[13px] sm:text-[14px] text-neutral-600">
                       <span>Thực nhận</span>
-                      <span className="font-mono text-sm font-bold text-neutral-900 tabular-nums">{formatVND(item.seller_net_amount)}</span>
+                      <span className="font-mono text-[15px] sm:text-base font-bold text-neutral-900 tabular-nums">{formatVND(item.seller_net_amount)}</span>
                     </div>
                   </li>
                 ))}
               </ul>
-            ) : <p className="mt-4 text-[13px] text-neutral-500 italic">Không có phân bổ thanh toán.</p>}
+            ) : <p className="mt-5 text-[14px] sm:text-[15px] text-neutral-500 italic">Không có phân bổ thanh toán.</p>}
           </section>
 
-          <section className="border-t border-neutral-200 pt-6">
-            <h3 className="font-mono text-[11px] font-bold uppercase tracking-widest text-neutral-500">Lịch sử bất biến</h3>
+          <section className="border-t border-neutral-200 pt-7">
+            <h3 className="font-mono text-[13px] sm:text-[14px] font-bold uppercase tracking-widest text-neutral-500">Lịch sử bất biến</h3>
             {detail.events.length ? (
-              <ol className="mt-4 space-y-4 border-l-2 border-neutral-200 pl-4 ml-1">
+              <ol className="mt-5 space-y-5 border-l-2 border-neutral-200 pl-5 ml-1">
                 {detail.events.map((event, index) => (
-                  <li key={`${String(event.id)}-${index}`} className="text-[13px] relative">
-                    <span className="absolute -left-[23px] top-1.5 h-2 w-2 rounded-full bg-neutral-400"></span>
+                  <li key={`${String(event.id)}-${index}`} className="text-[14px] sm:text-[15px] relative">
+                    <span className="absolute -left-[27px] top-1.5 h-2.5 w-2.5 rounded-full bg-neutral-400"></span>
                     <p className="font-semibold text-neutral-900">{statusLabel(String(event.action || event.event_type || event.new_state || 'Cập nhật'))}</p>
-                    <p className="mt-1.5 text-xs leading-relaxed text-neutral-500">{event.reason ? String(event.reason) : 'Cập nhật trạng thái hệ thống'}</p>
-                    <p className="mt-1 font-mono text-[10px] text-neutral-400 tabular-nums">{formatVietnamDateTime(String(event.created_at || ''))}</p>
+                    <p className="mt-2 text-[13px] sm:text-[14px] leading-relaxed text-neutral-500">{event.reason ? String(event.reason) : 'Cập nhật trạng thái hệ thống'}</p>
+                    <p className="mt-1.5 font-mono text-[11px] text-neutral-400 tabular-nums">{formatVietnamDateTime(String(event.created_at || ''))}</p>
                   </li>
                 ))}
               </ol>
-            ) : <p className="mt-4 text-[13px] text-neutral-500 italic">Chưa có sự kiện.</p>}
+            ) : <p className="mt-5 text-[14px] sm:text-[15px] text-neutral-500 italic">Chưa có sự kiện.</p>}
           </section>
 
           {detail.valid_actions.length > 0 && (
-            <section className="border-t border-neutral-200 pt-6 pb-2">
-              <h3 className="font-mono text-[11px] font-bold uppercase tracking-widest text-neutral-500">Thao tác hợp lệ</h3>
+            <section className="border-t border-neutral-200 pt-7 pb-3">
+              <h3 className="font-mono text-[13px] sm:text-[14px] font-bold uppercase tracking-widest text-neutral-500">Thao tác hợp lệ</h3>
               {!action ? (
-                <div className="mt-4 flex flex-col gap-3">
+                <div className="mt-5 flex flex-col gap-4">
                   {detail.valid_actions.map((item) => (
-                    <Button key={item} type="button" size="sm" variant={item === 'cancelled' ? 'outline' : 'primary'} className="min-h-11 w-full text-sm font-semibold" onClick={() => onAction(item)}>
+                    <Button key={item} type="button" size="sm" variant={item === 'cancelled' ? 'outline' : 'primary'} className="min-h-[52px] w-full text-[14px] sm:text-[15px] font-semibold" onClick={() => onAction(item)}>
                       {item === 'processing' ? 'Chuyển sang đang xử lý' : item === 'completed' ? 'Xác nhận hoàn tất' : 'Hủy đơn hàng'}
                     </Button>
                   ))}
                 </div>
               ) : (
-                <div className="mt-4 border border-neutral-900 bg-neutral-50 p-5">
-                  <p className="text-[13px] font-bold text-neutral-900">Xác nhận: {statusLabel(action)}</p>
+                <div className="mt-5 border border-neutral-900 bg-neutral-50 p-6">
+                  <p className="text-[14px] sm:text-[15px] font-bold text-neutral-900">Xác nhận: {statusLabel(action)}</p>
                   {needsReason && (
-                    <label className="mt-4 block">
-                      <span className="mb-2 block text-xs font-semibold text-neutral-700">Lý do <span aria-hidden="true" className="text-red-500">*</span></span>
-                      <textarea value={reason} onChange={(e) => onReason(e.target.value)} maxLength={1000} rows={3} className="w-full border border-neutral-300 bg-white p-3 text-[13px] outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900" placeholder="Ghi rõ lý do để lưu vào nhật ký hệ thống" />
+                    <label className="mt-5 block">
+                      <span className="mb-2 block text-[13px] font-semibold text-neutral-700">Lý do <span aria-hidden="true" className="text-red-500">*</span></span>
+                      <textarea value={reason} onChange={(e) => onReason(e.target.value)} maxLength={1000} rows={3} className="w-full border border-neutral-300 bg-white p-4 text-[14px] sm:text-[15px] outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900" placeholder="Ghi rõ lý do để lưu vào nhật ký hệ thống" />
                     </label>
                   )}
-                  {actionError && <p className="mt-3 text-xs font-bold text-red-600" role="alert" aria-live="assertive">{actionError}</p>}
-                  <div className="mt-5 flex flex-col sm:flex-row gap-3">
-                    <Button type="button" size="sm" className="min-h-11 flex-1 text-sm font-semibold" disabled={submitting || (needsReason && !reason.trim())} onClick={onSubmit}>{submitting ? 'Đang xử lý…' : 'Xác nhận'}</Button>
-                    <Button type="button" size="sm" variant="outline" className="min-h-11 flex-1 text-sm font-semibold" disabled={submitting} onClick={onCancel}>Quay lại</Button>
+                  {actionError && <p className="mt-4 text-[13px] sm:text-[14px] font-bold text-red-600" role="alert" aria-live="assertive">{actionError}</p>}
+                  <div className="mt-6 flex flex-col sm:flex-row gap-4">
+                    <Button type="button" size="sm" className="min-h-[52px] flex-1 text-[14px] sm:text-[15px] font-semibold" disabled={submitting || (needsReason && !reason.trim())} onClick={onSubmit}>{submitting ? 'Đang xử lý…' : 'Xác nhận'}</Button>
+                    <Button type="button" size="sm" variant="outline" className="min-h-[52px] flex-1 text-[14px] sm:text-[15px] font-semibold" disabled={submitting} onClick={onCancel}>Quay lại</Button>
                   </div>
                 </div>
               )}
@@ -509,7 +509,7 @@ export const AdminTransactionsClient = () => {
         <Filters values={filters} onChange={changeFilter} onSubmit={applyFilters} onReset={resetFilters} />
       </section>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.8fr)_minmax(360px,0.9fr)] items-start">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] xl:grid-cols-[minmax(0,7fr)_minmax(340px,3fr)]">
         <section className="flex flex-col min-w-0">
           <div className="mb-4 flex items-end justify-between">
             <div>
@@ -535,18 +535,24 @@ export const AdminTransactionsClient = () => {
           )}
         </section>
 
-        <DetailPanel
-          detail={detail}
-          loading={detailLoading}
-          action={pendingAction}
-          reason={reason}
-          submitting={submitting}
-          actionError={actionError}
-          onAction={(nextAction) => { setPendingAction(nextAction); setReason(''); setActionError(null); }}
-          onReason={setReason}
-          onCancel={() => { setPendingAction(null); setReason(''); setActionError(null); }}
-          onSubmit={() => void submitAction()}
-        />
+        <div className="flex flex-col min-w-0">
+          <div className="mb-4 hidden lg:invisible lg:block" aria-hidden="true">
+            <h2 className="font-mono text-xs font-bold uppercase tracking-widest text-neutral-900">Chi tiết giao dịch</h2>
+            <p className="mt-1.5 text-[13px] text-neutral-600 font-medium">Giữ khoảng cách</p>
+          </div>
+          <DetailPanel
+            detail={detail}
+            loading={detailLoading}
+            action={pendingAction}
+            reason={reason}
+            submitting={submitting}
+            actionError={actionError}
+            onAction={(nextAction) => { setPendingAction(nextAction); setReason(''); setActionError(null); }}
+            onReason={setReason}
+            onCancel={() => { setPendingAction(null); setReason(''); setActionError(null); }}
+            onSubmit={() => void submitAction()}
+          />
+        </div>
       </div>
     </AdminPageShell>
   );

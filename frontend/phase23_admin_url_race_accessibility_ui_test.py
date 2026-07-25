@@ -38,6 +38,11 @@ assert "listAbortController.current.abort()" in orders_client, "Missing list req
 assert "AbortController" in drawer, "Missing AbortController in OrderDetailDrawer"
 assert "fetchAbortController.current.abort()" in drawer, "Missing drawer request abortion"
 
+# Infinite loop prevention
+assert "searchParamsStr = searchParams.toString()" in orders_client, "Missing stable searchParamsStr derivation"
+assert "useMemo" in orders_client and "parseAdminOrdersSearchParams" in orders_client, "Missing memoized URL state parsing to prevent loop"
+assert "setPage(" not in orders_client, "Should not use local setPage, must derive from URL"
+
 # 29-50 Accessibility
 assert "role=\"dialog\"" in confirm or "<dialog" in confirm, "Missing dialog semantics in ConfirmDialog"
 assert "aria-labelledby" in confirm or "aria-label" in confirm or "<h" in confirm, "Missing accessible title in ConfirmDialog"

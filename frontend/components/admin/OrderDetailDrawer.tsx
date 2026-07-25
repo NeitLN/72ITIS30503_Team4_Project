@@ -189,12 +189,12 @@ export const OrderDetailDrawer = ({ orderId, onClose, onUpdateSuccess }: OrderDe
 
     if (error) {
       return (
-        <div className="flex-1 p-6 flex flex-col items-center justify-center text-center">
-          <span className="text-4xl mb-4" aria-hidden="true">⚠️</span>
-          <h3 className="font-display text-lg font-bold uppercase text-red-900 mb-2">
+        <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">
+          <span className="text-5xl mb-5" aria-hidden="true">⚠️</span>
+          <h3 className="font-display text-xl sm:text-2xl font-bold uppercase text-red-900 mb-3">
             Không thể tải chi tiết đơn hàng
           </h3>
-          <p className="text-sm text-red-800 mb-6">{error}</p>
+          <p className="text-base text-red-800 mb-8">{error}</p>
           <div className="flex gap-4">
             <Button
               type="button"
@@ -210,11 +210,11 @@ export const OrderDetailDrawer = ({ orderId, onClose, onUpdateSuccess }: OrderDe
                   .catch(err => setError(err.message))
                   .finally(() => setLoading(false));
               }}
-              className="font-mono text-xs uppercase"
+              className="font-mono text-[13px] sm:text-sm uppercase min-h-[48px] px-6"
             >
               Thử lại
             </Button>
-            <Button type="button" variant="outline" onClick={handleClose} className="font-mono text-xs uppercase">
+            <Button type="button" variant="outline" onClick={handleClose} className="font-mono text-[13px] sm:text-sm uppercase min-h-[48px] px-6">
               Đóng
             </Button>
           </div>

@@ -19,12 +19,12 @@ export const AdminEmptyState = ({
   filtered = false
 }: AdminEmptyStateProps) => {
   return (
-    <div className={`mt-12 text-center border py-16 px-4 ${filtered ? 'border-dashed border-neutral-300 bg-white' : 'border-solid border-neutral-200 bg-neutral-50'}`}>
-      <span className="text-3xl" aria-hidden="true">{icon}</span>
-      <h2 className="mt-4 font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
+    <div className={`mt-12 text-center border py-16 px-4 max-w-2xl mx-auto ${filtered ? 'border-dashed border-neutral-300 bg-white' : 'border-solid border-neutral-200 bg-neutral-50'}`}>
+      <span className="text-4xl" aria-hidden="true">{icon}</span>
+      <h2 className="mt-4 font-display text-xl font-bold uppercase tracking-tight text-neutral-900">
         {title}
       </h2>
-      <p className="mt-2 text-sm text-neutral-500 mb-6">
+      <p className="mt-2 text-sm text-neutral-500 mb-6 leading-relaxed">
         {description}
       </p>
       {actionLabel && onAction && (
@@ -32,7 +32,7 @@ export const AdminEmptyState = ({
           type="button"
           variant="outline"
           onClick={onAction}
-          className="font-mono text-xs uppercase tracking-wider"
+          className="font-mono text-xs uppercase tracking-wider min-h-[44px] px-6"
         >
           {actionLabel}
         </Button>

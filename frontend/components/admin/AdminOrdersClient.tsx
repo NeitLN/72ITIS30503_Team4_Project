@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
@@ -44,8 +44,9 @@ export const AdminOrdersClient = () => {
   const { user, isAuthenticated, isHydrated, isAdmin } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchParamsStr = searchParams.toString();
   
-  const urlState = parseAdminOrdersSearchParams(new URLSearchParams(searchParams.toString()));
+  const urlState = useMemo(() => parseAdminOrdersSearchParams(new URLSearchParams(searchParamsStr)), [searchParamsStr]);
 
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,11 +63,11 @@ export const AdminOrdersClient = () => {
   });
 
   const [draftFilters, setDraftFilters] = useState<AdminOrdersUrlState>(urlState);
-  const [prevSearchParamsStr, setPrevSearchParamsStr] = useState(searchParams.toString());
+  const [prevSearchParamsStr, setPrevSearchParamsStr] = useState(searchParamsStr);
 
   // Sync draft filters with URL changes (e.g. Back/Forward) safely
-  if (prevSearchParamsStr !== searchParams.toString()) {
-    setPrevSearchParamsStr(searchParams.toString());
+  if (prevSearchParamsStr !== searchParamsStr) {
+    setPrevSearchParamsStr(searchParamsStr);
     setDraftFilters(urlState);
   }
 
@@ -265,10 +266,10 @@ export const AdminOrdersClient = () => {
 
       <form
         onSubmit={handleApplyFilters}
-        className="mb-8 border border-neutral-200 bg-neutral-50 p-5 flex flex-col md:flex-row gap-4 items-end"
+        className="mb-8 border border-neutral-200 bg-neutral-50 p-6 lg:p-8 flex flex-col lg:flex-row gap-5 items-end shadow-sm"
       >
-        <div className="flex-1 w-full">
-          <label htmlFor="search-query" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
+        <div className="w-full lg:w-[400px]">
+          <label htmlFor="search-query" className="block font-mono text-xs sm:text-[13px] uppercase tracking-widest text-neutral-500 mb-2.5">
             Tìm kiếm đơn hàng
           </label>
           <input
@@ -277,18 +278,18 @@ export const AdminOrdersClient = () => {
             placeholder="Tìm theo mã đơn, người mua hoặc email"
             value={draftFilters.query || ''}
             onChange={(e) => setDraftFilters(prev => ({ ...prev, query: e.target.value }))}
-            className="w-full border border-neutral-300 p-2 text-sm focus:outline-none focus:border-neutral-900"
+            className="min-h-[52px] w-full border border-neutral-300 px-4 text-[14px] sm:text-[15px] focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
           />
         </div>
-        <div className="w-full md:w-48">
-          <label htmlFor="order-status" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
+        <div className="w-full sm:w-1/2 lg:w-48">
+          <label htmlFor="order-status" className="block font-mono text-xs sm:text-[13px] uppercase tracking-widest text-neutral-500 mb-2.5">
             Trạng thái đơn hàng
           </label>
           <select
             id="order-status"
             value={draftFilters.orderStatus || ''}
             onChange={(e) => setDraftFilters(prev => ({ ...prev, orderStatus: e.target.value as 'pending' | 'processing' | 'completed' | 'cancelled' | '' }))}
-            className="w-full border border-neutral-300 p-2 text-sm focus:outline-none focus:border-neutral-900 bg-white"
+            className="min-h-[52px] w-full border border-neutral-300 px-4 text-[14px] sm:text-[15px] focus:outline-none focus:border-neutral-900 bg-white"
           >
             <option value="">Tất cả trạng thái</option>
             <option value="pending">{tStatus('pending')}</option>
@@ -297,15 +298,15 @@ export const AdminOrdersClient = () => {
             <option value="cancelled">{tStatus('cancelled')}</option>
           </select>
         </div>
-        <div className="w-full md:w-48">
-          <label htmlFor="payment-method" className="block font-mono text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
+        <div className="w-full sm:w-1/2 lg:w-48">
+          <label htmlFor="payment-method" className="block font-mono text-xs sm:text-[13px] uppercase tracking-widest text-neutral-500 mb-2.5">
             Phương thức thanh toán
           </label>
           <select
             id="payment-method"
             value={draftFilters.paymentMethod || ''}
             onChange={(e) => setDraftFilters(prev => ({ ...prev, paymentMethod: e.target.value as 'cod' | 'bank_transfer' | 'simulated_card' | '' }))}
-            className="w-full border border-neutral-300 p-2 text-sm focus:outline-none focus:border-neutral-900 bg-white"
+            className="min-h-[52px] w-full border border-neutral-300 px-4 text-[14px] sm:text-[15px] focus:outline-none focus:border-neutral-900 bg-white"
           >
             <option value="">Tất cả</option>
             <option value="cod">{tPaymentMethod('cod')}</option>
@@ -313,22 +314,22 @@ export const AdminOrdersClient = () => {
             <option value="simulated_card">{tPaymentMethod('simulated_card')}</option>
           </select>
         </div>
-        <div className="flex gap-2 w-full md:w-auto">
-          <Button type="submit" className="font-mono text-xs uppercase tracking-wider flex-1 md:flex-none">
-            Áp dụng
-          </Button>
+        <div className="flex gap-4 w-full lg:w-auto">
           <Button
             type="button"
             variant="outline"
             onClick={handleResetFilters}
-            className="font-mono text-xs uppercase tracking-wider flex-1 md:flex-none"
+            className="font-mono text-[13px] sm:text-sm uppercase tracking-wider flex-1 lg:flex-none min-h-[52px] px-8 font-semibold"
           >
             Đặt lại
+          </Button>
+          <Button type="submit" className="font-mono text-[13px] sm:text-sm uppercase tracking-wider flex-1 lg:flex-none min-h-[52px] px-8 font-semibold">
+            Áp dụng
           </Button>
         </div>
       </form>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
         <AdminMetricCard label="Tổng cộng" value={orders.length} emphasized={true} />
         <AdminMetricCard label={tStatus('pending')} value={<span className="text-yellow-600">{pendingCount}</span>} />
         <AdminMetricCard label={tStatus('processing')} value={<span className="text-blue-600">{processingCount}</span>} />
@@ -350,41 +351,41 @@ export const AdminOrdersClient = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse" aria-label="Danh sách đơn hàng quản trị">
               <thead>
-                <tr className="border-b border-neutral-200 font-mono text-[10px] uppercase tracking-wider text-neutral-500 bg-neutral-50">
-                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.orderCode}</th>
-                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.customer}</th>
-                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.createdAt}</th>
-                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.total}</th>
-                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.paymentMethod}</th>
-                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.status}</th>
-                  <th scope="col" className="px-5 py-4 font-semibold">{vi.adminOrders.actions}</th>
+                <tr className="border-b border-neutral-200 font-mono text-[11px] sm:text-xs uppercase tracking-widest text-neutral-500 bg-neutral-50">
+                  <th scope="col" className="px-6 py-5 font-semibold">{vi.adminOrders.orderCode}</th>
+                  <th scope="col" className="px-6 py-5 font-semibold">{vi.adminOrders.customer}</th>
+                  <th scope="col" className="px-6 py-5 font-semibold">{vi.adminOrders.createdAt}</th>
+                  <th scope="col" className="px-6 py-5 font-semibold">{vi.adminOrders.total}</th>
+                  <th scope="col" className="px-6 py-5 font-semibold">{vi.adminOrders.paymentMethod}</th>
+                  <th scope="col" className="px-6 py-5 font-semibold">{vi.adminOrders.status}</th>
+                  <th scope="col" className="px-6 py-5 font-semibold">{vi.adminOrders.actions}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-200 text-sm">
+              <tbody className="divide-y divide-neutral-200 text-[14px] sm:text-[15px]">
                 {orders.map((order) => (
                   <tr key={order.id} className="hover:bg-neutral-50 transition-colors">
-                    <th scope="row" className="px-5 py-5 font-mono text-xs font-bold text-neutral-900 text-left">
+                    <th scope="row" className="px-6 py-6 font-mono text-[13px] sm:text-sm font-bold text-neutral-900 text-left">
                       {order.order_code}
                     </th>
-                    <td className="px-5 py-5">
+                    <td className="px-6 py-6">
                       <p className="font-semibold text-neutral-900">{order.customer_name || `Người dùng: ${order.user_id}`}</p>
-                      {order.customer_email && <p className="text-xs text-neutral-500">{order.customer_email}</p>}
-                      {order.customer_phone && <p className="text-xs text-neutral-500">{order.customer_phone}</p>}
+                      {order.customer_email && <p className="text-[13px] sm:text-sm text-neutral-500 mt-1">{order.customer_email}</p>}
+                      {order.customer_phone && <p className="text-[13px] sm:text-sm text-neutral-500 mt-1">{order.customer_phone}</p>}
                     </td>
-                    <td className="px-5 py-5 text-neutral-600 text-xs">
+                    <td className="px-6 py-6 text-neutral-600 text-[13px] sm:text-sm">
                       {formatVietnamDateTime(order.created_at)}
                     </td>
-                    <td className="px-5 py-5 font-mono font-bold text-neutral-900">
+                    <td className="px-6 py-6 font-mono font-bold text-neutral-900">
                       {formatVND(Number(order.total_amount))}
-                      {order.shipping_fee > 0 && <p className="text-[10px] text-neutral-400 font-normal mt-0.5">+ {formatVND(Number(order.shipping_fee))} vận chuyển</p>}
+                      {order.shipping_fee > 0 && <p className="text-xs text-neutral-400 font-normal mt-1">+ {formatVND(Number(order.shipping_fee))} vận chuyển</p>}
                     </td>
-                    <td className="px-5 py-5 font-mono text-[10px] uppercase text-neutral-500">
+                    <td className="px-6 py-6 font-mono text-[11px] sm:text-xs uppercase text-neutral-500">
                       {formatPaymentMethod(order.payment_method)}
                     </td>
-                    <td className="px-5 py-5">
+                    <td className="px-6 py-6">
                       <AdminStatusBadge status={order.status} />
                     </td>
-                    <td className="px-5 py-5">
+                    <td className="px-6 py-6">
                       {renderStatusActions(order)}
                     </td>
                   </tr>
@@ -393,8 +394,8 @@ export const AdminOrdersClient = () => {
             </table>
           </div>
 
-          <div className="border-t border-neutral-200 bg-neutral-50 px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="font-mono text-xs text-neutral-500">
+          <div className="border-t border-neutral-200 bg-neutral-50 px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-5">
+            <div className="font-mono text-[13px] sm:text-sm text-neutral-600 font-medium">
               {pagination.totalItems > 0 ? (
                 `Hiển thị ${(pagination.page - 1) * pagination.pageSize + 1}–${Math.min(pagination.page * pagination.pageSize, pagination.totalItems)} trong tổng số ${pagination.totalItems} đơn hàng`
               ) : (
@@ -402,9 +403,9 @@ export const AdminOrdersClient = () => {
               )}
             </div>
             {pagination.totalItems > 0 && (
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <label htmlFor="page-size" className="font-mono text-[10px] uppercase text-neutral-500">
+              <div className="flex flex-wrap items-center gap-5">
+                <div className="flex items-center gap-3">
+                  <label htmlFor="page-size" className="font-mono text-xs uppercase tracking-widest text-neutral-500">
                     Số dòng:
                   </label>
                   <select
@@ -412,24 +413,24 @@ export const AdminOrdersClient = () => {
                     value={pagination.pageSize}
                     disabled={isLoading}
                     onChange={(e) => changePageSize(Number(e.target.value))}
-                    className="border border-neutral-300 bg-white p-1 text-xs focus:outline-none focus:border-neutral-900"
+                    className="border border-neutral-300 bg-white px-3 min-h-[44px] text-[14px] sm:text-[15px] focus:outline-none focus:border-neutral-900"
                   >
                     <option value={10}>10</option>
                     <option value={20}>20</option>
                     <option value={50}>50</option>
                   </select>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     disabled={!pagination.hasPreviousPage || isLoading}
                     onClick={() => changePage(pagination.page - 1)}
-                    className="font-mono text-[10px] uppercase tracking-wider px-2 py-1 h-auto"
+                    className="font-mono text-xs uppercase tracking-wider px-4 h-[44px] font-semibold"
                   >
                     Trang trước
                   </Button>
-                  <span className="font-mono text-xs text-neutral-500" aria-live="polite">
+                  <span className="font-mono text-[13px] sm:text-[14px] text-neutral-600 font-medium" aria-live="polite">
                     Trang {pagination.page} / {pagination.totalPages}
                   </span>
                   <Button
@@ -437,7 +438,7 @@ export const AdminOrdersClient = () => {
                     variant="outline"
                     disabled={!pagination.hasNextPage || isLoading}
                     onClick={() => changePage(pagination.page + 1)}
-                    className="font-mono text-[10px] uppercase tracking-wider px-2 py-1 h-auto"
+                    className="font-mono text-xs uppercase tracking-wider px-4 h-[44px] font-semibold"
                   >
                     Trang sau
                   </Button>

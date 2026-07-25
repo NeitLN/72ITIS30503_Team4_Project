@@ -27,7 +27,7 @@ export const AdminStatusBadge = ({ status }: AdminStatusBadgeProps) => {
   const displayStatus = translatedStatus === status && status !== 'pending' ? status : translatedStatus;
 
   return (
-    <span className={`inline-flex items-center border px-2 py-0.5 font-mono text-[10px] uppercase font-bold ${colorClass}`}>
+    <span className={`inline-flex items-center border px-2 py-0.5 min-h-[26px] font-mono text-[10px] uppercase font-bold whitespace-nowrap ${colorClass}`}>
       {displayStatus}
     </span>
   );

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Container } from '../../ui/Container';
 
 interface AdminPageShellProps {
   children: React.ReactNode;
@@ -8,8 +7,8 @@ interface AdminPageShellProps {
 
 export const AdminPageShell = ({ children, className = '' }: AdminPageShellProps) => {
   return (
-    <Container className={`py-10 sm:py-16 max-w-7xl ${className}`}>
+    <div className={`mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-8 2xl:px-10 py-10 sm:py-16 ${className}`}>
       {children}
-    </Container>
+    </div>
   );
 };
