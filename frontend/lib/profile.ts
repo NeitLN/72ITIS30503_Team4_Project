@@ -23,8 +23,33 @@ function authHeaders(extra?: Record<string, string>) {
   return { ...(extra || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
 
+export interface SellerReadiness {
+  completionPercentage: number;
+  completedCount: number;
+  totalSupportedSteps: number;
+  isStorefrontAvailable: boolean;
+  hasDraftListing: boolean;
+  hasActiveListing: boolean;
+  steps: Array<{
+    key: string;
+    label: string;
+    completed: boolean;
+    actionLabel?: string;
+    actionHref?: string;
+  }>;
+}
+
+export type ReadinessResponse =
+  | { success: true; data: SellerReadiness }
+  | { success: false; error: { message: string } };
+
 export async function getMyProfile(): Promise<ProfileResponse> {
   const res = await fetch(`${getApiBaseUrl()}/api/profile/me`, { headers: authHeaders() });
+  return res.json();
+}
+
+export async function getMyReadiness(): Promise<ReadinessResponse> {
+  const res = await fetch(`${getApiBaseUrl()}/api/profile/me/readiness`, { headers: authHeaders() });
   return res.json();
 }
 

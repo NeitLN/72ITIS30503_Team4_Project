@@ -14,6 +14,7 @@ import { searchVnLocations, displayVnLocation } from '../../lib/vnLocations';
 import { EN } from '../../lib/i18n';
 import { getMyImpact, ProfileImpact } from '../../lib/impact';
 import { PersonalImpactCard } from '../sustainability/PersonalImpactCard';
+import { SellerReadinessWidget } from '../seller/SellerReadinessWidget';
 
 type FormState = {
   display_name: string;
@@ -289,9 +290,14 @@ export const ProfileClient = () => {
                 {isEditing ? 'Hủy chỉnh sửa' : 'Chỉnh sửa hồ sơ'}
               </Button>
               {profile.username ? (
-                <Link href={`/seller/${profile.username}`} className="w-full" data-testid="profile-view-storefront">
-                  <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">Xem gian hàng công khai</Button>
-                </Link>
+                <>
+                  <Link href={`/seller/${profile.username}`} className="w-full" data-testid="profile-view-storefront">
+                    <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">Xem gian hàng công khai</Button>
+                  </Link>
+                  <Link href={ROUTES.SELLER_DASHBOARD} className="w-full">
+                    <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider text-neutral-600">Vào kênh người bán</Button>
+                  </Link>
+                </>
               ) : (
                 <p className="text-[11px] text-neutral-500 text-center">Đặt tên người dùng để mở gian hàng công khai.</p>
               )}
@@ -307,6 +313,7 @@ export const ProfileClient = () => {
         {impact ? <PersonalImpactCard impact={impact} /> : null}
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12">
           <div className="lg:col-span-8 flex flex-col gap-8">
+            <SellerReadinessWidget />
             {isEditing ? (
               <section className="border border-neutral-200 bg-white p-6 sm:p-8">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-6">

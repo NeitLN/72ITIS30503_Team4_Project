@@ -246,10 +246,84 @@ async function uploadAvatar(userId, file) {
   return projectMe(updated);
 }
 
+async function getMyReadiness(userId) {
+  checkDb();
+  const profile = await getMyProfile(userId);
+
+  const { count: draftCount, error: draftErr } = await supabaseAdmin
+    .from('products')
+    .select('id', { count: 'exact', head: true })
+    .eq('seller_id', userId)
+    .eq('status', 'draft')
+    .eq('listing_source', 'user');
+  if (draftErr) throw draftErr;
+
+  const { count: activeCount, error: activeErr } = await supabaseAdmin
+    .from('products')
+    .select('id', { count: 'exact', head: true })
+    .eq('seller_id', userId)
+    .eq('status', 'active')
+    .eq('listing_source', 'user');
+  if (activeErr) throw activeErr;
+
+  const steps = [
+    {
+      key: 'username',
+      label: 'Đặt tên gian hàng',
+      completed: !!profile.username,
+      actionLabel: 'Cập nhật',
+      actionHref: '/profile',
+    },
+    {
+      key: 'avatar',
+      label: 'Thêm ảnh đại diện',
+      completed: !!profile.avatar_url,
+      actionLabel: 'Cập nhật',
+      actionHref: '/profile',
+    },
+    {
+      key: 'bio',
+      label: 'Viết giới thiệu gian hàng',
+      completed: !!profile.bio,
+      actionLabel: 'Cập nhật',
+      actionHref: '/profile',
+    },
+    {
+      key: 'location',
+      label: 'Thêm vị trí',
+      completed: !!profile.location,
+      actionLabel: 'Cập nhật',
+      actionHref: '/profile',
+    },
+    {
+      key: 'first_listing',
+      label: 'Đăng sản phẩm đầu tiên',
+      completed: (activeCount || 0) > 0 || (draftCount || 0) > 0,
+      actionLabel: 'Đăng bán',
+      actionHref: '/sell',
+    },
+  ];
+
+  const completedCount = steps.filter((s) => s.completed).length;
+  const totalSupportedSteps = steps.length;
+  const completionPercentage = Math.round((completedCount / totalSupportedSteps) * 100);
+
+  return {
+    completionPercentage,
+    completedCount,
+    totalSupportedSteps,
+    isStorefrontAvailable: !!profile.username,
+    hasDraftListing: (draftCount || 0) > 0,
+    hasActiveListing: (activeCount || 0) > 0,
+    steps,
+  };
+}
+
 module.exports = {
   getMyProfile,
   updateMyProfile,
   uploadAvatar,
+  getMyReadiness,
   ProfileValidationError,
   RESERVED_USERNAMES,
   normalizeUsername,

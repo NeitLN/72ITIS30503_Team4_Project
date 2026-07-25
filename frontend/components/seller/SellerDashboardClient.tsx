@@ -15,6 +15,7 @@ import {
 } from '../../lib/sellerDashboard';
 import { ListingEditForm } from './ListingEditForm';
 import { ConfirmDialog } from './ConfirmDialog';
+import { SellerReadinessWidget } from './SellerReadinessWidget';
 import { LifecycleBadge } from '../sustainability/LifecycleBadge';
 import { getMyImpact, ProfileImpact } from '../../lib/impact';
 import { PersonalImpactCard } from '../sustainability/PersonalImpactCard';
@@ -296,6 +297,7 @@ export const SellerDashboardClient = () => {
       {/* ---------- Overview ---------- */}
       {tab === 'overview' && (
         <div data-testid="dashboard-overview">
+          <SellerReadinessWidget />
           {statsError && <p role="alert" className="text-sm text-red-600 mb-4">{statsError}</p>}
           {!stats && !statsError && <p className="text-sm text-neutral-500 animate-pulse">Đang tải thống kê…</p>}
           {stats && (

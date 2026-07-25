@@ -31,6 +31,18 @@ router.get('/me/impact', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/profile/me/readiness — the authenticated user's seller readiness.
+router.get('/me/readiness', requireAuth, async (req, res) => {
+  try {
+    const readiness = await profileService.getMyReadiness(req.user.id);
+    return success(res, readiness);
+  } catch (err) {
+    if (err.status) return error(res, err.status, err.message);
+    console.error('Get my readiness error:', err);
+    return error(res, 500, 'Không thể tải trạng thái gian hàng.');
+  }
+});
+
 // GET /api/profile/me — the authenticated user's own editable profile.
 router.get('/me', requireAuth, async (req, res) => {
   try {
