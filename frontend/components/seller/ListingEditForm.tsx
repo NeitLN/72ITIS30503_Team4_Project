@@ -294,6 +294,25 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
     && normalizeBrandText(form.brand) !== normalizeBrandText(UNBRANDED_LABEL)
     && (!matchedBrand || matchedBrand.verification_status !== 'verified');
 
+  const computeQualityScore = () => {
+    if (!listing || !form) return { score: 0, checks: [] };
+    const checks = [
+      { key: 'name', label: 'Tên sản phẩm', passed: form.name.trim().length >= 3 },
+      { key: 'description', label: 'Mô tả chi tiết', passed: form.description.trim().length >= 50 },
+      { key: 'category', label: 'Có danh mục', passed: !!form.category_slug },
+      { key: 'brand', label: 'Có thương hiệu', passed: !!form.brand && form.brand !== UNBRANDED_LABEL },
+      { key: 'condition', label: 'Tình trạng', passed: !!form.condition },
+      { key: 'size', label: 'Kích thước', passed: !!form.size },
+      { key: 'price', label: 'Giá bán hợp lệ', passed: !!form.price && Number(form.price) > 0 },
+      { key: 'images', label: 'Ít nhất 3 ảnh', passed: listing.images.length >= 3 },
+      { key: 'cover', label: 'Ảnh bìa', passed: listing.images.length > 0 },
+    ];
+    const passedCount = checks.filter(c => c.passed).length;
+    return { score: Math.round((passedCount / checks.length) * 100), checks };
+  };
+
+  const { score, checks } = computeQualityScore();
+
   return (
     <div>
       <div aria-live="polite" className="sr-only">{statusMessage}</div>
@@ -308,6 +327,26 @@ export const ListingEditForm = ({ listingId, onSaved, onCancel }: ListingEditFor
         >
           Xem trang sản phẩm &rarr;
         </Link>
+      </div>
+
+      <div className="mb-8 border border-neutral-200 bg-neutral-50 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="font-mono text-[10px] uppercase text-neutral-500 font-bold tracking-wider">Chất lượng tin đăng</span>
+          <span className={`font-mono text-sm font-bold ${score === 100 ? 'text-green-600' : score > 60 ? 'text-neutral-900' : 'text-orange-600'}`}>
+            {score}%
+          </span>
+        </div>
+        <div className="w-full h-1 bg-neutral-200 mb-4">
+          <div className={`h-full ${score === 100 ? 'bg-green-600' : 'bg-neutral-900'} transition-all`} style={{ width: `${score}%` }} />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+          {checks.map(c => (
+            <div key={c.key} className={`flex items-center gap-2 ${c.passed ? 'text-neutral-400' : 'text-neutral-900 font-medium'}`}>
+              <span>{c.passed ? '✓' : '○'}</span>
+              {c.label}
+            </div>
+          ))}
+        </div>
       </div>
 
       {saveError && (
