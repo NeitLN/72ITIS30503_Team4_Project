@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import { formatVND, formatVietnamDateTime, formatCondition } from '../../lib/format';
+import { tPaymentMethod } from '../../lib/i18n';
 import { LISTING_STATUS_LABELS, FULFILLMENT_STATUS_LABELS } from '../../lib/listingOptions';
 import {
   SellerListing, SellerListingStats, SellerOrderItem,
@@ -339,6 +340,7 @@ export const SellerDashboardClient = () => {
           ['overview', 'Tổng quan'],
           ['listings', 'Sản phẩm'],
           ['orders', 'Đơn bán'],
+          ['finance', 'Tài chính'],
         ] as [Tab, string][]).map(([key, label]) => (
           <button
             key={key}
@@ -731,7 +733,7 @@ export const SellerDashboardClient = () => {
                       <tr className="border-b border-neutral-200 bg-neutral-50 text-left font-mono text-[10px] uppercase tracking-wider text-neutral-500">
                         <th scope="col" className="px-4 py-3">Ngày</th>
                         <th scope="col" className="px-4 py-3">Mã đơn</th>
-                        <th scope="col" className="px-4 py-3">Sản phẩm</th>
+                        <th scope="col" className="px-4 py-3">Phương thức</th>
                         <th scope="col" className="px-4 py-3 text-right">Doanh thu gộp</th>
                         <th scope="col" className="px-4 py-3 text-right">Phí</th>
                         <th scope="col" className="px-4 py-3 text-right">Thực nhận</th>
@@ -744,8 +746,7 @@ export const SellerDashboardClient = () => {
                           <td className="px-4 py-3 whitespace-nowrap text-neutral-500">{formatVietnamDateTime(entry.created_at)}</td>
                           <td className="px-4 py-3 font-mono">{entry.order_code}</td>
                           <td className="px-4 py-3">
-                            <span className="line-clamp-1">{entry.item_name}</span>
-                            <span className="text-[10px] text-neutral-500">SL: {entry.quantity}</span>
+                            <span className="line-clamp-1">{tPaymentMethod(entry.payment_method)}</span>
                           </td>
                           <td className="px-4 py-3 text-right">{formatVND(entry.gross_amount)}</td>
                           <td className="px-4 py-3 text-right text-red-600">-{formatVND(entry.platform_fee)}</td>
@@ -753,10 +754,11 @@ export const SellerDashboardClient = () => {
                           <td className="px-4 py-3">
                             <span className={`font-mono text-[10px] uppercase tracking-wider border px-2 py-0.5 ${
                               entry.state === 'released' ? 'border-green-300 text-green-700 bg-green-50' :
-                              entry.state === 'escrow' ? 'border-orange-300 text-orange-700 bg-orange-50' :
+                              entry.state === 'held' ? 'border-orange-300 text-orange-700 bg-orange-50' :
+                              entry.state === 'disputed' ? 'border-red-300 text-red-700 bg-red-50' :
                               'border-neutral-300 text-neutral-500 bg-neutral-50'
                             }`}>
-                              {entry.state === 'released' ? 'Khả dụng' : entry.state === 'escrow' ? 'Tạm giữ' : entry.state === 'refunded' ? 'Đã hoàn tiền' : 'Đã hủy'}
+                              {entry.state === 'released' ? 'Khả dụng' : entry.state === 'held' ? 'Tạm giữ' : entry.state === 'refunded' ? 'Đã hoàn tiền' : entry.state === 'disputed' ? 'Đang tranh chấp' : entry.state}
                             </span>
                           </td>
                         </tr>

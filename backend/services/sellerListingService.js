@@ -578,30 +578,76 @@ async function getMyListingStats(userId) {
 
 async function deleteDraftListing(userId, id) {
   checkDb();
+  // 1-2. Authentication happens in routes/sellerListings.js; ownership is
+  // verified here — getMyListingById throws 404 for anything not owned by
+  // this seller (and never matches seed/catalog rows — see ownedListingQuery).
   const existing = await getMyListingById(userId, id);
+  // 3. Only drafts are eligible for hard deletion.
   if (existing.status !== 'draft') {
     throw new SellerListingError('Chỉ có thể xóa sản phẩm nháp.', 409);
   }
-  
-  if (existing.images && existing.images.length > 0) {
-    const paths = existing.images.map(img => extractOwnedStoragePath(img.url, userId)).filter(Boolean);
-    if (paths.length) {
-      await supabaseAdmin.storage.from(BUCKET).remove(paths).catch(() => {});
+
+  // 4. Capture candidate owned Storage paths BEFORE mutating anything.
+  const candidateImages = existing.images || [];
+
+  // 5. Delete the database listing FIRST. product_images/product_sustainability
+  // cascade-delete with it (on delete cascade) — Storage is never touched
+  // before this database deletion has actually succeeded, so a failure here
+  // can never leave a listing with broken image URLs.
+  const { error } = await supabaseAdmin.from('products').delete().eq('id', id).eq('seller_id', userId);
+  if (error) throw error;
+
+  // 6-7. Best-effort Storage cleanup, only now that the DB row is
+  // confirmed gone, and only for files no *other* surviving product_images
+  // row still references — a listing duplicated before this fix may still
+  // share a physical file with another (possibly active) listing, and that
+  // file must never be removed out from under it.
+  if (candidateImages.length) {
+    try {
+      const { data: stillUsedRows, error: lookupErr } = await supabaseAdmin
+        .from('product_images')
+        .select('url')
+        .in('url', candidateImages.map((img) => img.url));
+      if (lookupErr) throw lookupErr;
+
+      const stillReferenced = new Set((stillUsedRows || []).map((row) => row.url));
+      const pathsSafeToDelete = candidateImages
+        .filter((img) => !stillReferenced.has(img.url))
+        .map((img) => extractOwnedStoragePath(img.url, userId))
+        .filter(Boolean);
+
+      if (pathsSafeToDelete.length) {
+        const { error: removeErr } = await supabaseAdmin.storage.from(BUCKET).remove(pathsSafeToDelete);
+        if (removeErr) throw removeErr;
+      }
+    } catch (cleanupErr) {
+      // 8. Non-fatal: the listing is already deleted successfully. Never
+      // expose the provider's raw error payload to the caller, and never
+      // attempt to "undo" the already-successful database deletion.
+      console.error(`Storage cleanup warning for deleted draft ${id}:`, cleanupErr?.message || cleanupErr);
     }
   }
 
-  const { error } = await supabaseAdmin.from('products').delete().eq('id', id).eq('seller_id', userId);
-  if (error) throw error;
-  
   return { success: true };
 }
 
 async function duplicateListing(userId, id) {
   checkDb();
+  // Ownership verified before any Storage or database mutation — throws
+  // 404 for anything not owned by this seller (never a seed/catalog row).
   const existing = await getMyListingById(userId, id);
-  
+
+  // seller_name is NOT NULL on products but deliberately isn't part of the
+  // shared LISTING_COLUMNS allowlist (kept narrow everywhere else to avoid
+  // leaking it into responses that don't need it) — fetched separately,
+  // scoped to this already-ownership-verified row only.
+  const { data: sellerNameRow, error: sellerNameErr } = await supabaseAdmin
+    .from('products').select('seller_name').eq('id', id).single();
+  if (sellerNameErr) throw sellerNameErr;
+
   const newProduct = {
     seller_id: userId,
+    seller_name: sellerNameRow.seller_name,
     name: `${existing.name} (Bản sao)`,
     slug: `${existing.slug}-copy-${crypto.randomBytes(4).toString('hex')}`,
     description: existing.description,
@@ -617,33 +663,98 @@ async function duplicateListing(userId, id) {
     is_negotiable: existing.is_negotiable,
     status: 'draft',
     listing_source: 'user',
+    // Placeholder — image_url/thumbnail are NOT NULL columns. Overwritten
+    // below with the copied primary image's own URL once that's known; for
+    // the rare listing with zero images, the original's value is kept as-is
+    // (there's no product_images row backing it either way in that case).
     image_url: existing.image_url,
     thumbnail: existing.thumbnail,
   };
-  
+
   const { data: inserted, error } = await supabaseAdmin.from('products').insert(newProduct).select(LISTING_COLUMNS).single();
   if (error) throw error;
-  
-  if (existing.images && existing.images.length > 0) {
-    const newImages = existing.images.map(img => ({
-      product_id: inserted.id,
-      url: img.url,
-      alt_text: img.alt_text,
-      sort_order: img.sort_order,
-      is_primary: img.is_primary
-    }));
-    await supabaseAdmin.from('product_images').insert(newImages);
-  }
-  
-  if (existing.sustainability && existing.sustainability.lifecycle_type) {
+
+  // Any owned Storage object copied for this attempt — rolled back if
+  // anything below fails, so a partial copy never lingers.
+  const copiedPaths = [];
+
+  try {
+    if (existing.images && existing.images.length > 0) {
+      const newImageRecords = [];
+      for (let i = 0; i < existing.images.length; i++) {
+        const img = existing.images[i];
+        const sourcePath = extractOwnedStoragePath(img.url, userId);
+
+        if (!sourcePath) {
+          // Not one of our own Storage objects (e.g. a seed/catalog or
+          // otherwise external URL) — reference it as-is. We never "own"
+          // (and therefore never later delete) a path we didn't create.
+          newImageRecords.push({
+            product_id: inserted.id, url: img.url, alt_text: img.alt_text,
+            sort_order: img.sort_order, is_primary: img.is_primary,
+          });
+          continue;
+        }
+
+        // Deep copy into a brand-new, listing-specific path — the
+        // duplicate never shares a physical file with the original, so
+        // deleting either listing later can never break the other's photos.
+        // The extension is read straight off the source path (it was
+        // written by addImages()/createListing() using extFromMime at
+        // upload time) rather than re-derived from a MIME type we don't have.
+        const ext = sourcePath.includes('.') ? sourcePath.split('.').pop() : 'jpg';
+        const destPath = `products/${userId}/${inserted.id}/${i}-${crypto.randomUUID()}.${ext}`;
+        const { error: copyErr } = await supabaseAdmin.storage.from(BUCKET).copy(sourcePath, destPath);
+        if (copyErr) throw new Error(`Không thể sao chép ảnh "${sourcePath}": ${copyErr.message}`);
+        copiedPaths.push(destPath);
+
+        const { data: pub } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(destPath);
+        newImageRecords.push({
+          product_id: inserted.id, url: pub.publicUrl, alt_text: img.alt_text,
+          sort_order: img.sort_order, is_primary: img.is_primary,
+        });
+      }
+
+      const { error: imgErr } = await supabaseAdmin.from('product_images').insert(newImageRecords);
+      if (imgErr) throw imgErr;
+
+      const primary = newImageRecords.find((r) => r.is_primary) || newImageRecords[0];
+      if (primary) {
+        const { error: updateErr } = await supabaseAdmin.from('products')
+          .update({ image_url: primary.url, thumbnail: primary.url, updated_at: new Date().toISOString() })
+          .eq('id', inserted.id);
+        if (updateErr) throw updateErr;
+      }
+    }
+
+    if (existing.sustainability && existing.sustainability.lifecycle_type) {
       const { data: row } = await supabaseAdmin.from('product_sustainability').select('*').eq('product_id', existing.id).maybeSingle();
       if (row) {
-          const { product_id, created_at, updated_at, ...susFields } = row;
-          await supabaseAdmin.from('product_sustainability').insert({ ...susFields, product_id: inserted.id });
+        const { product_id, created_at, updated_at, ...susFields } = row;
+        await supabaseAdmin.from('product_sustainability').insert({ ...susFields, product_id: inserted.id });
       }
+    }
+
+    return getMyListingById(userId, inserted.id);
+  } catch (err) {
+    // Compensate for a partial failure — never leave a half-created
+    // duplicate. Roll back any Storage objects already copied for this
+    // attempt, then remove the product row itself (product_images and
+    // product_sustainability cascade-delete with it).
+    try {
+      if (copiedPaths.length) {
+        await supabaseAdmin.storage.from(BUCKET).remove(copiedPaths);
+      }
+    } catch (rollbackErr) {
+      console.error(`Rollback warning: failed to remove copied images for aborted duplicate of ${id}:`, rollbackErr?.message || rollbackErr);
+    }
+    try {
+      await supabaseAdmin.from('products').delete().eq('id', inserted.id);
+    } catch (rollbackErr) {
+      console.error(`Rollback warning: failed to remove the half-created duplicate row for ${id}:`, rollbackErr?.message || rollbackErr);
+    }
+    throw err;
   }
-  
-  return getMyListingById(userId, inserted.id);
 }
 
 module.exports = {

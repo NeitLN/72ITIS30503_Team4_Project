@@ -168,6 +168,9 @@ export async function updateFulfillmentStatus(itemId: string, status: string): P
 export interface SellerFinanceSummary {
   gross_revenue: number;
   escrow_amount: number;
+  released_amount: number;
+  refunded_amount: number;
+  disputed_amount: number;
   available_balance: number;
   paid_out_amount: number;
   platform_fees: number;
@@ -181,8 +184,6 @@ export interface SellerFinanceSummary {
 export interface SellerFinanceLedgerEntry {
   id: string;
   order_code: string;
-  item_name: string;
-  quantity: number;
   gross_amount: number;
   platform_fee: number;
   net_amount: number;

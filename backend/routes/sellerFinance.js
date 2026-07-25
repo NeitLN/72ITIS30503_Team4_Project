@@ -1,10 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const sellerFinanceService = require('../services/sellerFinanceService');
-const { requireAuth } = require('../middleware/auth');
-const { success, error, handleServiceError } = require('../utils/apiResponse');
+const { authenticateUser, requireAuth } = require('../middleware/auth');
+const { success, error } = require('../utils/apiResponse');
 
-router.use(requireAuth);
+// `handleServiceError` is not exported by utils/apiResponse — every other
+// seller route (sellerListings.js, sellerOrders.js) defines its own local
+// copy rather than importing one that doesn't exist. Matching that pattern.
+function handleServiceError(err, res, fallback) {
+  if (err.status) return error(res, err.status, err.message, err.details, err.code);
+  console.error(fallback, err);
+  return error(res, 500, 'Đã xảy ra lỗi hệ thống.');
+}
+
+// authenticateUser must run before requireAuth — requireAuth only checks
+// req.user truthiness, it never decodes the token itself. Without
+// authenticateUser here, every request (valid token or not) was rejected
+// with 401, since req.user was never populated.
+router.use(authenticateUser, requireAuth);
 
 // GET /api/seller/finance/summary
 router.get('/summary', async (req, res) => {
