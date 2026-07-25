@@ -457,14 +457,15 @@ export const SellerDashboardClient = () => {
                   {/* Desktop table */}
                   <div className="hidden md:block overflow-x-auto border border-neutral-200">
                     <table className="w-full text-sm">
+                      <caption className="sr-only">Danh sách sản phẩm của bạn</caption>
                       <thead>
                         <tr className="border-b border-neutral-200 bg-neutral-50 text-left font-mono text-[10px] uppercase tracking-wider text-neutral-500">
-                          <th className="px-4 py-3">Sản phẩm</th>
-                          <th className="px-4 py-3">Giá</th>
-                          <th className="px-4 py-3">Kho</th>
-                          <th className="px-4 py-3">Trạng thái</th>
-                          <th className="px-4 py-3">Cập nhật</th>
-                          <th className="px-4 py-3">Hành động</th>
+                          <th scope="col" className="px-4 py-3">Sản phẩm</th>
+                          <th scope="col" className="px-4 py-3">Giá</th>
+                          <th scope="col" className="px-4 py-3">Kho</th>
+                          <th scope="col" className="px-4 py-3">Trạng thái</th>
+                          <th scope="col" className="px-4 py-3">Cập nhật</th>
+                          <th scope="col" className="px-4 py-3">Hành động</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -725,15 +726,16 @@ export const SellerDashboardClient = () => {
               ) : (
                 <div className="overflow-x-auto border border-neutral-200">
                   <table className="w-full text-sm">
+                    <caption className="sr-only">Sổ cái tài chính</caption>
                     <thead>
                       <tr className="border-b border-neutral-200 bg-neutral-50 text-left font-mono text-[10px] uppercase tracking-wider text-neutral-500">
-                        <th className="px-4 py-3">Ngày</th>
-                        <th className="px-4 py-3">Mã đơn</th>
-                        <th className="px-4 py-3">Sản phẩm</th>
-                        <th className="px-4 py-3 text-right">Doanh thu gộp</th>
-                        <th className="px-4 py-3 text-right">Phí</th>
-                        <th className="px-4 py-3 text-right">Thực nhận</th>
-                        <th className="px-4 py-3">Trạng thái</th>
+                        <th scope="col" className="px-4 py-3">Ngày</th>
+                        <th scope="col" className="px-4 py-3">Mã đơn</th>
+                        <th scope="col" className="px-4 py-3">Sản phẩm</th>
+                        <th scope="col" className="px-4 py-3 text-right">Doanh thu gộp</th>
+                        <th scope="col" className="px-4 py-3 text-right">Phí</th>
+                        <th scope="col" className="px-4 py-3 text-right">Thực nhận</th>
+                        <th scope="col" className="px-4 py-3">Trạng thái</th>
                       </tr>
                     </thead>
                     <tbody>

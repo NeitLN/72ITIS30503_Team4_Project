@@ -101,6 +101,7 @@ export const SellListingClient = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   const submitLockRef = useRef(false); // synchronous guard against rapid double-clicks
 
@@ -149,6 +150,7 @@ export const SellListingClient = () => {
             ...parsed,
             product_journey: { ...EMPTY_PRODUCT_JOURNEY, ...(parsed.product_journey || {}) },
           });
+          setLastSaved(new Date());
         }
       } catch {
         // ignore corrupt draft
@@ -160,7 +162,11 @@ export const SellListingClient = () => {
 
   useEffect(() => {
     if (!draftLoaded) return;
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    const timer = setTimeout(() => {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+      setLastSaved(new Date());
+    }, 500); // Debounce save
+    return () => clearTimeout(timer);
   }, [form, draftLoaded]);
 
   // Warn before leaving with unsaved progress past step 1.
@@ -475,24 +481,32 @@ export const SellListingClient = () => {
       <div aria-live="polite" className="sr-only">{statusMessage}</div>
 
       {/* Step indicator */}
-      <ol className="mb-8 flex flex-wrap gap-x-4 gap-y-2 font-mono text-[10px] uppercase tracking-widest">
-        {STEP_LABELS.map((label, i) => {
-          const n = i + 1;
-          const active = n === step;
-          const done = n < step;
-          return (
-            <li key={label} className={`flex items-center gap-1.5 ${active ? 'text-neutral-900 font-bold' : done ? 'text-neutral-500' : 'text-neutral-300'}`}>
-              <span
-                className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${active ? 'border-neutral-900 bg-neutral-900 text-white' : done ? 'border-neutral-400' : 'border-neutral-300'}`}
-                aria-hidden="true"
-              >
-                {n}
-              </span>
-              {label}
-            </li>
-          );
-        })}
-      </ol>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+        <ol className="flex flex-wrap gap-x-4 gap-y-2 font-mono text-[10px] uppercase tracking-widest">
+          {STEP_LABELS.map((label, i) => {
+            const n = i + 1;
+            const active = n === step;
+            const done = n < step;
+            return (
+              <li key={label} className={`flex items-center gap-1.5 ${active ? 'text-neutral-900 font-bold' : done ? 'text-neutral-500' : 'text-neutral-300'}`}>
+                <span
+                  className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${active ? 'border-neutral-900 bg-neutral-900 text-white' : done ? 'border-neutral-400' : 'border-neutral-300'}`}
+                  aria-hidden="true"
+                >
+                  {n}
+                </span>
+                {label}
+              </li>
+            );
+          })}
+        </ol>
+        {lastSaved && (
+          <span className="font-mono text-[10px] uppercase tracking-widest text-green-600 animate-in fade-in flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
+            Đã lưu bản nháp ({lastSaved.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})
+          </span>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-8">
