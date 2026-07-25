@@ -135,7 +135,15 @@ async function listMyListings(userId, query = {}) {
   if (countErr) throw countErr;
 
   const dataQuery = applyListingFilters(ownedListingQuery(userId), query);
-  const { data, error } = await dataQuery.order('updated_at', { ascending: false }).range(from, to);
+  
+  let q = dataQuery;
+  const sort = query.sort || 'newest';
+  if (sort === 'oldest') q = q.order('updated_at', { ascending: true });
+  else if (sort === 'price_asc') q = q.order('price', { ascending: true });
+  else if (sort === 'price_desc') q = q.order('price', { ascending: false });
+  else q = q.order('updated_at', { ascending: false });
+
+  const { data, error } = await q.range(from, to);
   if (error) throw error;
 
   const withImages = await attachImages(data || []);
@@ -568,6 +576,76 @@ async function getMyListingStats(userId) {
   };
 }
 
+async function deleteDraftListing(userId, id) {
+  checkDb();
+  const existing = await getMyListingById(userId, id);
+  if (existing.status !== 'draft') {
+    throw new SellerListingError('Chỉ có thể xóa sản phẩm nháp.', 409);
+  }
+  
+  if (existing.images && existing.images.length > 0) {
+    const paths = existing.images.map(img => extractOwnedStoragePath(img.url, userId)).filter(Boolean);
+    if (paths.length) {
+      await supabaseAdmin.storage.from(BUCKET).remove(paths).catch(() => {});
+    }
+  }
+
+  const { error } = await supabaseAdmin.from('products').delete().eq('id', id).eq('seller_id', userId);
+  if (error) throw error;
+  
+  return { success: true };
+}
+
+async function duplicateListing(userId, id) {
+  checkDb();
+  const existing = await getMyListingById(userId, id);
+  
+  const newProduct = {
+    seller_id: userId,
+    name: `${existing.name} (Bản sao)`,
+    slug: `${existing.slug}-copy-${crypto.randomBytes(4).toString('hex')}`,
+    description: existing.description,
+    price: existing.price,
+    sale_price: existing.sale_price,
+    category_slug: existing.category_slug,
+    brand_id: existing.brand_id,
+    brand: existing.brand,
+    condition: existing.condition,
+    size: existing.size,
+    stock: existing.stock,
+    location: existing.location,
+    is_negotiable: existing.is_negotiable,
+    status: 'draft',
+    listing_source: 'user',
+    image_url: existing.image_url,
+    thumbnail: existing.thumbnail,
+  };
+  
+  const { data: inserted, error } = await supabaseAdmin.from('products').insert(newProduct).select(LISTING_COLUMNS).single();
+  if (error) throw error;
+  
+  if (existing.images && existing.images.length > 0) {
+    const newImages = existing.images.map(img => ({
+      product_id: inserted.id,
+      url: img.url,
+      alt_text: img.alt_text,
+      sort_order: img.sort_order,
+      is_primary: img.is_primary
+    }));
+    await supabaseAdmin.from('product_images').insert(newImages);
+  }
+  
+  if (existing.sustainability && existing.sustainability.lifecycle_type) {
+      const { data: row } = await supabaseAdmin.from('product_sustainability').select('*').eq('product_id', existing.id).maybeSingle();
+      if (row) {
+          const { product_id, created_at, updated_at, ...susFields } = row;
+          await supabaseAdmin.from('product_sustainability').insert({ ...susFields, product_id: inserted.id });
+      }
+  }
+  
+  return getMyListingById(userId, inserted.id);
+}
+
 module.exports = {
   SellerListingError,
   listMyListings,
@@ -578,4 +656,6 @@ module.exports = {
   removeImage,
   reorderImages,
   getMyListingStats,
+  deleteDraftListing,
+  duplicateListing,
 };

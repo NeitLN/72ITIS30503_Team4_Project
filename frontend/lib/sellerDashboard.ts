@@ -94,7 +94,7 @@ export async function getMyListingStats(): Promise<ApiResult<SellerListingStats>
 }
 
 export async function getMyListings(params: {
-  page?: number; limit?: number; status?: string; category?: string; search?: string;
+  page?: number; limit?: number; status?: string; category?: string; search?: string; sort?: string;
 } = {}): Promise<ApiResult<SellerListing[]>> {
   const query = new URLSearchParams();
   if (params.page) query.set('page', String(params.page));
@@ -102,12 +102,21 @@ export async function getMyListings(params: {
   if (params.status) query.set('status', params.status);
   if (params.category) query.set('category', params.category);
   if (params.search) query.set('search', params.search);
+  if (params.sort) query.set('sort', params.sort);
   const qs = query.toString();
   return authedJson(`/api/seller/listings${qs ? `?${qs}` : ''}`);
 }
 
 export async function getMyListing(id: string): Promise<ApiResult<SellerListing>> {
   return authedJson(`/api/seller/listings/${id}`);
+}
+
+export async function deleteDraftListing(id: string): Promise<ApiResult<{ deleted: true }>> {
+  return authedJson(`/api/seller/listings/${id}`, { method: 'DELETE' });
+}
+
+export async function duplicateListing(id: string): Promise<ApiResult<SellerListing>> {
+  return authedJson(`/api/seller/listings/${id}/duplicate`, { method: 'POST' });
 }
 
 export async function updateMyListing(id: string, fields: Record<string, unknown>): Promise<ApiResult<SellerListing>> {

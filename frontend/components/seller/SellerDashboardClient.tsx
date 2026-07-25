@@ -11,7 +11,7 @@ import { LISTING_STATUS_LABELS, FULFILLMENT_STATUS_LABELS } from '../../lib/list
 import {
   SellerListing, SellerListingStats, SellerOrderItem,
   getMyListingStats, getMyListings, transitionListingStatus,
-  getMyOrderItems, updateFulfillmentStatus,
+  getMyOrderItems, updateFulfillmentStatus, deleteDraftListing, duplicateListing
 } from '../../lib/sellerDashboard';
 import { ListingEditForm } from './ListingEditForm';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -72,6 +72,7 @@ export const SellerDashboardClient = () => {
   const [listingCount, setListingCount] = useState(0);
   const [listingPage, setListingPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
+  const [sortFilter, setSortFilter] = useState('newest');
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<{ id: string; action: string; label: string } | null>(null);
@@ -90,7 +91,7 @@ export const SellerDashboardClient = () => {
     setListingsLoading(true);
     setListingsError(null);
     try {
-      const res = await getMyListings({ page: listingPage, limit: LISTINGS_PER_PAGE, status: statusFilter || undefined, search: search || undefined });
+      const res = await getMyListings({ page: listingPage, limit: LISTINGS_PER_PAGE, status: statusFilter || undefined, search: search || undefined, sort: sortFilter });
       if (requestId !== listingsRequestRef.current) return; // superseded by a newer request
       if (res.success) {
         setListings(res.data);
@@ -104,7 +105,7 @@ export const SellerDashboardClient = () => {
     } finally {
       if (requestId === listingsRequestRef.current) setListingsLoading(false);
     }
-  }, [listingPage, statusFilter, search]);
+  }, [listingPage, statusFilter, search, sortFilter]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -125,27 +126,48 @@ export const SellerDashboardClient = () => {
     setActionError(null);
     setStatusMessage('Đang cập nhật…');
     try {
-      const res = await transitionListingStatus(id, action);
-      if (res.success) {
-        setListings((prev) => prev.map((l) => (l.id === id ? res.data : l)));
-        setStatusMessage('Đã cập nhật trạng thái sản phẩm.');
-        loadStats();
+      if (action === 'delete') {
+        const res = await deleteDraftListing(id);
+        if (res.success) {
+          setListings((prev) => prev.filter((l) => l.id !== id));
+          setStatusMessage('Đã xóa bản nháp.');
+          loadStats();
+        } else {
+          setActionError(res.error.message || 'Không thể xóa bản nháp.');
+          setStatusMessage('Xóa không thành công.');
+        }
+      } else if (action === 'duplicate') {
+        const res = await duplicateListing(id);
+        if (res.success) {
+          setListings((prev) => [res.data, ...prev]);
+          setStatusMessage('Đã nhân bản sản phẩm.');
+          loadStats();
+        } else {
+          setActionError(res.error.message || 'Không thể nhân bản sản phẩm.');
+          setStatusMessage('Nhân bản không thành công.');
+        }
       } else {
-        setActionError(res.error.message || 'Không thể cập nhật trạng thái.');
-        setStatusMessage('Cập nhật trạng thái không thành công.');
+        const res = await transitionListingStatus(id, action);
+        if (res.success) {
+          setListings((prev) => prev.map((l) => (l.id === id ? res.data : l)));
+          setStatusMessage('Đã cập nhật trạng thái sản phẩm.');
+          loadStats();
+        } else {
+          setActionError(res.error.message || 'Không thể cập nhật trạng thái.');
+          setStatusMessage('Cập nhật trạng thái không thành công.');
+        }
       }
     } catch {
       setActionError('Lỗi kết nối — hệ thống có thể đang tạm ngưng.');
-      setStatusMessage('Cập nhật trạng thái không thành công do lỗi kết nối.');
+      setStatusMessage('Cập nhật không thành công do lỗi kết nối.');
     } finally {
       setPendingAction(null);
     }
   };
 
   const requestAction = (id: string, action: string, label: string) => {
-    // Destructive/state-changing actions (hide, mark sold, archive) always
-    // go through the confirmation dialog; reactivating never needs one.
-    if (action === 'active') {
+    // Destructive/state-changing actions always go through the confirmation dialog.
+    if (action === 'active' || action === 'duplicate') {
       handleTransition(id, action);
     } else {
       setPendingAction({ id, action, label });
@@ -357,11 +379,21 @@ export const SellerDashboardClient = () => {
                 <select
                   value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setListingPage(1); }}
                   data-testid="listings-status-filter"
-                  className="border border-neutral-300 bg-white px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none"
+                  className="border border-neutral-300 bg-white px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none w-full sm:w-auto"
                 >
                   {LISTING_STATUS_FILTERS.map((s) => (
                     <option key={s} value={s}>{s ? LISTING_STATUS_LABELS[s] : 'Tất cả trạng thái'}</option>
                   ))}
+                </select>
+                <select
+                  value={sortFilter} onChange={(e) => { setSortFilter(e.target.value); setListingPage(1); }}
+                  data-testid="listings-sort-filter"
+                  className="border border-neutral-300 bg-white px-3.5 py-2 text-sm text-neutral-900 focus:border-neutral-900 focus:outline-none w-full sm:w-auto"
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="oldest">Cũ nhất</option>
+                  <option value="price_asc">Giá tăng dần</option>
+                  <option value="price_desc">Giá giảm dần</option>
                 </select>
               </div>
 
@@ -405,6 +437,7 @@ export const SellerDashboardClient = () => {
                                 <img src={listing.thumbnail || listing.image_url || ''} alt={listing.name} className="h-12 w-12 object-cover border border-neutral-200 shrink-0" />
                                 <div className="min-w-0">
                                   <span className="block font-medium text-neutral-900 line-clamp-2">{listing.name}</span>
+                                  <span className="block text-[10px] text-neutral-500 mt-0.5">{listing.category_slug} {listing.brand ? `· ${listing.brand}` : ''} {listing.condition ? `· ${formatCondition(listing.condition)}` : ''}</span>
                                   <LifecycleBadge lifecycle={listing.sustainability?.lifecycle_type} showNotSpecified testId="listing-lifecycle" className="mt-1" />
                                 </div>
                               </div>
@@ -432,6 +465,14 @@ export const SellerDashboardClient = () => {
                                     {a.label}
                                   </button>
                                 ))}
+                                <button onClick={() => requestAction(listing.id, 'duplicate', 'Nhân bản')} className="font-mono text-[10px] uppercase tracking-wider text-neutral-700 hover:text-neutral-900 underline" data-testid="listing-action-duplicate">
+                                  Nhân bản
+                                </button>
+                                {listing.status === 'draft' && (
+                                  <button onClick={() => requestAction(listing.id, 'delete', 'Xóa bản nháp')} className="font-mono text-[10px] uppercase tracking-wider text-red-600 hover:text-red-800 underline" data-testid="listing-action-delete">
+                                    Xóa
+                                  </button>
+                                )}
                                 <Link href={ROUTES.PRODUCT(listing.slug)} target="_blank" className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 hover:text-neutral-900 underline">
                                   Xem trang sản phẩm
                                 </Link>
@@ -453,6 +494,7 @@ export const SellerDashboardClient = () => {
                           <div className="min-w-0">
                             <p className="font-medium text-neutral-900 line-clamp-2">{listing.name}</p>
                             <p className="text-sm text-neutral-600">{formatVND(listing.sale_price ?? listing.price)}</p>
+                            <span className="block text-[10px] text-neutral-500 mt-0.5">{listing.category_slug} {listing.brand ? `· ${listing.brand}` : ''} {listing.condition ? `· ${formatCondition(listing.condition)}` : ''}</span>
                             <LifecycleBadge lifecycle={listing.sustainability?.lifecycle_type} showNotSpecified testId="listing-lifecycle" className="mt-1" />
                             <span className="mt-1 inline-block font-mono text-[10px] uppercase tracking-wider border border-neutral-300 px-2 py-0.5" data-testid="listing-status">
                               {LISTING_STATUS_LABELS[listing.status] || listing.status}
@@ -473,6 +515,14 @@ export const SellerDashboardClient = () => {
                               {a.label}
                             </button>
                           ))}
+                          <button onClick={() => requestAction(listing.id, 'duplicate', 'Nhân bản')} className="font-mono text-[10px] uppercase tracking-wider text-neutral-700 underline" data-testid="listing-action-duplicate">
+                            Nhân bản
+                          </button>
+                          {listing.status === 'draft' && (
+                            <button onClick={() => requestAction(listing.id, 'delete', 'Xóa bản nháp')} className="font-mono text-[10px] uppercase tracking-wider text-red-600 underline" data-testid="listing-action-delete">
+                              Xóa
+                            </button>
+                          )}
                         </div>
                       </li>
                     ))}

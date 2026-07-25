@@ -122,4 +122,24 @@ router.delete('/:id/images/:imageId', async (req, res) => {
   }
 });
 
+// DELETE /api/seller/listings/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    await sellerListingService.deleteDraftListing(req.user.id, req.params.id);
+    return success(res, { deleted: true });
+  } catch (err) {
+    return handleServiceError(err, res, `Delete draft listing ${req.params.id} error:`);
+  }
+});
+
+// POST /api/seller/listings/:id/duplicate
+router.post('/:id/duplicate', async (req, res) => {
+  try {
+    const listing = await sellerListingService.duplicateListing(req.user.id, req.params.id);
+    return success(res, listing);
+  } catch (err) {
+    return handleServiceError(err, res, `Duplicate listing ${req.params.id} error:`);
+  }
+});
+
 module.exports = router;
