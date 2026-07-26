@@ -4,7 +4,7 @@
 |---|---|---|---|---|---|---|---|
 | 0 | Seller Baseline Audit | Completed (audit only) | (None - read only) | No | No | (Initial) | Phase 1 |
 | 1 | Seller Onboarding and Store Readiness | Completed | 5258541 | No | No | (Done) | Phase 2 |
-| 2 | Seller Profile and Public Storefront | Partial — only adds a share-storefront button; ownership/private-field/trust behavior predates this phase and was not re-verified here; no dedicated test | d6406f3 | No | No | (Done) | Phase 3 |
+| 2 | Seller Profile and Public Storefront | Code Complete — Browser QA Pending (Implementation and automated backend tests passed. Public/private field separation enforced, metrics verified, E2E tests added) | 9c87f2e | No | No | (Remediated) | Phase 3 |
 | 3 | Seller Product Management | Remediated — search/filter/sort were already correct; duplicate/delete had real image-ownership and deletion-order defects, fixed in this remediation pass (see below) | f17c52e + remediation | No | No | (Remediated) | Phase 4 |
 | 4 | Inventory, Variants, and Listing Quality | Code complete — browser E2E pending (implementation failure-safe, regression passed) | e6a55dd | No | No | (Done) | Phase 5 |
 | 5 | Seller Orders and Fulfillment | Core list/filter/fulfillment flow works (predates this phase, independently verified live); this phase's own addition (order-detail drawer) calls a pre-existing, correctly seller-isolated endpoint. No dedicated regression test for the drawer itself | 7c45d33 | No | No | (Done) | Phase 6 |
@@ -18,6 +18,12 @@
 ## Remediation pass (this commit)
 
 Fixed four confirmed defects plus several additional defects discovered while fixing them:
+
+**Profile and Storefront (Phase 2):**
+- Enforced strict backend validation and separation of public vs private seller fields by stripping internal user ID before responding to storefront APIs.
+- Filtered public products to guarantee only `active` status and `listing_source: 'user'`, preventing seed/draft/archived items from appearing on storefronts.
+- Fixed frontend "empty storefront" copy to match the exact requirement ("Gian hàng này chưa có sản phẩm đang bán.").
+- Created extensive backend integration tests and Playwright browser E2E test file for profile updates and storefront validation.
 
 **Finance (Phase 6):**
 - Added the missing "Tài chính" tab button to the Seller Dashboard's navigation array (the panel/data-loading code already existed but was unreachable).
