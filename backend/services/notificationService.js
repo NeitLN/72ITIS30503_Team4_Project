@@ -9,7 +9,7 @@ const checkDb = () => {
 function validateInternalActionHref(action_href) {
   if (action_href !== undefined && action_href !== null) {
     if (
-      typeof action_href !== 'string' || 
+      typeof action_href !== 'string' ||
       action_href.trim() === '' ||
       !action_href.startsWith('/') ||
       action_href.startsWith('//') ||
