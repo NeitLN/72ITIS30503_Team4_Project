@@ -28,7 +28,9 @@ router.get('/:username', async (req, res) => {
       return error(res, 404, 'Không tìm thấy người bán.');
     }
     
-    return success(res, seller);
+    // Strip internal ID before sending to client
+    const { id, ...publicSeller } = seller;
+    return success(res, publicSeller);
   } catch (err) {
     if (err.message === 'DATABASE_NOT_CONFIGURED') {
       return error(res, 503, 'Dịch vụ tạm thời không khả dụng: hệ thống chưa được cấu hình.');
@@ -49,7 +51,8 @@ router.get('/:username/products', async (req, res) => {
 
     const { data, meta } = await productService.getProducts({
       ...req.query,
-      seller: seller.username // normalized value resolved above, not the raw param
+      trusted_seller_id: seller.id,
+      listing_source: 'user'
     });
     
     return success(res, data, meta);

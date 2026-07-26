@@ -74,7 +74,7 @@ async function getSellerByUsername(rawUsername) {
   }
 
   return {
-    id: user.id,
+    id: user.id, // INTERNAL ONLY, stripped in route
     username: user.username,
     full_name: user.full_name,
     avatar_url: user.avatar_url || null,

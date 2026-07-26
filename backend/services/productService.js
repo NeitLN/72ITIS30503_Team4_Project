@@ -180,7 +180,9 @@ const getProducts = async (options = {}) => {
     }
   }
 
-  if (options.seller) {
+  if (options.trusted_seller_id) {
+    query = query.eq('seller_id', options.trusted_seller_id);
+  } else if (options.seller) {
     try {
       const { data: userData, error } = await supabase.from('users').select('id').eq('username', options.seller).single();
       if (!error && userData) {
@@ -193,6 +195,10 @@ const getProducts = async (options = {}) => {
       // If table users lacks username column, query by seller_name directly on products table (bulletproof fallback)
       query = query.ilike('seller_name', `%${options.seller}%`);
     }
+  }
+
+  if (options.listing_source) {
+    query = query.eq('listing_source', options.listing_source);
   }
 
   if (options.condition) {
