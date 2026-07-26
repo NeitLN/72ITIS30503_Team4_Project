@@ -24,6 +24,9 @@ const sellerFinanceRoutes = require('./routes/sellerFinance');
 const sustainabilityRoutes = require('./routes/sustainability');
 const adminTransactionRoutes = require('./routes/adminTransactions');
 const adminRoutes = require('./routes/admin');
+const notificationRoutes = require('./routes/notifications');
+const conversationRoutes = require('./routes/conversations');
+const messageRoutes = require('./routes/messages');
 
 const app = express();
 
@@ -59,6 +62,9 @@ app.use('/api/seller/finance', sellerFinanceRoutes);
 app.use('/api/sustainability', sustainabilityRoutes);
 app.use('/api/admin/transactions', adminTransactionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/conversations', conversationRoutes);
+app.use('/api/messages', messageRoutes);
 
 // 404 Handler
 app.use((req, res) => {

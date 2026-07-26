@@ -14,6 +14,7 @@
 const { supabaseAdmin, isSupabaseAdminConfigured } = require('../lib/supabase');
 const { FULFILLMENT_STATUSES } = require('../constants/listingStatus');
 const { fromRpcError } = require('../utils/serviceError');
+const notificationService = require('./notificationService');
 
 class SellerOrderError extends Error {
   constructor(message, status) {

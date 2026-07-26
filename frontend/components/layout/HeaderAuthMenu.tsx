@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../constants/routes';
+import { HeaderMessagesButton } from './HeaderMessagesButton';
+import { HeaderNotificationsButton } from './HeaderNotificationsButton';
 
 export const HeaderAuthMenu = () => {
   const { user, isAuthenticated, isHydrated, logout } = useAuth();
@@ -84,6 +86,9 @@ export const HeaderAuthMenu = () => {
 
     return (
       <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium whitespace-nowrap">
+        <HeaderMessagesButton />
+        <HeaderNotificationsButton />
+        
         <div className="hidden md:flex items-center">
           <Link href={ROUTES.PROFILE} className="text-neutral-900 transition-colors hover:text-neutral-500 font-semibold">
             Hồ sơ

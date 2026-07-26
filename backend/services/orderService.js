@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { supabaseAdmin, isSupabaseAdminConfigured } = require('../lib/supabase');
 const { ServiceError, fromRpcError } = require('../utils/serviceError');
 const { getOrderPayment, normalizePayment, toSafeCheckoutPayment } = require('./paymentService');
+const notificationService = require('./notificationService');
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const IDEMPOTENCY_KEY_RE = UUID_RE;
@@ -218,6 +219,25 @@ async function createOrder(user, payload, idempotencyKey) {
     throw fromRpcError(error, 'Không thể tạo đơn hàng. Vui lòng thử lại.');
   }
 
+  // Generate new_order notifications for sellers safely (best-effort)
+  if (!data.idempotentReplay && data.items && data.items.length > 0) {
+    const sellersToNotify = [...new Set(data.items.map(i => i.sellerId || i.seller_id).filter(Boolean))];
+    for (const sellerId of sellersToNotify) {
+      try {
+        await notificationService.createNotification({
+          user_id: sellerId,
+          type: 'new_order',
+          title: 'Đơn hàng mới',
+          body: `Bạn vừa có một đơn hàng mới (${data.orderCode}). Vui lòng chuẩn bị hàng.`,
+          action_href: '/seller/orders',
+          event_key: `order_${data.id}_seller_${sellerId}`
+        });
+      } catch (err) {
+        console.error(`Failed to dispatch new_order notification for seller ${sellerId}`, err);
+      }
+    }
+  }
+
   return mapCheckoutResult(data);
 }
 
@@ -381,6 +401,32 @@ async function cancelOrder(user, orderId) {
     p_order_id: orderId,
   });
   if (error) throw fromRpcError(error, 'Không thể hủy đơn hàng. Vui lòng thử lại.');
+
+  if (!data.idempotentReplay) {
+    // Notify sellers that order was cancelled
+    try {
+      const { data: items } = await supabaseAdmin
+        .from('order_items')
+        .select('seller_id')
+        .eq('order_id', orderId);
+      if (items && items.length > 0) {
+        const sellers = [...new Set(items.map(i => i.seller_id))];
+        for (const sellerId of sellers) {
+          await notificationService.createNotification({
+            user_id: sellerId,
+            type: 'cancellation',
+            title: 'Đơn hàng đã hủy',
+            body: `Đơn hàng ${data.orderCode} đã bị hủy bởi người mua.`,
+            action_href: '/seller/orders',
+            event_key: `cancel_${orderId}_seller_${sellerId}`
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to dispatch cancellation notification', err);
+    }
+  }
+
   return {
     id: data.id,
     order_code: data.orderCode,

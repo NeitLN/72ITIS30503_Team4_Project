@@ -119,9 +119,33 @@ export const SellerOrderDetailDrawer: React.FC<SellerOrderDetailDrawerProps> = (
               </section>
 
               {/* Actions (simplified, actual actions usually per item) */}
-              <p className="text-xs text-neutral-500 mt-4">
-                Vui lòng cập nhật trạng thái xử lý từng sản phẩm tại màn hình danh sách Đơn bán.
-              </p>
+              <div className="flex justify-between items-center mt-4">
+                <p className="text-xs text-neutral-500">
+                  Vui lòng cập nhật trạng thái xử lý từng sản phẩm tại màn hình danh sách Đơn bán.
+                </p>
+                <button
+                  type="button"
+                  className="bg-black text-white px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider hover:bg-neutral-800 transition-colors"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/conversations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order_id: orderId })
+                      }).then(r => r.json());
+                      if (res.success && res.data?.id) {
+                        window.location.href = `/messages/${res.data.id}`;
+                      } else {
+                        alert(res.error?.message || 'Không thể mở tin nhắn.');
+                      }
+                    } catch (e) {
+                      alert('Lỗi kết nối.');
+                    }
+                  }}
+                >
+                  Nhắn người mua
+                </button>
+              </div>
             </>
           )}
         </div>

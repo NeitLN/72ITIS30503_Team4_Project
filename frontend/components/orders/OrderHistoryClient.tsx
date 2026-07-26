@@ -231,7 +231,7 @@ export const OrderHistoryClient = () => {
                     <td className="px-5 py-5">
                       {getStatusBadge(order.status)}
                     </td>
-                    <td className="px-5 py-5 text-right">
+                    <td className="px-5 py-5 text-right flex flex-col gap-2 items-end">
                       {order.status === 'pending' && (
                         <Button
                           type="button"
@@ -241,6 +241,31 @@ export const OrderHistoryClient = () => {
                           className="font-mono text-[10px] uppercase tracking-wider"
                         >
                           {cancellingId === order.id ? 'Đang hủy…' : 'Hủy đơn'}
+                        </Button>
+                      )}
+                      {(order.status === 'pending' || order.status === 'processing') && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="font-mono text-[10px] uppercase tracking-wider bg-black text-white hover:bg-neutral-800"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch('/api/conversations', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ order_id: order.id })
+                              }).then(r => r.json());
+                              if (res.success && res.data?.id) {
+                                window.location.href = `/messages/${res.data.id}`;
+                              } else {
+                                alert(res.error?.message || 'Không thể mở tin nhắn.');
+                              }
+                            } catch (e) {
+                              alert('Lỗi kết nối.');
+                            }
+                          }}
+                        >
+                          Nhắn người bán
                         </Button>
                       )}
                     </td>
