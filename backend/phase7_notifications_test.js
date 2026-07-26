@@ -8,6 +8,94 @@ async function run() {
   let testUser2 = null;
 
   try {
+    console.log('--- A. Production Validator Unit Tests ---');
+    let unitPassed = 0;
+    let unitFailed = 0;
+
+    let insertCalled = 0;
+    let lastInsertedPath = null;
+
+    const originalFrom = supabaseAdmin.from;
+    supabaseAdmin.from = (table) => {
+      if (table === 'notifications') {
+        return {
+          insert: (data) => {
+            insertCalled++;
+            lastInsertedPath = data.action_href;
+            return { select: () => ({ maybeSingle: async () => ({ data: { id: 'mocked' } }) }) };
+          }
+        };
+      }
+      return originalFrom.call(supabaseAdmin, table);
+    };
+
+    const acceptedPaths = [
+      null,
+      '/orders',
+      '/seller/dashboard',
+      '/messages/123',
+      '/notifications?page=2',
+      '/category/ao-khoac#items'
+    ];
+
+    const rejectedPaths = [
+      '',
+      'orders',
+      'https://evil.example',
+      'http://evil.example',
+      '//evil.example',
+      '/\\evil.example',
+      '/\\\\evil.example',
+      '/%5cevil.example',
+      '/%5Cevil.example',
+      'javascript:alert(1)',
+      'data:text/html,test',
+      '\x00',
+      '\r',
+      '\n',
+      '\t',
+      '\x1B'
+    ];
+
+    for (const path of acceptedPaths) {
+      insertCalled = 0;
+      lastInsertedPath = null;
+      try {
+        await notificationService.createNotification({ user_id: '123', action_href: path });
+        if (insertCalled === 1 && lastInsertedPath === path) {
+          unitPassed++;
+        } else {
+          console.error(`Unit FAIL: Insert assertion failed for ${JSON.stringify(path)}`);
+          unitFailed++;
+        }
+      } catch (e) {
+        console.error(`Unit FAIL: Expected to accept ${JSON.stringify(path)} but got: ${e.message}`);
+        unitFailed++;
+      }
+    }
+
+    for (const path of rejectedPaths) {
+      insertCalled = 0;
+      try {
+        await notificationService.createNotification({ user_id: '123', action_href: path });
+        console.error(`Unit FAIL: Expected to reject ${JSON.stringify(path)} but it was accepted`);
+        unitFailed++;
+      } catch (e) {
+        if (e.message === 'Invalid action_href format' && insertCalled === 0) {
+          unitPassed++;
+        } else {
+          console.error(`Unit FAIL: Expected controlled validation error and no insert for ${JSON.stringify(path)} but got: ${e.message}, insertCalled=${insertCalled}`);
+          unitFailed++;
+        }
+      }
+    }
+
+    supabaseAdmin.from = originalFrom;
+
+    console.log(`Unit/mock results: passed=${unitPassed}, failed=${unitFailed}, blocked=0`);
+    if (unitFailed > 0) throw new Error('Unit tests failed');
+
+    console.log('--- B. Live DB Tests ---');
     const ts = Date.now();
 
     // Create test users

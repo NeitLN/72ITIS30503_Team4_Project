@@ -6,6 +6,21 @@ const checkDb = () => {
   }
 };
 
+function validateInternalActionHref(action_href) {
+  if (action_href !== undefined && action_href !== null) {
+    if (
+      typeof action_href !== 'string' || 
+      action_href.trim() === '' ||
+      !action_href.startsWith('/') ||
+      action_href.startsWith('//') ||
+      /[\x00-\x1F\\]/.test(action_href) ||
+      /%5c/i.test(action_href)
+    ) {
+      throw new Error('Invalid action_href format');
+    }
+  }
+}
+
 /**
  * Creates a notification. Relies on the unique constraint (user_id, event_key)
  * to prevent duplicates for idempotent events.
@@ -14,13 +29,7 @@ async function createNotification(payload) {
   checkDb();
   const { user_id, type, title, body, action_href, event_key } = payload;
 
-  if (action_href) {
-    // Validate action_href matches the hardened SQL constraint:
-    // Starts with '/', not '//', and contains no control chars.
-    if (typeof action_href !== 'string' || !/^\/[^\x00-\x1F]*$/.test(action_href) || action_href.startsWith('//')) {
-      throw new Error('Invalid action_href format');
-    }
-  }
+  validateInternalActionHref(action_href);
 
   const { data, error } = await supabaseAdmin
     .from('notifications')
@@ -123,6 +132,7 @@ async function markAllNotificationsRead(userId) {
 }
 
 module.exports = {
+  validateInternalActionHref,
   createNotification,
   listMyNotifications,
   getUnreadCount,
