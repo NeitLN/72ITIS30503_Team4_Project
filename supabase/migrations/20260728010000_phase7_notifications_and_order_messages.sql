@@ -27,7 +27,12 @@ alter table public.notifications
   add constraint notifications_body_length check (char_length(trim(body)) between 1 and 1000),
   add constraint notifications_action_href_safe check (
     action_href is null or (
-      action_href ~ '^/[^[[:cntrl:]]]*$' and action_href not like '//%'
+      action_href <> ''
+      and left(action_href, 1) = '/'
+      and left(action_href, 2) <> '//'
+      and strpos(action_href, E'\\') = 0
+      and action_href !~ '[[:cntrl:]]'
+      and action_href !~* '%5c'
     )
   ),
   add constraint notifications_event_key_length check (
