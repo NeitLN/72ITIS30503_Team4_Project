@@ -99,7 +99,6 @@ export interface ListingView {
   sellerUsername: string | null;
   sellerRating: string | null;
   sellerLocation: string;
-  isVerifiedSeller: boolean;
   soldCount: number | null;
   isSoldOut: boolean;
 }
@@ -145,7 +144,6 @@ export function getListingView(product: Product): ListingView {
     sellerUsername: username || null,
     sellerRating: seller.seller_rating != null ? String(seller.seller_rating) : null,
     sellerLocation: displayVnLocation(product.location || seller.location || 'Việt Nam'),
-    isVerifiedSeller: Boolean(seller.is_verified_seller),
     soldCount: seller.sold_count ?? null,
     isSoldOut,
   };

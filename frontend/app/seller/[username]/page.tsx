@@ -120,11 +120,6 @@ export default async function SellerPage({ params }: SellerPageProps) {
                 <span className="font-mono text-xs text-neutral-500 bg-neutral-100 px-2 py-0.5">
                   @{seller.username}
                 </span>
-                {seller.is_verified_seller && (
-                  <span className="inline-flex items-center gap-1 border border-neutral-950 bg-neutral-950 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-white">
-                    Người bán đã xác minh
-                  </span>
-                )}
                 <ShareStorefrontButton storeUrl={`${SITE_URL}/seller/${seller.username}`} />
               </div>
 

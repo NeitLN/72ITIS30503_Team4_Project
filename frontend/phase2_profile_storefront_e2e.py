@@ -54,7 +54,7 @@ def main():
             page.goto(f"{BASE}/profile")
             page.wait_for_load_state("networkidle")
             page.wait_for_timeout(400)
-            
+
             try:
                 page.click('[data-testid="profile-edit-toggle"]')
             except Exception as e:
@@ -96,7 +96,8 @@ def main():
             check("Public identity (username) present", username in content)
             check("Private email absent", email not in content)
             check("Empty storefront copy is correct", "Gian hàng này chưa có sản phẩm đang bán" in content)
-            
+            check("Fake verification badge is absent", "Người bán đã xác minh" not in content)
+
             # --- 9. Create an active Seller listing ---
             page.goto(f"{BASE}/sell")
             page.wait_for_load_state("networkidle")
@@ -157,7 +158,7 @@ def main():
             mobile_page.goto(f"{BASE}/seller/{username}")
             mobile_page.wait_for_load_state("networkidle")
             mobile_page.wait_for_timeout(600)
-            
+
             overflow = mobile_page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth + 2")
             check("No horizontal overflow on mobile storefront", not overflow)
 

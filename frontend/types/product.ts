@@ -7,7 +7,6 @@ export interface Seller {
   location?: string;
   seller_rating?: number | string;
   sold_count?: number;
-  is_verified_seller?: boolean;
 }
 
 export interface Brand {

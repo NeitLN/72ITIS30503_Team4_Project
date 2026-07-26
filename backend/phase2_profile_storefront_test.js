@@ -57,7 +57,7 @@ async function run() {
 
     console.log('6. Updating to current own username succeeds');
     await profileService.updateMyProfile(testUser1.id, { username: username1 });
-    
+
     console.log('7. Missing storefront returns null');
     const noSeller = await sellerService.getSellerByUsername('non_existent_123');
     assert.strictEqual(noSeller, null);
@@ -67,11 +67,16 @@ async function run() {
     assert.ok(pub);
     assert.strictEqual(pub.email, undefined);
     assert.strictEqual(pub.role, undefined);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(pub, 'is_verified_seller'), false, 'DTO must not include fake verification');
     assert.strictEqual(pub.id, testUser1.id); // Internal ID still returned by service, stripped in route!
 
     console.log('9. Public storefront contains only user-sourced active listings');
     const { data: prods } = await productService.getProducts({ trusted_seller_id: testUser1.id, listing_source: 'user' });
     assert.strictEqual(prods.length, 0); // Empty storefront
+
+    console.log('10. Client-supplied seller_id cannot override trusted resolution');
+    const { data: hackedProds } = await productService.getProducts({ seller: 'fake', trusted_seller_id: testUser1.id });
+    assert.strictEqual(hackedProds.length, 0);
 
     console.log('All backend tests passed for Phase 2.');
   } finally {

@@ -22,7 +22,7 @@ const checkDb = () => {
 
 const PUBLIC_SELLER_COLUMNS = 'id, username, full_name, avatar_url, bio, location, created_at';
 
-async function getSellerByUsername(rawUsername) {
+async function resolveSellerByUsername(rawUsername) {
   checkDb();
 
   const normalized = normalizeUsername(decodeURIComponent(String(rawUsername || '')));
@@ -36,59 +36,103 @@ async function getSellerByUsername(rawUsername) {
   if (error) throw error;
   if (!user) return null;
 
-  const { count: activeListingCount } = await supabaseAdmin
+  return user;
+}
+
+function buildPublicSellerDto(internalSeller, metrics) {
+  return {
+    username: internalSeller.username,
+    full_name: internalSeller.full_name,
+    avatar_url: internalSeller.avatar_url || null,
+    bio: internalSeller.bio || null,
+    location: internalSeller.location || null,
+    created_at: internalSeller.created_at,
+    active_listing_count: metrics.activeListingCount || 0,
+    sold_count: metrics.soldCount || 0,
+    seller_rating: metrics.averageRating || null,
+    review_count: metrics.reviewCount || 0,
+  };
+}
+
+async function getSellerByUsername(rawUsername) {
+  const internalSeller = await resolveSellerByUsername(rawUsername);
+  if (!internalSeller) return null;
+
+  const { count: activeListingCount, error: activeCountError } = await supabaseAdmin
     .from('products')
     .select('id', { count: 'exact', head: true })
-    .eq('seller_id', user.id)
+    .eq('seller_id', internalSeller.id)
+    .eq('listing_source', 'user')
     .eq('status', 'active');
+  if (activeCountError) throw activeCountError;
 
-  const { data: sellerProductIds } = await supabaseAdmin
+  const { data: sellerProductIds, error: prodIdsError } = await supabaseAdmin
     .from('products')
     .select('id')
-    .eq('seller_id', user.id);
+    .eq('seller_id', internalSeller.id);
+  if (prodIdsError) throw prodIdsError;
   const productIds = (sellerProductIds || []).map((p) => p.id);
 
   // Real sold count uses the immutable seller snapshot on order_items, so a
   // later product edit cannot rewrite historical seller attribution.
   let soldCount = 0;
-  const { count: completedItemCount } = await supabaseAdmin
+  const { data: completedItems, error: completedItemsError } = await supabaseAdmin
     .from('order_items')
-    .select('id', { count: 'exact', head: true })
-    .eq('seller_id', user.id)
+    .select('quantity')
+    .eq('seller_id', internalSeller.id)
     .eq('fulfillment_status', 'completed');
-  soldCount = completedItemCount || 0;
+  if (completedItemsError) throw completedItemsError;
+
+  soldCount = (completedItems || []).reduce((sum, item) => {
+    const quantity = Number(item.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) return sum;
+    return sum + Math.floor(quantity);
+  }, 0);
 
   // Real rating/review count: published reviews on this seller's products.
   let averageRating = null;
   let reviewCount = 0;
-  if (productIds.length) {
-    const { data: reviews } = await supabaseAdmin
+  if (productIds.length > 0) {
+    const { data: reviews, error: reviewsError } = await supabaseAdmin
       .from('reviews')
       .select('rating')
       .in('product_id', productIds)
       .eq('status', 'published');
-    reviewCount = (reviews || []).length;
+    if (reviewsError) throw reviewsError;
+
+    // Filter to valid ratings
+    const validReviews = (reviews || []).filter(r => {
+      const val = Number(r.rating);
+      return Number.isFinite(val) && val >= 1 && val <= 5;
+    });
+
+    reviewCount = validReviews.length;
     if (reviewCount > 0) {
-      averageRating = Math.round((reviews.reduce((sum, r) => sum + Number(r.rating), 0) / reviewCount) * 10) / 10;
+      averageRating = Math.round((validReviews.reduce((sum, r) => sum + Number(r.rating), 0) / reviewCount) * 10) / 10;
     }
   }
 
-  return {
-    id: user.id, // INTERNAL ONLY, stripped in route
-    username: user.username,
-    full_name: user.full_name,
-    avatar_url: user.avatar_url || null,
-    bio: user.bio || null,
-    location: user.location || null,
-    created_at: user.created_at,
-    is_verified_seller: false, // no real verification field/process exists yet — never fabricated
-    active_listing_count: activeListingCount || 0,
-    sold_count: soldCount,
-    seller_rating: averageRating,
-    review_count: reviewCount,
-  };
+  const dto = buildPublicSellerDto(internalSeller, {
+    activeListingCount,
+    soldCount,
+    averageRating,
+    reviewCount
+  });
+
+  // Attach the internal id to the dto so that the router can pass it to productService
+  // We will configure the router to explicitly extract it out.
+  // We attach it as a non-enumerable property so it doesn't show up in Object.keys() / JSON.stringify() by default,
+  // but it's better to just return the internal ID separately or return an object with both.
+  // Wait, let's just make getSellerByUsername return the dto, but how does routes/sellers.js know the internal ID?
+  // routes/sellers.js uses `sellerService.getSellerByUsername(username)` and then uses `seller.id` for products.
+  // Let's return the internal id on the dto explicitly and strip it in the route, as we already do.
+  dto.id = internalSeller.id;
+
+  return dto;
 }
 
 module.exports = {
   getSellerByUsername,
+  resolveSellerByUsername,
+  buildPublicSellerDto,
 };

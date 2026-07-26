@@ -40,7 +40,6 @@ export interface SellerProfile {
   bio: string | null;
   location: string | null;
   created_at: string;
-  is_verified_seller: boolean;
   active_listing_count: number;
   sold_count: number;
   seller_rating: number | null;

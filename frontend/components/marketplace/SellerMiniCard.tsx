@@ -52,11 +52,6 @@ export const SellerMiniCard = ({ listing }: SellerMiniCardProps) => {
                 {listing.sellerHandle}
               </Link>
             ) : nameBlock}
-            {listing.isVerifiedSeller && (
-              <span className="inline-flex items-center gap-1 border border-neutral-900 bg-neutral-900 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-white">
-                Đã xác thực
-              </span>
-            )}
           </p>
           <p className="mt-1 font-mono text-xs text-neutral-600">
             {listing.sellerRating ? `★ ${listing.sellerRating}` : 'Chưa có đánh giá'}

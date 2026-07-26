@@ -84,8 +84,7 @@ const attachRelations = async (products, { sustainabilityDetails = false } = {})
         avatar_url: seller.avatar_url,
         location: seller.location,
         seller_rating: seller.seller_rating,
-        sold_count: seller.sold_count,
-        is_verified_seller: seller.is_verified_seller
+        sold_count: seller.sold_count
       } : null,
       brand: brand ? {
         name: brand.name,

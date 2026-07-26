@@ -64,11 +64,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         <div className="mt-3 border-t border-neutral-100 pt-3">
           <p className="flex items-center gap-1.5 truncate text-xs text-neutral-600">
             <span className="truncate font-medium">{listing.sellerHandle}</span>
-            {listing.isVerifiedSeller && (
-              <span aria-label="Người bán đã xác thực" title="Người bán đã xác thực" className="text-neutral-900">
-                ✓
-              </span>
-            )}
             {listing.sellerRating && <span className="whitespace-nowrap">· ★ {listing.sellerRating}</span>}
           </p>
           <p className="mt-0.5 text-xs text-neutral-400">{listing.sellerLocation}</p>
