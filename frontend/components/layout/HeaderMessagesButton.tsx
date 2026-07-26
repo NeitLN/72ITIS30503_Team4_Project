@@ -4,20 +4,28 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
+import { useAuth } from '../../hooks/useAuth';
 
 export const HeaderMessagesButton = () => {
   const pathname = usePathname();
+  const { isHydrated, isAuthenticated, token } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const isActive = pathname?.startsWith('/messages');
 
   useEffect(() => {
+    if (!isHydrated || !isAuthenticated || !token) {
+      return;
+    }
+
     let active = true;
 
     // Unread count is included in listMyConversations.
     // For a simple badge, we can quickly fetch it. It's not a standalone endpoint yet,
     // so we'll fetch conversations and sum.
     const fetchCount = () => {
-      apiFetch<{ success: boolean; data: { unread_count?: number }[] }>('/api/conversations')
+      apiFetch<{ success: boolean; data: { unread_count?: number }[] }>('/api/conversations', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
         .then((res) => {
           if (active && res.success && res.data) {
             const sum = res.data.reduce((acc, conv) => acc + (conv.unread_count || 0), 0);
@@ -40,7 +48,7 @@ export const HeaderMessagesButton = () => {
       window.removeEventListener('focus', onFocus);
       clearInterval(interval);
     };
-  }, []);
+  }, [isHydrated, isAuthenticated, token]);
 
   return (
     <Link

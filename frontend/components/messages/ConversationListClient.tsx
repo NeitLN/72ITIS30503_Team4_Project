@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Container } from '../ui/Container';
 import { apiFetch } from '../../lib/api';
+import { useAuth } from '../../hooks/useAuth';
 
 interface Conversation {
   id: string;
@@ -16,13 +17,18 @@ interface Conversation {
 }
 
 export function ConversationListClient() {
+  const { isHydrated, isAuthenticated, token } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isHydrated || !isAuthenticated || !token) return;
+
     let active = true;
-    apiFetch<{ success: boolean; data: Conversation[]; error?: { message: string } }>('/api/conversations')
+    apiFetch<{ success: boolean; data: Conversation[]; error?: { message: string } }>('/api/conversations', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((res) => {
         if (!active) return;
         if (!res.success) throw new Error(res.error?.message || 'Lỗi tải danh sách tin nhắn');
@@ -35,7 +41,7 @@ export function ConversationListClient() {
         if (active) setLoading(false);
       });
     return () => { active = false; };
-  }, []);
+  }, [isHydrated, isAuthenticated, token]);
 
   return (
     <Container className="py-8 min-h-[60vh]">
@@ -47,9 +53,15 @@ export function ConversationListClient() {
         {error ? `Lỗi: ${error}` : ''}
       </div>
 
-      {loading ? (
+      {!isHydrated || (isAuthenticated && loading) ? (
         <div className="animate-pulse space-y-4">
           {[1, 2].map(i => <div key={i} className="h-20 bg-neutral-100 border border-neutral-200" />)}
+        </div>
+      ) : !isAuthenticated ? (
+        <div className="py-12 text-center" data-testid="conversations-signed-out">
+          <p className="text-neutral-500 font-mono text-sm uppercase tracking-widest">
+            Vui lòng đăng nhập để xem tin nhắn
+          </p>
         </div>
       ) : error ? (
         <p className="text-red-700 bg-red-50 p-4 border border-red-200">{error}</p>

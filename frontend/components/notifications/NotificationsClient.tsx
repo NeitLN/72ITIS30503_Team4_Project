@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
 import { apiFetch } from '../../lib/api';
+import { useAuth } from '../../hooks/useAuth';
 
 interface Notification {
   id: string;
@@ -17,17 +18,22 @@ interface Notification {
 }
 
 export function NotificationsClient() {
+  const { isHydrated, isAuthenticated, token } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isHydrated || !isAuthenticated || !token) return;
+
     let active = true;
 
     const fetchNotifications = async () => {
       try {
         setLoading(true);
-        const res = await apiFetch<{ success: boolean; data: Notification[]; error?: { message: string } }>('/api/notifications');
+        const res = await apiFetch<{ success: boolean; data: Notification[]; error?: { message: string } }>('/api/notifications', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (!active) return;
         if (!res.success) throw new Error(res.error?.message || 'Lỗi tải thông báo');
         setNotifications(res.data);
@@ -45,11 +51,15 @@ export function NotificationsClient() {
 
     fetchNotifications();
     return () => { active = false; };
-  }, []);
+  }, [isHydrated, isAuthenticated, token]);
 
   const handleMarkAllRead = async () => {
+    if (!token) return;
     try {
-      const res = await apiFetch<{ success: boolean }>('/api/notifications/read-all', { method: 'PATCH' });
+      const res = await apiFetch<{ success: boolean }>('/api/notifications/read-all', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.success) {
         setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
       }
@@ -59,8 +69,12 @@ export function NotificationsClient() {
   };
 
   const handleMarkRead = async (id: string) => {
+    if (!token) return;
     try {
-      const res = await apiFetch<{ success: boolean }>(`/api/notifications/${id}/read`, { method: 'PATCH' });
+      const res = await apiFetch<{ success: boolean }>(`/api/notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.success) {
         setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
       }
@@ -86,9 +100,15 @@ export function NotificationsClient() {
         {error ? `Lỗi: ${error}` : ''}
       </div>
 
-      {loading ? (
+      {!isHydrated || (isAuthenticated && loading) ? (
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map(i => <div key={i} className="h-24 bg-neutral-100 border border-neutral-200" />)}
+        </div>
+      ) : !isAuthenticated ? (
+        <div className="py-12 text-center" data-testid="notifications-signed-out">
+          <p className="text-neutral-500 font-mono text-sm uppercase tracking-widest">
+            Vui lòng đăng nhập để xem thông báo
+          </p>
         </div>
       ) : error ? (
         <p className="text-red-700 bg-red-50 p-4 border border-red-200">{error}</p>

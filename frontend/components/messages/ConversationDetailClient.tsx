@@ -25,7 +25,7 @@ interface Conversation {
 
 export function ConversationDetailClient() {
   const { id } = useParams() as { id: string };
-  const { user } = useAuth();
+  const { user, isHydrated, isAuthenticated, token } = useAuth();
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,15 +36,17 @@ export function ConversationDetailClient() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !isHydrated || !isAuthenticated || !token) return;
+
     let active = true;
+    const authHeaders = { Authorization: `Bearer ${token}` };
 
     const fetchDetails = async () => {
       try {
         setLoading(true);
         const [convRes, msgRes] = await Promise.all([
-          apiFetch<{ success: boolean; data: Conversation; error?: { message: string } }>(`/api/conversations/${id}`),
-          apiFetch<{ success: boolean; data: Message[]; error?: { message: string } }>(`/api/conversations/${id}/messages`)
+          apiFetch<{ success: boolean; data: Conversation; error?: { message: string } }>(`/api/conversations/${id}`, { headers: authHeaders }),
+          apiFetch<{ success: boolean; data: Message[]; error?: { message: string } }>(`/api/conversations/${id}/messages`, { headers: authHeaders })
         ]);
 
         if (!active) return;
@@ -55,7 +57,7 @@ export function ConversationDetailClient() {
         setConversation(convRes.data);
         setMessages([...msgRes.data].reverse());
 
-        await apiFetch(`/api/conversations/${id}/read`, { method: 'PATCH' });
+        await apiFetch(`/api/conversations/${id}/read`, { method: 'PATCH', headers: authHeaders });
 
       } catch (err: unknown) {
         if (!active) return;
@@ -71,7 +73,7 @@ export function ConversationDetailClient() {
 
     fetchDetails();
     return () => { active = false; };
-  }, [id]);
+  }, [id, isHydrated, isAuthenticated, token]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -81,10 +83,13 @@ export function ConversationDetailClient() {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
 
+    if (!token) return;
+
     try {
       setSending(true);
       const res = await apiFetch<{ success: boolean; data: Message; error?: { message: string } }>(`/api/conversations/${id}/messages`, {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ body: newMessage })
       });
 
@@ -103,7 +108,7 @@ export function ConversationDetailClient() {
     }
   };
 
-  if (loading) {
+  if (!isHydrated || (isAuthenticated && loading)) {
     return (
       <Container className="py-8 min-h-[60vh]">
         <div className="animate-pulse space-y-4 max-w-2xl mx-auto">
@@ -114,11 +119,13 @@ export function ConversationDetailClient() {
     );
   }
 
-  if (error || !conversation) {
+  if (!isAuthenticated || error || !conversation) {
     return (
       <Container className="py-8 min-h-[60vh]">
         <div className="max-w-2xl mx-auto text-center">
-          <p className="text-red-700 bg-red-50 p-4 border border-red-200 inline-block mb-4">{error || 'Không tìm thấy cuộc trò chuyện'}</p>
+          <p className="text-red-700 bg-red-50 p-4 border border-red-200 inline-block mb-4">
+            {!isAuthenticated ? 'Vui lòng đăng nhập để xem cuộc trò chuyện' : (error || 'Không tìm thấy cuộc trò chuyện')}
+          </p>
           <div>
             <Link href="/messages" className="text-sm uppercase tracking-widest font-mono hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">
               ← Quay lại danh sách

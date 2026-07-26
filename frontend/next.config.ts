@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Two lockfiles exist (repo-root orchestrator + frontend/), which makes
+  // Next.js infer the workspace root incorrectly. frontend/ is the only
+  // place Next/Turbopack ever runs from, so pin it explicitly.
+  turbopack: {
+    root: process.cwd(),
+  },
   async redirects() {
     return [
       // Phase 15: `/products` has no page of its own (only the dynamic

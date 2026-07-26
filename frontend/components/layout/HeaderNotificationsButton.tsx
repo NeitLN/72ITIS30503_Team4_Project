@@ -4,17 +4,25 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/api';
+import { useAuth } from '../../hooks/useAuth';
 
 export const HeaderNotificationsButton = () => {
   const pathname = usePathname();
+  const { isHydrated, isAuthenticated, token } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const isActive = pathname === '/notifications';
 
   useEffect(() => {
+    if (!isHydrated || !isAuthenticated || !token) {
+      return;
+    }
+
     let active = true;
 
     const fetchCount = () => {
-      apiFetch<{ success: boolean; data: { count: number } }>('/api/notifications/unread-count')
+      apiFetch<{ success: boolean; data: { count: number } }>('/api/notifications/unread-count', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
         .then((res) => {
           if (active && res.success && res.data) {
             setUnreadCount(res.data.count);
@@ -36,7 +44,7 @@ export const HeaderNotificationsButton = () => {
       window.removeEventListener('focus', onFocus);
       clearInterval(interval);
     };
-  }, []);
+  }, [isHydrated, isAuthenticated, token]);
 
   return (
     <Link

@@ -61,13 +61,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(storedUser);
-        // Optimistically set hydrated to true so UI doesn't block
-        setIsHydrated(true);
-        // Verify in background
+        // Verify the session before marking auth as ready, so protected
+        // requests never fire against a stale/expired token.
         await refreshUser(storedToken);
-      } else {
-        setIsHydrated(true);
       }
+
+      setIsHydrated(true);
     };
 
     initAuth();
