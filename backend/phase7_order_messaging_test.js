@@ -9,7 +9,7 @@ async function run() {
 
   try {
     const ts = Date.now();
-    
+
     // Create users
     const bReq = await supabaseAdmin.auth.admin.createUser({ email: `buyer_${ts}@test.local`, password: 'password', email_confirm: true });
     uBuyer = bReq.data.user;

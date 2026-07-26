@@ -12,7 +12,7 @@ export const HeaderMessagesButton = () => {
 
   useEffect(() => {
     let active = true;
-    
+
     // Unread count is included in listMyConversations.
     // For a simple badge, we can quickly fetch it. It's not a standalone endpoint yet,
     // so we'll fetch conversations and sum.

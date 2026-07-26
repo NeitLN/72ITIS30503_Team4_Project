@@ -13,13 +13,13 @@ alter table public.notifications
 alter table public.notifications
   add constraint notifications_type_check check (
     type in (
-      'new_order', 
-      'cancellation', 
-      'packing_needed', 
-      'payment_recorded', 
-      'allocation_released', 
-      'listing_sold', 
-      'buyer_message', 
+      'new_order',
+      'cancellation',
+      'packing_needed',
+      'payment_recorded',
+      'allocation_released',
+      'listing_sold',
+      'buyer_message',
       'incomplete_setup'
     )
   ),
@@ -35,14 +35,14 @@ alter table public.notifications
   );
 
 -- Enforce idempotency
-create unique index if not exists notifications_user_id_event_key_idx 
-  on public.notifications (user_id, event_key) 
+create unique index if not exists notifications_user_id_event_key_idx
+  on public.notifications (user_id, event_key)
   where event_key is not null;
 
-create index if not exists notifications_user_id_created_at_idx 
+create index if not exists notifications_user_id_created_at_idx
   on public.notifications (user_id, created_at desc);
 
-create index if not exists notifications_user_id_is_read_created_at_idx 
+create index if not exists notifications_user_id_is_read_created_at_idx
   on public.notifications (user_id, is_read, created_at desc);
 
 -- 2. NOTIFICATIONS SECURITY
@@ -67,7 +67,7 @@ create table if not exists public.conversations (
   status text not null default 'active' check (status in ('active', 'archived')),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  
+
   constraint conversations_different_users check (buyer_id <> seller_id),
   constraint conversations_unique_order_seller unique (order_id, seller_id)
 );
@@ -100,7 +100,7 @@ create table if not exists public.message_reports (
   reason text not null constraint message_reports_reason_length check (char_length(trim(reason)) between 1 and 500),
   status text not null default 'pending' check (status in ('pending', 'reviewed', 'resolved')),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  
+
   constraint message_reports_unique_reporter unique (message_id, reporter_id)
 );
 
@@ -121,8 +121,8 @@ create policy "Participants can view messages"
   on public.messages for select
   using (
     exists (
-      select 1 from public.conversations c 
-      where c.id = messages.conversation_id 
+      select 1 from public.conversations c
+      where c.id = messages.conversation_id
       and (c.buyer_id = auth.uid() or c.seller_id = auth.uid())
     )
   );

@@ -21,7 +21,7 @@ async function getOrCreateOrderConversation(userId, orderId) {
   // Verify order exists and caller's role in it
   // An order may have multiple items with different sellers.
   // We need to verify if the caller is the buyer OR a seller for at least one item.
-  
+
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
     .select('id, buyer_id')
@@ -45,7 +45,7 @@ async function getOrCreateOrderConversation(userId, orderId) {
       .eq('order_id', orderId);
     if (itemsErr) throw itemsErr;
     if (!items || items.length === 0) throw new ConversationError('Không tìm thấy đơn hàng.', 404);
-    
+
     const uniqueSellers = [...new Set(items.map(i => i.seller_id))];
     if (uniqueSellers.length > 1) {
       throw new ConversationError('Đơn hàng có nhiều người bán, vui lòng chọn người bán để nhắn tin.', 400);
@@ -145,7 +145,7 @@ async function listMyConversations(userId, options = {}) {
       .select('conversation_id, body, created_at, sender_id, is_read')
       .in('conversation_id', conversationIds)
       .order('created_at', { ascending: false });
-    
+
     if (!msgsErr && messages) {
       data.forEach(c => {
         const convMsgs = messages.filter(m => m.conversation_id === c.id);

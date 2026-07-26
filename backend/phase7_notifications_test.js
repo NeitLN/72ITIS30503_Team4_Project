@@ -9,7 +9,7 @@ async function run() {
 
   try {
     const ts = Date.now();
-    
+
     // Create test users
     const u1 = await supabaseAdmin.auth.admin.createUser({ email: `n1_${ts}@test.local`, password: 'password', email_confirm: true });
     testUser1 = u1.data.user;

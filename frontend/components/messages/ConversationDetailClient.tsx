@@ -30,7 +30,7 @@ export function ConversationDetailClient() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -89,7 +89,7 @@ export function ConversationDetailClient() {
       });
 
       if (!res.success) throw new Error(res.error?.message || 'Không thể gửi tin nhắn');
-      
+
       setMessages(prev => [...prev, res.data]);
       setNewMessage('');
     } catch (err: unknown) {
@@ -161,8 +161,8 @@ export function ConversationDetailClient() {
               return (
                 <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                   <div className={`max-w-[85%] px-4 py-2 text-sm whitespace-pre-wrap break-words border ${
-                    isMine 
-                      ? 'bg-black text-white border-black rounded-l-xl rounded-tr-xl' 
+                    isMine
+                      ? 'bg-black text-white border-black rounded-l-xl rounded-tr-xl'
                       : 'bg-neutral-100 text-neutral-900 border-neutral-200 rounded-r-xl rounded-tl-xl'
                   }`}>
                     {msg.body}

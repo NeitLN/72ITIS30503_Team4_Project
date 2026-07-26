@@ -12,7 +12,7 @@ export const HeaderNotificationsButton = () => {
 
   useEffect(() => {
     let active = true;
-    
+
     const fetchCount = () => {
       apiFetch<{ success: boolean; data: { count: number } }>('/api/notifications/unread-count')
         .then((res) => {
