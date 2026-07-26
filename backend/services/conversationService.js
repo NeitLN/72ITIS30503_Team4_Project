@@ -48,7 +48,7 @@ async function getOrCreateOrderConversation(userId, orderId, requestedSellerId =
     if (!items || items.length === 0) throw new ConversationError('Không tìm thấy đơn hàng.', 404);
 
     const uniqueSellers = [...new Set(items.map(i => i.seller_id))];
-    
+
     if (uniqueSellers.length > 1) {
       if (!requestedSellerId) {
         throw new ConversationError('Đơn hàng có nhiều người bán, vui lòng chọn người bán để nhắn tin.', 400);

@@ -77,7 +77,7 @@ async function run() {
     } catch (e) { assert.ok(e); }
 
     console.log('8. read-state consistency (implicit via DB logic)');
-    
+
     console.log('9. mark-one-read remains owner-scoped');
     const notifId = list1.data[0].id;
     // User 2 trying to mark user 1's notif read
