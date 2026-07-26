@@ -15,12 +15,17 @@ class ConversationError extends Error {
   }
 }
 
-async function getOrCreateOrderConversation(userId, orderId) {
-  checkDb();
+function toPublicParticipant(user) {
+  if (!user) return null;
+  return {
+    username: user.username,
+    full_name: user.full_name,
+    avatar_url: user.avatar_url
+  };
+}
 
-  // Verify order exists and caller's role in it
-  // An order may have multiple items with different sellers.
-  // We need to verify if the caller is the buyer OR a seller for at least one item.
+async function getOrCreateOrderConversation(userId, orderId, requestedSellerId = null) {
+  checkDb();
 
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
@@ -32,13 +37,9 @@ async function getOrCreateOrderConversation(userId, orderId) {
   if (!order) throw new ConversationError('Không tìm thấy đơn hàng.', 404);
 
   let sellerId = null;
-  let isBuyer = order.buyer_id === userId;
+  const isBuyer = order.buyer_id === userId;
 
   if (isBuyer) {
-    // Determine the seller to start a conversation with.
-    // If order has multiple sellers, we need a specific seller_id, but the signature
-    // doesn't force it. Let's look at order_items. If multiple sellers exist, we must
-    // require sellerId context, or we can just pick the first one if only one exists.
     const { data: items, error: itemsErr } = await supabaseAdmin
       .from('order_items')
       .select('seller_id')
@@ -47,12 +48,23 @@ async function getOrCreateOrderConversation(userId, orderId) {
     if (!items || items.length === 0) throw new ConversationError('Không tìm thấy đơn hàng.', 404);
 
     const uniqueSellers = [...new Set(items.map(i => i.seller_id))];
+    
     if (uniqueSellers.length > 1) {
-      throw new ConversationError('Đơn hàng có nhiều người bán, vui lòng chọn người bán để nhắn tin.', 400);
+      if (!requestedSellerId) {
+        throw new ConversationError('Đơn hàng có nhiều người bán, vui lòng chọn người bán để nhắn tin.', 400);
+      }
+      if (!uniqueSellers.includes(requestedSellerId)) {
+        throw new ConversationError('Người bán không tồn tại trong đơn hàng này.', 404);
+      }
+      sellerId = requestedSellerId;
+    } else {
+      if (requestedSellerId && requestedSellerId !== uniqueSellers[0]) {
+        throw new ConversationError('Người bán không tồn tại trong đơn hàng này.', 404);
+      }
+      sellerId = uniqueSellers[0];
     }
-    sellerId = uniqueSellers[0];
   } else {
-    // Caller is acting as the seller. Verify they own an item.
+    // For sellers, body requestedSellerId must not override authenticated identity.
     const { data: items, error: itemsErr } = await supabaseAdmin
       .from('order_items')
       .select('id')
@@ -60,7 +72,7 @@ async function getOrCreateOrderConversation(userId, orderId) {
       .eq('seller_id', userId)
       .limit(1);
     if (itemsErr) throw itemsErr;
-    if (!items || items.length === 0) throw new ConversationError('Không tìm thấy đơn hàng.', 404);
+    if (!items || items.length === 0) throw new ConversationError('Không tìm thấy đơn hàng.', 404); // returns safe 404
     sellerId = userId;
   }
 
@@ -91,7 +103,7 @@ async function getOrCreateOrderConversation(userId, orderId) {
     .maybeSingle();
 
   if (createErr) {
-    if (createErr.code === '23505') { // unique violation race condition
+    if (createErr.code === '23505') {
       const { data: retry } = await supabaseAdmin
         .from('conversations')
         .select('id')
@@ -136,9 +148,7 @@ async function listMyConversations(userId, options = {}) {
     throw error;
   }
 
-  // Enrich with last message
   const conversationIds = data.map(c => c.id);
-  let unreadCounts = {};
   if (conversationIds.length > 0) {
     const { data: messages, error: msgsErr } = await supabaseAdmin
       .from('messages')
@@ -146,7 +156,9 @@ async function listMyConversations(userId, options = {}) {
       .in('conversation_id', conversationIds)
       .order('created_at', { ascending: false });
 
-    if (!msgsErr && messages) {
+    if (msgsErr) throw msgsErr; // Propagate database error
+
+    if (messages) {
       data.forEach(c => {
         const convMsgs = messages.filter(m => m.conversation_id === c.id);
         if (convMsgs.length > 0) {
@@ -173,7 +185,7 @@ async function listMyConversations(userId, options = {}) {
         order_id: c.order_id,
         status: c.status,
         updated_at: c.updated_at,
-        other_participant: otherParticipant,
+        other_participant: toPublicParticipant(otherParticipant),
         last_message: c.last_message,
         unread_count: c.unread_count || 0
       };
@@ -182,7 +194,8 @@ async function listMyConversations(userId, options = {}) {
   };
 }
 
-async function getConversation(userId, conversationId) {
+// Internal resolver providing full participant IDs for correct logic evaluation
+async function resolveConversationForParticipant(userId, conversationId) {
   checkDb();
   const { data: conv, error } = await supabaseAdmin
     .from('conversations')
@@ -205,15 +218,27 @@ async function getConversation(userId, conversationId) {
   if (!conv || (conv.buyer_id !== userId && conv.seller_id !== userId)) return null;
 
   return {
+    ...conv,
+    caller_role: conv.buyer_id === userId ? 'buyer' : 'seller',
+    other_user_id: conv.buyer_id === userId ? conv.seller_id : conv.buyer_id,
+    other_participant_raw: conv.buyer_id === userId ? conv.seller : conv.buyer
+  };
+}
+
+async function getConversation(userId, conversationId) {
+  const conv = await resolveConversationForParticipant(userId, conversationId);
+  if (!conv) return null;
+
+  return {
     id: conv.id,
     order_id: conv.order_id,
     status: conv.status,
-    other_participant: conv.buyer_id === userId ? conv.seller : conv.buyer
+    other_participant: toPublicParticipant(conv.other_participant_raw)
   };
 }
 
 async function listMessages(userId, conversationId, options = {}) {
-  const conv = await getConversation(userId, conversationId);
+  const conv = await resolveConversationForParticipant(userId, conversationId);
   if (!conv) throw new ConversationError('Không tìm thấy cuộc trò chuyện.', 404);
 
   const page = Math.max(parseInt(options.page, 10) || 1, 1);
@@ -227,7 +252,7 @@ async function listMessages(userId, conversationId, options = {}) {
     .from('messages')
     .select('id, sender_id, body, created_at, is_read, read_at', { count: 'exact' })
     .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: false }) // Return newest first for API, frontend reverses
+    .order('created_at', { ascending: false })
     .range(from, to);
 
   if (error) {
@@ -241,7 +266,7 @@ async function listMessages(userId, conversationId, options = {}) {
 }
 
 async function sendMessage(userId, conversationId, body) {
-  const conv = await getConversation(userId, conversationId);
+  const conv = await resolveConversationForParticipant(userId, conversationId);
   if (!conv) throw new ConversationError('Không tìm thấy cuộc trò chuyện.', 404);
   if (conv.status !== 'active') throw new ConversationError('Cuộc trò chuyện đã đóng.', 400);
 
@@ -266,14 +291,13 @@ async function sendMessage(userId, conversationId, body) {
     .update({ updated_at: new Date().toISOString() })
     .eq('id', conversationId);
 
-  // Send notification to the other participant
   try {
-    const otherUserId = conv.other_participant.id;
+    const senderRoleLabel = conv.caller_role === 'buyer' ? 'người mua' : 'người bán';
     await notificationService.createNotification({
-      user_id: otherUserId,
+      user_id: conv.other_user_id,
       type: 'buyer_message',
       title: 'Tin nhắn mới',
-      body: `Bạn có tin nhắn mới từ ${userId === conv.buyer_id ? 'người mua' : 'người bán'}.`,
+      body: `Bạn có tin nhắn mới từ ${senderRoleLabel}.`,
       action_href: `/messages/${conversationId}`,
       event_key: `msg_${msg.id}`
     });
@@ -285,7 +309,7 @@ async function sendMessage(userId, conversationId, body) {
 }
 
 async function markConversationRead(userId, conversationId) {
-  const conv = await getConversation(userId, conversationId);
+  const conv = await resolveConversationForParticipant(userId, conversationId);
   if (!conv) throw new ConversationError('Không tìm thấy cuộc trò chuyện.', 404);
 
   const { error } = await supabaseAdmin
@@ -318,8 +342,8 @@ async function reportMessage(userId, messageId, reason) {
   }
   if (!msg) throw new ConversationError('Không tìm thấy tin nhắn.', 404);
 
-  const conv = await getConversation(userId, msg.conversation_id);
-  if (!conv) throw new ConversationError('Không tìm thấy tin nhắn.', 404); // Not authorized
+  const conv = await resolveConversationForParticipant(userId, msg.conversation_id);
+  if (!conv) throw new ConversationError('Không tìm thấy tin nhắn.', 404);
 
   const { error: insertErr } = await supabaseAdmin
     .from('message_reports')
@@ -330,9 +354,7 @@ async function reportMessage(userId, messageId, reason) {
     });
 
   if (insertErr) {
-    if (insertErr.code === '23505') {
-      return true; // Already reported, idempotent
-    }
+    if (insertErr.code === '23505') return true;
     throw insertErr;
   }
 

@@ -245,7 +245,7 @@ async function listMyOrders(userId) {
   checkDb();
   const { data, error } = await supabaseAdmin
     .from('orders')
-    .select('id, order_code, status, payment_method, subtotal, shipping_fee, discount_amount, total_amount, created_at')
+    .select('id, order_code, status, payment_method, subtotal, shipping_fee, discount_amount, total_amount, created_at, items:order_items(seller_id)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw new ServiceError('ORDER_LIST_FAILED', 'Không thể tải danh sách đơn hàng của bạn.', 500);

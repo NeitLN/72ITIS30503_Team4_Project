@@ -37,13 +37,27 @@ router.get('/', async (req, res) => {
 });
 
 // Create/Get order conversation
-router.post('/', async (req, res) => {
+const createConvRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  message: {
+    success: false,
+    error: {
+      message: 'Bạn đang thao tác quá nhanh, vui lòng chờ một lát.'
+    }
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user.id
+});
+
+router.post('/', createConvRateLimit, async (req, res) => {
   try {
-    const { order_id } = req.body;
+    const { order_id, seller_id } = req.body;
     if (!order_id) {
       return sendError(res, 422, 'Vui lòng cung cấp mã đơn hàng.');
     }
-    const conversationId = await conversationService.getOrCreateOrderConversation(req.user.id, order_id);
+    const conversationId = await conversationService.getOrCreateOrderConversation(req.user.id, order_id, seller_id);
     return success(res, { id: conversationId });
   } catch (err) {
     if (err instanceof conversationService.ConversationError) {

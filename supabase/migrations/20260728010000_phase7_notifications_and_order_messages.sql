@@ -27,11 +27,14 @@ alter table public.notifications
   add constraint notifications_body_length check (char_length(trim(body)) between 1 and 1000),
   add constraint notifications_action_href_safe check (
     action_href is null or (
-      action_href like '/%' and action_href not like '//%'
+      action_href ~ '^/[^[[:cntrl:]]]*$' and action_href not like '//%'
     )
   ),
   add constraint notifications_event_key_length check (
     event_key is null or char_length(trim(event_key)) between 1 and 255
+  ),
+  add constraint notifications_read_state_check check (
+    (is_read = false and read_at is null) or (is_read = true and read_at is not null)
   );
 
 -- Enforce idempotency
@@ -52,6 +55,7 @@ drop policy if exists "Users can update their own notifications" on public.notif
 revoke update on public.notifications from authenticated;
 revoke insert on public.notifications from authenticated;
 revoke delete on public.notifications from authenticated;
+revoke all on public.notifications from anon;
 
 -- We keep the SELECT policy from the original scaffold so users can view them.
 -- All mutations (insert, mark-read update) must go through the backend service_role.
@@ -85,7 +89,11 @@ create table if not exists public.messages (
   body text not null constraint messages_body_length check (char_length(trim(body)) between 1 and 2000),
   is_read boolean not null default false,
   read_at timestamp with time zone,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+
+  constraint messages_read_state_check check (
+    (is_read = false and read_at is null) or (is_read = true and read_at is not null)
+  )
 );
 
 create index if not exists messages_conversation_id_created_at_idx on public.messages(conversation_id, created_at asc);
@@ -133,6 +141,10 @@ grant select, insert, update, delete on public.messages to service_role;
 grant select, insert, update, delete on public.message_reports to service_role;
 
 -- Authenticated users can only read, no direct inserts/updates (enforcing backend resolution)
+revoke all on public.conversations from anon, authenticated;
+revoke all on public.messages from anon, authenticated;
+revoke all on public.message_reports from anon, authenticated;
+
 grant select on public.conversations to authenticated;
 grant select on public.messages to authenticated;
 -- Report viewing is restricted to admins/service_role

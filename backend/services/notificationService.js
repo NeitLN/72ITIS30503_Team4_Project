@@ -14,6 +14,14 @@ async function createNotification(payload) {
   checkDb();
   const { user_id, type, title, body, action_href, event_key } = payload;
 
+  if (action_href) {
+    // Validate action_href matches the hardened SQL constraint:
+    // Starts with '/', not '//', and contains no control chars.
+    if (typeof action_href !== 'string' || !/^\/[^\x00-\x1F]*$/.test(action_href) || action_href.startsWith('//')) {
+      throw new Error('Invalid action_href format');
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .from('notifications')
     .insert({
@@ -24,7 +32,7 @@ async function createNotification(payload) {
       action_href,
       event_key,
     })
-    .select()
+    .select('id, type, title, body, action_href, is_read, read_at, created_at')
     .maybeSingle();
 
   // Handle unique violation silently as success (idempotent)
@@ -43,7 +51,7 @@ async function listMyNotifications(userId, options = {}) {
 
   let query = supabaseAdmin
     .from('notifications')
-    .select('*', { count: 'exact' })
+    .select('id, type, title, body, action_href, is_read, read_at, created_at', { count: 'exact' })
     .eq('user_id', userId);
 
   if (options.status === 'unread') {
@@ -94,7 +102,7 @@ async function markNotificationRead(userId, notificationId) {
     .update({ is_read: true, read_at: new Date().toISOString() })
     .eq('user_id', userId)
     .eq('id', notificationId)
-    .select()
+    .select('id, type, title, body, action_href, is_read, read_at, created_at')
     .maybeSingle();
 
   if (error) throw error;

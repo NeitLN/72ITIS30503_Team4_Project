@@ -20,6 +20,7 @@ type Order = {
   discount_amount?: number;
   total_amount: number;
   created_at: string;
+  items?: { seller_id: string }[];
 };
 
 export const OrderHistoryClient = () => {
@@ -244,29 +245,36 @@ export const OrderHistoryClient = () => {
                         </Button>
                       )}
                       {(order.status === 'pending' || order.status === 'processing') && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="font-mono text-[10px] uppercase tracking-wider bg-black text-white hover:bg-neutral-800"
-                          onClick={async () => {
-                            try {
-                              const res = await fetch('/api/conversations', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ order_id: order.id })
-                              }).then(r => r.json());
-                              if (res.success && res.data?.id) {
-                                window.location.href = `/messages/${res.data.id}`;
-                              } else {
-                                alert(res.error?.message || 'Không thể mở tin nhắn.');
-                              }
-                            } catch {
-                              alert('Lỗi kết nối.');
-                            }
-                          }}
-                        >
-                          Nhắn người bán
-                        </Button>
+                        <div className="flex flex-col gap-1 w-full mt-2 items-end">
+                          {Array.from(new Set((order.items || []).map(i => i.seller_id))).map((sellerId, idx) => (
+                            <Button
+                              key={sellerId || idx}
+                              type="button"
+                              variant="outline"
+                              className="font-mono text-[10px] uppercase tracking-wider bg-black text-white hover:bg-neutral-800"
+                              onClick={async () => {
+                                try {
+                                  const payload: { order_id: string; seller_id?: string } = { order_id: order.id };
+                                  if (sellerId) payload.seller_id = sellerId;
+                                  const res = await fetch('/api/conversations', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                  }).then(r => r.json());
+                                  if (res.success && res.data?.id) {
+                                    window.location.href = `/messages/${res.data.id}`;
+                                  } else {
+                                    alert(res.error?.message || 'Không thể mở tin nhắn.');
+                                  }
+                                } catch {
+                                  alert('Lỗi kết nối.');
+                                }
+                              }}
+                            >
+                              Nhắn người bán
+                            </Button>
+                          ))}
+                        </div>
                       )}
                     </td>
                   </tr>
