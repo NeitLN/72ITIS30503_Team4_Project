@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
+import { apiFetch } from '../../lib/api';
 import { cancelOrder, listMyOrders } from '../../lib/orders';
 import { formatVND, formatVietnamDateTime } from '../../lib/format';
 import { ROUTES } from '../../constants/routes';
@@ -24,7 +25,7 @@ type Order = {
 };
 
 export const OrderHistoryClient = () => {
-  const { isAuthenticated, isHydrated } = useAuth();
+  const { isAuthenticated, isHydrated, token } = useAuth();
   
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -256,18 +257,23 @@ export const OrderHistoryClient = () => {
                                 try {
                                   const payload: { order_id: string; seller_id?: string } = { order_id: order.id };
                                   if (sellerId) payload.seller_id = sellerId;
-                                  const res = await fetch('/api/conversations', {
+                                  const res = await apiFetch<{ success: boolean, data?: { id: string }, error?: { message: string } }>('/api/conversations', {
                                     method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
+                                    headers: { 
+                                      'Content-Type': 'application/json',
+                                      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                                    },
                                     body: JSON.stringify(payload)
-                                  }).then(r => r.json());
+                                  });
                                   if (res.success && res.data?.id) {
                                     window.location.href = `/messages/${res.data.id}`;
                                   } else {
                                     alert(res.error?.message || 'Không thể mở tin nhắn.');
                                   }
-                                } catch {
-                                  alert('Lỗi kết nối.');
+                                } catch (e) {
+                                  const error = e as Error;
+                                  console.error(error);
+                                  alert(error.message || 'Lỗi kết nối.');
                                 }
                               }}
                             >
