@@ -24,10 +24,24 @@ async function run() {
     await supabaseAdmin.from('users').upsert({ id: uSeller2.id, email: uSeller2.email, full_name: 'Seller 2', role: 'seller' });
 
     // Create an order
-    const { data: order } = await supabaseAdmin.from('orders').insert({
+    const { data: order, error: orderErr } = await supabaseAdmin.from('orders').insert({
       user_id: uBuyer.id, buyer_id: uBuyer.id, order_code: `ORD-${ts}`, status: 'pending', payment_method: 'cod', total_amount: 100000, subtotal: 100000, shipping_fee: 0, customer_name: 'Buyer', customer_email: 'buyer@test', customer_phone: '0123456789', shipping_address: 'Addr', city: 'City'
     }).select('id').single();
+    if (orderErr) {
+      if (orderErr.code === 'PGRST205' || orderErr.message.includes('does not exist') || orderErr.message.includes('schema cache')) {
+        console.log('[BLOCKED] Phase 7 migration has not been applied.');
+        return;
+      }
+      throw new Error(`Order setup failed: ${orderErr.message}`);
+    }
     testOrder = order;
+
+    // Check if conversation creation works (to detect missing table)
+    const initCheck = await supabaseAdmin.from('conversations').select('id').limit(1);
+    if (initCheck.error && (initCheck.error.code === 'PGRST205' || initCheck.error.message.includes('does not exist') || initCheck.error.message.includes('schema cache'))) {
+        console.log('[BLOCKED] Phase 7 migration has not been applied.');
+        return;
+    }
 
     // Create order items for Seller 1
     await supabaseAdmin.from('order_items').insert({

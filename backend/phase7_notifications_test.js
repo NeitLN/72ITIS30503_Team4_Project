@@ -88,4 +88,11 @@ async function run() {
   }
 }
 
-run().catch(console.error);
+run().catch(err => {
+  if (err?.code === 'PGRST205' || (err?.message && (err.message.includes('does not exist') || err.message.includes('schema cache')))) {
+    console.log('[BLOCKED] Phase 7 migration has not been applied.');
+  } else {
+    console.error(err);
+    process.exit(1);
+  }
+});

@@ -1,29 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const rateLimit = require('express-rate-limit');
+const { rateLimit } = require('express-rate-limit');
 const conversationService = require('../services/conversationService');
-const { authenticateUser } = require('../middleware/auth');
+const { authenticateUser, requireAuth } = require('../middleware/auth');
 const { success, error: sendError } = require('../utils/apiResponse');
+
+router.use(authenticateUser, requireAuth);
 
 // Simple rate limiter for messaging
 const messageRateLimit = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 30, // Limit each IP/user to 30 requests per windowMs
-  message: 'Bạn đang gửi tin nhắn quá nhanh, vui lòng chờ một lát.',
+  limit: 30, // Limit each IP/user to 30 requests per windowMs
+  message: {
+    success: false,
+    error: {
+      message: 'Bạn đang gửi tin nhắn quá nhanh, vui lòng chờ một lát.'
+    }
+  },
   standardHeaders: true,
   legacyHeaders: false,
-});
-
-const reportRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
-  message: 'Bạn đã đạt giới hạn báo cáo, vui lòng thử lại sau.',
-  standardHeaders: true,
-  legacyHeaders: false,
+  keyGenerator: (req) => req.user.id
 });
 
 // List conversations
-router.get('/', authenticateUser, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { data, meta } = await conversationService.listMyConversations(req.user.id, req.query);
     return success(res, data, meta);
@@ -37,7 +37,7 @@ router.get('/', authenticateUser, async (req, res) => {
 });
 
 // Create/Get order conversation
-router.post('/', authenticateUser, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { order_id } = req.body;
     if (!order_id) {
@@ -58,7 +58,7 @@ router.post('/', authenticateUser, async (req, res) => {
 });
 
 // Get conversation details
-router.get('/:id', authenticateUser, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const conv = await conversationService.getConversation(req.user.id, req.params.id);
     if (!conv) {
@@ -72,7 +72,7 @@ router.get('/:id', authenticateUser, async (req, res) => {
 });
 
 // List messages
-router.get('/:id/messages', authenticateUser, async (req, res) => {
+router.get('/:id/messages', async (req, res) => {
   try {
     const { data, meta } = await conversationService.listMessages(req.user.id, req.params.id, req.query);
     return success(res, data, meta);
@@ -86,7 +86,7 @@ router.get('/:id/messages', authenticateUser, async (req, res) => {
 });
 
 // Send message
-router.post('/:id/messages', authenticateUser, messageRateLimit, async (req, res) => {
+router.post('/:id/messages', messageRateLimit, async (req, res) => {
   try {
     const { body } = req.body;
     const msg = await conversationService.sendMessage(req.user.id, req.params.id, body);
@@ -104,7 +104,7 @@ router.post('/:id/messages', authenticateUser, messageRateLimit, async (req, res
 });
 
 // Mark conversation read
-router.patch('/:id/read', authenticateUser, async (req, res) => {
+router.patch('/:id/read', async (req, res) => {
   try {
     await conversationService.markConversationRead(req.user.id, req.params.id);
     return success(res, { message: 'Đã đánh dấu đã đọc' });

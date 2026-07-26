@@ -260,7 +260,7 @@ export const OrderHistoryClient = () => {
                               } else {
                                 alert(res.error?.message || 'Không thể mở tin nhắn.');
                               }
-                            } catch (e) {
+                            } catch {
                               alert('Lỗi kết nối.');
                             }
                           }}
