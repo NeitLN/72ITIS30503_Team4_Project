@@ -29,7 +29,7 @@ async function getOrCreateOrderConversation(userId, orderId, requestedSellerId =
 
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
-    .select('id, buyer_id')
+    .select('id, user_id')
     .eq('id', orderId)
     .maybeSingle();
 
@@ -37,7 +37,7 @@ async function getOrCreateOrderConversation(userId, orderId, requestedSellerId =
   if (!order) throw new ConversationError('Không tìm thấy đơn hàng.', 404);
 
   let sellerId = null;
-  const isBuyer = order.buyer_id === userId;
+  const isBuyer = order.user_id === userId;
 
   if (isBuyer) {
     const { data: items, error: itemsErr } = await supabaseAdmin
@@ -96,7 +96,7 @@ async function getOrCreateOrderConversation(userId, orderId, requestedSellerId =
     .from('conversations')
     .insert({
       order_id: orderId,
-      buyer_id: order.buyer_id,
+      buyer_id: order.user_id,
       seller_id: sellerId,
     })
     .select('id')

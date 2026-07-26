@@ -105,7 +105,7 @@ async function run() {
 
     const u2 = await supabaseAdmin.auth.admin.createUser({ email: `n2_${ts}@test.local`, password: 'password', email_confirm: true });
     testUser2 = u2.data.user;
-    await supabaseAdmin.from('users').upsert({ id: testUser2.id, email: testUser2.email, full_name: 'Notif User 2', role: 'buyer' });
+    await supabaseAdmin.from('users').upsert({ id: testUser2.id, email: testUser2.email, full_name: 'Notif User 2', role: 'customer' });
 
     // Check if table exists (to detect missing table)
     const initCheck = await supabaseAdmin.from('notifications').select('id').limit(1);
@@ -177,6 +177,7 @@ async function run() {
     assert.strictEqual(markedBy1.is_read, true);
 
     console.log('10. mark-all remains owner-scoped');
+    await supabaseAdmin.from('notifications').delete().eq('user_id', testUser1.id);
     await notificationService.createNotification({
       user_id: testUser1.id, type: 'new_order', title: 'Test 1b', body: 'Body', event_key: `e1b_${ts}`
     });
