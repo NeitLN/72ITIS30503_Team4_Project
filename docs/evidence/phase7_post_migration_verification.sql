@@ -33,7 +33,7 @@ WITH post_migration_checks AS (
     EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'notifications_action_href_safe') as action_href_safe_constraint_exists,
     EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'notifications_read_state_check') as notif_read_state_constraint_exists,
     EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'messages_read_state_check') as messages_read_state_constraint_exists,
-    EXISTS (SELECT 1 FROM pg_policy WHERE policyname = 'Participants can view their conversations' AND tablename = 'conversations') as conv_select_policy_exists,
-    EXISTS (SELECT 1 FROM pg_policy WHERE policyname = 'Participants can view messages' AND tablename = 'messages') as msg_select_policy_exists
+    EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Participants can view their conversations' AND tablename = 'conversations') as conv_select_policy_exists,
+    EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Participants can view messages' AND tablename = 'messages') as msg_select_policy_exists
 )
 SELECT * FROM post_migration_checks;
