@@ -23,3 +23,9 @@ backend/scripts/_introspect.js
 backend/scripts/_introspect2.js
 backend/scripts/_previews/
 frontend/smoke_shots/
+
+# Playwright QA output
+playwright-report/
+test-results/
+evidence/
+.auth/

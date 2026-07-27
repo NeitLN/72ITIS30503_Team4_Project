@@ -4,15 +4,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Container } from '../ui/Container';
 import { ROUTES } from '../../constants/routes';
+import { useAuth } from '../../hooks/useAuth';
 
-const linkGroups = [
-  {
-    heading: 'MUA SẮM',
-    links: [
-      { label: 'Xem tất cả sản phẩm', href: ROUTES.SHOP },
-      { label: 'Đăng bán sản phẩm', href: ROUTES.SELL },
-    ],
-  },
+const shopLinkGroup = (showSellLink: boolean) => ({
+  heading: 'MUA SẮM',
+  links: [
+    { label: 'Xem tất cả sản phẩm', href: ROUTES.SHOP },
+    ...(showSellLink ? [{ label: 'Đăng bán sản phẩm', href: ROUTES.SELL }] : []),
+  ],
+});
+
+const staticLinkGroups = [
   {
     heading: 'VỀ STYLEHUB',
     links: [
@@ -32,16 +34,30 @@ const linkGroups = [
 
 export const Footer = () => {
   const pathname = usePathname();
+  const { user, isHydrated } = useAuth();
   if (pathname?.startsWith('/admin')) {
     return null;
   }
+
+  const showSellLink = !isHydrated || !user || user.role === 'seller';
+  const linkGroups = [shopLinkGroup(showSellLink), ...staticLinkGroups];
 
   return (
     <footer className="mt-auto border-t border-neutral-200 bg-white">
       <Container>
         <div className="grid grid-cols-1 gap-10 py-14 md:grid-cols-4">
           <div>
-            <p className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900">StyleHub</p>
+            <p className="flex items-center gap-2 font-display text-2xl font-black uppercase tracking-tight text-neutral-900">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/cat-logo.png"
+                alt="StyleHub Cat Logo"
+                className="h-9 w-9 object-contain"
+              />
+              <span>
+                Style<span className="text-red-600">Hub</span>
+              </span>
+            </p>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-neutral-500">
               Sàn thương mại điện tử C2C, nơi mọi người có thể mua, bán và khám phá những món đồ thuộc nhiều thương hiệu và phong cách khác nhau.
             </p>

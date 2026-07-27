@@ -69,7 +69,7 @@ export function AdminOverviewClient() {
     return () => { mounted = false; };
   }, [isHydrated, isAuthenticated, isAdmin]);
 
-  if (!isHydrated || isLoading) {
+  if (!isHydrated) {
     return <OverviewSkeleton />;
   }
 
@@ -86,6 +86,10 @@ export function AdminOverviewClient() {
         </div>
       </AdminPageShell>
     );
+  }
+
+  if (isLoading) {
+    return <OverviewSkeleton />;
   }
 
   if (error) {
