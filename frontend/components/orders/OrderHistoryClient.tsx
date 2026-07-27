@@ -251,8 +251,8 @@ export const OrderHistoryClient = () => {
                             <Button
                               key={sellerId || idx}
                               type="button"
-                              variant="outline"
-                              className="font-mono text-[10px] uppercase tracking-wider bg-black text-white hover:bg-neutral-800"
+                              variant="primary"
+                              className="font-mono text-[10px] uppercase tracking-wider"
                               onClick={async () => {
                                 try {
                                   const payload: { order_id: string; seller_id?: string } = { order_id: order.id };
