@@ -17,11 +17,10 @@ export const Header = () => {
 
   const isAdminRoute = pathname === ROUTES.ADMIN_OVERVIEW || pathname?.startsWith(`${ROUTES.ADMIN_OVERVIEW}/`);
   const isAdminUser = user?.role === 'admin';
-  const isCustomerUser = user?.role === 'customer';
 
   const showPublicNavigation = !isAdminRoute;
   const showShoppingActions = !isAdminRoute && isHydrated && !isAdminUser;
-  const showSellButton = showShoppingActions && !isCustomerUser;
+  const showSellButton = showShoppingActions && (!user || user.role === 'seller');
 
   const logoHref = isAdminRoute ? ROUTES.ADMIN_OVERVIEW : ROUTES.HOME;
 

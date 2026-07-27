@@ -31,7 +31,7 @@ const requireSeller = (req, res, next) => {
     return error(res, 401, 'Vui lòng đăng nhập để tiếp tục.');
   }
   
-  if (req.user.role !== 'seller' && req.user.role !== 'admin') {
+  if (req.user.role !== 'seller') {
     return error(res, 403, 'Yêu cầu quyền người bán.');
   }
   

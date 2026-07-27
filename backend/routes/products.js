@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const productService = require('../services/productService');
 const listingService = require('../services/listingService');
-const { authenticateUser, requireAuth } = require('../middleware/auth');
+const { authenticateUser, requireSeller } = require('../middleware/auth');
 const { success, error } = require('../utils/apiResponse');
 
 const upload = multer({
@@ -18,9 +18,9 @@ const upload = multer({
 });
 
 // POST /api/products — create a real, persistent user listing.
-// Auth required. seller_id/status/slug/image URLs are NEVER taken from the
-// request body — see services/listingService.js for the full trust boundary.
-router.post('/', authenticateUser, requireAuth, (req, res) => {
+// Seller role required. seller_id/status/slug/image URLs are NEVER taken
+// from the request body — see services/listingService.js for the full trust boundary.
+router.post('/', authenticateUser, requireSeller, (req, res) => {
   upload.array('images', listingService.MAX_IMAGES)(req, res, async (uploadErr) => {
     if (uploadErr) {
       if (uploadErr.message === 'UNSUPPORTED_FILE_TYPE') {
