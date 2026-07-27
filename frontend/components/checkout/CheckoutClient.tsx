@@ -232,6 +232,16 @@ export const CheckoutClient = () => {
 
   const inputClass = (field: string) => `mt-1.5 block w-full border px-3.5 py-2 text-sm focus:outline-none ${errors[field] ? 'border-red-500' : 'border-neutral-300 focus:border-neutral-900'}`;
 
+  const submitLabel = isPlacing
+    ? (paymentMethod === 'bank_transfer' ? 'Đang tạo hướng dẫn thanh toán...' : paymentMethod === 'simulated_card' ? 'Đang chuyển đến cổng thanh toán...' : 'Đang tạo đơn...')
+    : isQuoting
+    ? 'Đang kiểm tra giỏ hàng…'
+    : paymentMethod === 'bank_transfer'
+    ? 'Tạo đơn & nhận mã chuyển khoản'
+    : paymentMethod === 'simulated_card'
+    ? 'Tiếp tục thanh toán'
+    : vi.checkout.placeOrder;
+
   return (
     <Container className="py-10 sm:py-16">
       <PageHeader eyebrow={vi.checkout.title} title={vi.checkout.title} lede="Giá và tồn kho được xác nhận trực tiếp trước khi tạo đơn." />
@@ -261,10 +271,26 @@ export const CheckoutClient = () => {
           </section>
           <section className="border border-neutral-200 bg-white p-6 sm:p-8"><h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b pb-3 mb-6">2. {vi.checkout.paymentMethod}</h2>
             <div className="space-y-3">{[
-              ['cod', vi.checkout.cod, 'Thanh toán khi nhận hàng.'],
-              ['bank_transfer', vi.checkout.bankTransfer, 'Chuyển khoản theo hướng dẫn sau khi đơn được tạo.'],
-              ['simulated_card', vi.checkout.simulatedCard, vi.checkout.simulatedCardCopy],
-            ].map(([value, title, copy]) => <label key={value} className="flex gap-3 border border-neutral-300 p-4 cursor-pointer"><input type="radio" name="payment" value={value} checked={paymentMethod === value} onChange={() => { setPaymentMethod(value); setErrors((old) => ({ ...old, cardBrand: '', lastFour: '' })); }} /><span><strong className="block text-sm">{title}</strong><span className="text-xs text-neutral-500">{copy}</span></span></label>)}</div>
+              ['cod', '📦', vi.checkout.cod, vi.checkout.codSubtitle, vi.checkout.codBadge],
+              ['bank_transfer', '🏦', vi.checkout.bankTransfer, vi.checkout.bankTransferSubtitle, vi.checkout.bankTransferBadge],
+              ['simulated_card', '💳', vi.checkout.simulatedCard, vi.checkout.simulatedCardCopy, vi.checkout.simulatedCardBadge],
+            ].map(([value, icon, title, subtitle, badge]) => {
+              const selected = paymentMethod === value;
+              return (
+                <label key={value} className={`flex gap-3 border p-4 cursor-pointer transition-colors ${selected ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-300 hover:border-neutral-400'}`}>
+                  <input type="radio" name="payment" value={value} checked={selected} onChange={() => { setPaymentMethod(value); setErrors((old) => ({ ...old, cardBrand: '', lastFour: '' })); }} className="mt-1" />
+                  <span aria-hidden="true" className="text-lg leading-none">{icon}</span>
+                  <span className="flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <strong className="block text-sm">{title}</strong>
+                      <span className="font-mono text-[9px] uppercase tracking-wider text-neutral-500 border border-neutral-300 px-1.5 py-0.5">{badge}</span>
+                    </span>
+                    <span className="block mt-0.5 text-xs text-neutral-500">{subtitle}</span>
+                  </span>
+                </label>
+              );
+            })}</div>
+            {paymentMethod === 'bank_transfer' && <p className="mt-3 text-xs text-neutral-500">Mã tham chiếu, số tài khoản và hạn chuyển khoản sẽ hiển thị ngay sau khi đơn hàng được tạo.</p>}
             {paymentMethod === 'simulated_card' && <div data-testid="simulated-card-fields" className="mt-4 border border-amber-300 bg-amber-50 p-4">
               <p className="text-xs leading-relaxed text-amber-950">{vi.checkout.simulatedCardWarning}</p>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -292,7 +318,7 @@ export const CheckoutClient = () => {
           <div className="divide-y divide-neutral-200 max-h-80 overflow-y-auto">{cart.map((item) => <div key={item.id} className="flex gap-3 py-4"><div className="h-14 w-14 shrink-0 border bg-white"><ListingImage src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" /></div><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{item.name}</p><p className="mt-1 font-mono text-[10px] text-neutral-500">SL {item.quantity} · Cỡ {item.size}</p></div><p className="font-mono text-xs font-bold">{formatVND((item.salePrice ?? item.price) * item.quantity)}</p></div>)}</div>
           <dl className="mt-6 space-y-3 border-t pt-5 text-xs"><div className="flex justify-between"><dt>{vi.cart.subtotal}</dt><dd className="font-mono">{formatVND(subtotal)}</dd></div><div className="flex justify-between"><dt>{vi.cart.shippingFee}</dt><dd className="font-mono">{shipping === 0 ? 'Miễn phí' : formatVND(shipping)}</dd></div>{discount > 0 && <div className="flex justify-between text-green-800"><dt>{vi.coupon.discount}</dt><dd className="font-mono">− {formatVND(discount)}</dd></div>}<div className="flex justify-between border-t pt-4 text-base font-bold"><dt>{vi.cart.total}</dt><dd className="font-mono">{formatVND(total)}</dd></div></dl>
           <div className="mt-6 border-t pt-5"><label htmlFor="coupon" className="text-xs font-semibold">{vi.coupon.title}</label>{appliedCouponCode ? <div className="mt-2 flex items-center justify-between border border-green-300 bg-green-50 p-3"><span className="font-mono text-xs font-bold text-green-900">{appliedCouponCode}</span><button type="button" className="text-xs underline" onClick={() => { setAppliedCouponCode(null); setCouponCodeInput(''); }}>Gỡ</button></div> : <div className="mt-2 flex gap-2"><input id="coupon" value={couponCodeInput} onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())} className="min-w-0 flex-1 border border-neutral-300 px-3 py-2 text-xs font-mono" /><Button type="button" variant="outline" onClick={handleApplyCoupon} disabled={isQuoting}>Áp dụng</Button></div>}{couponError && <p role="alert" className="mt-2 text-xs text-red-700">{couponError}</p>}</div>
-          <Button form="checkout-form" type="submit" size="lg" className="mt-7 w-full" disabled={isPlacing || isQuoting || !quote || quote.requires_review}>{isPlacing ? 'Đang giữ hàng và tạo đơn…' : isQuoting ? 'Đang kiểm tra giỏ hàng…' : vi.checkout.placeOrder}</Button>
+          <Button form="checkout-form" type="submit" size="lg" className="mt-7 w-full" disabled={isPlacing || isQuoting || !quote || quote.requires_review}>{submitLabel}</Button>
           <p aria-live="polite" className="mt-3 text-center text-[11px] text-neutral-500">Chỉ trừ tồn kho khi đơn hàng được tạo thành công.</p>
         </div></aside>
       </div>

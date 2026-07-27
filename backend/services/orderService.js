@@ -3,6 +3,7 @@ const { supabaseAdmin, isSupabaseAdminConfigured } = require('../lib/supabase');
 const { ServiceError, fromRpcError } = require('../utils/serviceError');
 const { getOrderPayment, normalizePayment, toSafeCheckoutPayment } = require('./paymentService');
 const notificationService = require('./notificationService');
+const bankTransferService = require('./bankTransferService');
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const IDEMPOTENCY_KEY_RE = UUID_RE;
@@ -151,6 +152,13 @@ function mapCheckoutResult(result) {
     message: result.message,
   };
   if (result.payment) mapped.payment = toSafeCheckoutPayment(result.payment);
+  if (mapped.payment_method === 'bank_transfer') {
+    mapped.bank_transfer = bankTransferService.buildInstructions({
+      order_code: mapped.order_code,
+      total_amount: mapped.total_amount,
+      created_at: new Date().toISOString(),
+    });
+  }
   return mapped;
 }
 
@@ -381,11 +389,17 @@ async function getOrderById(orderId, user) {
       items: items || [],
       payments,
       paymentAllocations,
-      paymentEvents
+      paymentEvents,
+      ...(order.payment_method === 'bank_transfer' ? { bank_transfer: bankTransferService.buildInstructions(order) } : {}),
     };
   } else {
     const payment = await getOrderPayment(orderId);
-    return { ...order, items: items || [], ...(payment ? { payment } : {}) };
+    return {
+      ...order,
+      items: items || [],
+      ...(payment ? { payment } : {}),
+      ...(order.payment_method === 'bank_transfer' ? { bank_transfer: bankTransferService.buildInstructions(order) } : {}),
+    };
   }
 }
 

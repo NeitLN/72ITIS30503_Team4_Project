@@ -75,7 +75,7 @@ const statusLabel = (value: string | null | undefined, method?: string | null | 
 const methodLabel = (value: string | null | undefined) => {
   if (!value) return 'Không áp dụng';
   return {
-    simulated_card: 'Thẻ mô phỏng',
+    simulated_card: 'Thẻ ngân hàng / Trực tuyến',
     cod: 'Thanh toán khi nhận hàng',
     bank_transfer: 'Chuyển khoản',
   }[value] || value.replaceAll('_', ' ');
@@ -138,7 +138,7 @@ const Filters = ({ values, onChange, onSubmit, onReset }: {
       <label className="lg:col-span-2">
         <span className="mb-2 block font-mono text-[11px] lg:text-xs uppercase tracking-widest text-neutral-500">Phương thức</span>
         <select value={values.paymentMethod || ''} onChange={(e) => onChange('paymentMethod', e.target.value)} className="min-h-11 w-full border border-neutral-300 bg-white px-3 text-[13px] lg:text-sm outline-none focus:border-neutral-900">
-          <option value="">Tất cả</option><option value="simulated_card">Thẻ mô phỏng</option><option value="cod">Khi nhận hàng</option><option value="bank_transfer">Chuyển khoản</option>
+          <option value="">Tất cả</option><option value="simulated_card">Thẻ ngân hàng / Trực tuyến</option><option value="cod">Khi nhận hàng</option><option value="bank_transfer">Chuyển khoản</option>
         </select>
       </label>
       <label className="lg:col-span-2">
