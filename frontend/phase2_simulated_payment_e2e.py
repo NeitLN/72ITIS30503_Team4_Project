@@ -166,9 +166,9 @@ with sync_playwright() as playwright:
     expect(page.get_by_text("Phase 2 Seller A Tee", exact=True)).to_be_visible()
     expect(page.get_by_text("Phase 2 Seller B Tee", exact=True)).to_be_visible()
     check("Multi-seller cart remains visible", True)
-    expect(page.get_by_text("Simulated Card / Demo Card", exact=True)).to_be_visible()
-    page.get_by_text("Simulated Card / Demo Card", exact=True).click()
-    warning = "Simulated payment for academic demonstration only. No real card or money is processed."
+    expect(page.get_by_text("Thẻ ngân hàng / Thanh toán trực tuyến", exact=True)).to_be_visible()
+    page.get_by_text("Thẻ ngân hàng / Thanh toán trực tuyến", exact=True).click()
+    warning = "Môi trường thử nghiệm — không phát sinh tiền thật. Giao dịch đang được xử lý trong môi trường thử nghiệm."
     expect(page.get_by_text(warning, exact=True)).to_be_visible()
     check("Academic demo warning renders", True)
 
@@ -184,18 +184,18 @@ with sync_playwright() as playwright:
     page.fill("#province", "Thành phố Hồ Chí Minh")
     page.fill("#district", "Quận 1")
     page.fill("#streetAddress", "1 Đường QA")
-    page.get_by_role("button", name="Đặt hàng").click()
+    page.get_by_role("button", name="Tiếp tục thanh toán").click()
     expect(page.locator("#simulated-card-last-four-error")).to_be_visible()
     check("Invalid last four has accessible field validation", page.locator("#simulated-card-last-four").get_attribute("aria-invalid") == "true")
 
     page.fill("#simulated-card-last-four", "4242")
-    page.get_by_role("button", name="Đặt hàng").click()
+    page.get_by_role("button", name="Tiếp tục thanh toán").click()
     error_summary = page.locator('[data-testid="checkout-error-summary"]')
     expect(error_summary).to_contain_text("Thanh toán mô phỏng không thành công.")
     check("Failed checkout retains a useful error state", True)
     check("Failed checkout moves keyboard focus to error summary", error_summary.evaluate("node => document.activeElement === node"))
 
-    submit = page.get_by_role("button", name="Đặt hàng")
+    submit = page.get_by_role("button", name="Tiếp tục thanh toán")
     submit.dblclick(force=True)
     page.wait_for_url("**/checkout/success?orderId=*", timeout=15000)
     check("Repeated clicks create one additional request", len(order_requests) == 2, f"requests={len(order_requests)}")
