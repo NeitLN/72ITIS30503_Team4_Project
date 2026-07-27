@@ -11,6 +11,7 @@ declare global {
       showWidget?: () => void;
       hideWidget?: () => void;
       shutdown?: () => void;
+      minimize?: () => void;
       start?: (options?: { showWidget?: boolean }) => void;
     };
     __STYLEHUB_TAWK_ALLOWED__?: boolean;
@@ -28,6 +29,8 @@ export function ChatWidget() {
     const isAdminRoute =
       pathname === ROUTES.ADMIN_OVERVIEW ||
       pathname?.startsWith(`${ROUTES.ADMIN_OVERVIEW}/`);
+      
+    const isProfileRoute = pathname === ROUTES.PROFILE;
 
     // Flag to prevent async load races
     window.__STYLEHUB_TAWK_ALLOWED__ = !isAdminRoute;
@@ -50,11 +53,13 @@ export function ChatWidget() {
     if (api) {
       if (api.start) {
         api.start({ showWidget: true });
+        if (isProfileRoute) api.minimize?.();
         return;
       }
 
       if (api.showWidget) {
         api.showWidget();
+        if (isProfileRoute) api.minimize?.();
         return;
       }
     }
@@ -69,6 +74,7 @@ export function ChatWidget() {
         // Enforce the visibility flag inside the async callback
         if (window.__STYLEHUB_TAWK_ALLOWED__) {
           window.Tawk_API?.showWidget?.();
+          if (isProfileRoute) window.Tawk_API?.minimize?.();
         } else {
           window.Tawk_API?.hideWidget?.();
           window.Tawk_API?.shutdown?.();

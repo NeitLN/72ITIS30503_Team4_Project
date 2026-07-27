@@ -1,11 +1,37 @@
 import Link from 'next/link';
 import type { ProfileImpact } from '../../lib/impact';
 import { ROUTES } from '../../constants/routes';
+import { Button } from '../ui/Button';
 
-export function PersonalImpactCard({ impact, dashboard = false }: { impact: ProfileImpact; dashboard?: boolean }) {
+export function PersonalImpactCard({ impact, dashboard = false, isCustomerOnly = false }: { impact: ProfileImpact; dashboard?: boolean; isCustomerOnly?: boolean }) {
   const isZero = impact.metrics.activeCircularListings === 0
     && impact.metrics.circularUnitsSold === 0
     && impact.metrics.circularUnitsPurchased === 0;
+
+  if (isZero) {
+    return (
+      <section data-testid={dashboard ? 'dashboard-impact' : 'profile-impact'} className="mt-8 border border-neutral-950 bg-white p-6 sm:p-8">
+        <div className="flex flex-col items-center text-center max-w-md mx-auto">
+          <h2 className="font-display text-xl font-black uppercase tracking-tight text-neutral-900 mb-3">
+            Bắt đầu hành trình thời trang tuần hoàn
+          </h2>
+          <p className="text-sm text-neutral-600 mb-6 leading-relaxed">
+            Các chỉ số sẽ được cập nhật khi bạn mua hoặc bán những sản phẩm đủ điều kiện và giao dịch đã hoàn tất.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
+            <Link href={ROUTES.SHOP}>
+              <Button className="w-full font-mono text-xs uppercase tracking-wider">Khám phá sản phẩm</Button>
+            </Link>
+            {isCustomerOnly && (
+              <Link href={ROUTES.SELL}>
+                <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">Bắt đầu bán hàng</Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section data-testid={dashboard ? 'dashboard-impact' : 'profile-impact'} className="mt-8 border border-neutral-950 bg-white">
@@ -16,11 +42,6 @@ export function PersonalImpactCard({ impact, dashboard = false }: { impact: Prof
         </div>
         <Link href={ROUTES.SUSTAINABILITY} className="w-fit font-mono text-[10px] font-bold uppercase tracking-wider underline underline-offset-4">CÁCH TÍNH V{impact.methodologyVersion}</Link>
       </div>
-      {isZero ? (
-        <div data-testid="profile-impact-zero" className="border-b border-dashed border-neutral-300 p-5 text-sm text-neutral-600">
-          Chưa có hoạt động tuần hoàn đủ điều kiện. Số liệu của bạn sẽ được cập nhật khi có sản phẩm tuần hoàn đang đăng bán hoặc giao dịch mua bán đã hoàn tất.
-        </div>
-      ) : null}
       <dl className="grid grid-cols-1 divide-y divide-neutral-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="p-5">
           <dt className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">TỶ LỆ GHI NHẬN HÀNH TRÌNH</dt>

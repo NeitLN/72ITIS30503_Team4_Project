@@ -8,13 +8,15 @@ import { useAuth } from '../../hooks/useAuth';
 import { Container } from '../ui/Container';
 import { Button } from '../ui/Button';
 import { ROUTES } from '../../constants/routes';
-import { getMyProfile, updateMyProfile, uploadAvatar, MyProfile } from '../../lib/profile';
+import { getMyProfile, updateMyProfile, uploadAvatar, MyProfile, getMyReadiness, SellerReadiness } from '../../lib/profile';
 import { Combobox } from '../ui/Combobox';
 import { searchVnLocations, displayVnLocation } from '../../lib/vnLocations';
 import { EN } from '../../lib/i18n';
 import { getMyImpact, ProfileImpact } from '../../lib/impact';
 import { PersonalImpactCard } from '../sustainability/PersonalImpactCard';
 import { SellerReadinessWidget } from '../seller/SellerReadinessWidget';
+import { listMyOrders } from '../../lib/orders';
+import { formatVND, formatVietnamDateTime } from '../../lib/format';
 
 type FormState = {
   display_name: string;
@@ -32,6 +34,14 @@ function toForm(p: MyProfile): FormState {
   };
 }
 
+type RecentOrder = {
+  id: string;
+  order_code: string;
+  created_at: string;
+  total_amount: number;
+  status: string;
+};
+
 export const ProfileClient = () => {
   const { cartCount, isHydrated: isCartHydrated } = useCart();
   const { wishlistCount, isHydrated: isWishlistHydrated } = useWishlist();
@@ -39,8 +49,10 @@ export const ProfileClient = () => {
 
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [form, setForm] = useState<FormState | null>(null);
+  const [readiness, setReadiness] = useState<SellerReadiness | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[] | null>(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -63,16 +75,22 @@ export const ProfileClient = () => {
       setProfileLoading(true);
       setProfileError(null);
       try {
-        const res = await getMyProfile();
+        const [profRes, readRes] = await Promise.all([
+          getMyProfile(),
+          getMyReadiness()
+        ]);
         if (cancelled) return;
-        if (res.success) {
-          setProfile(res.data);
-          setForm(toForm(res.data));
+        if (profRes.success) {
+          setProfile(profRes.data);
+          setForm(toForm(profRes.data));
         } else {
-          setProfileError(res.error.message || 'Failed to load your profile.');
+          setProfileError(profRes.error.message || 'Không thể tải hồ sơ.');
+        }
+        if (readRes.success) {
+          setReadiness(readRes.data);
         }
       } catch {
-        if (!cancelled) setProfileError('Network error — the backend may be offline.');
+        if (!cancelled) setProfileError('Lỗi kết nối — hệ thống có thể đang tạm ngưng.');
       } finally {
         if (!cancelled) setProfileLoading(false);
       }
@@ -84,6 +102,16 @@ export const ProfileClient = () => {
     if (!isAuthHydrated || !isAuthenticated) return;
     let cancelled = false;
     getMyImpact().then((data) => { if (!cancelled) setImpact(data); }).catch(() => undefined);
+    
+    // Fetch recent orders
+    listMyOrders().then((res) => {
+      if (!cancelled && res.data) {
+        setRecentOrders(res.data.slice(0, 3));
+      }
+    }).catch(() => {
+      if (!cancelled) setRecentOrders([]);
+    });
+
     return () => { cancelled = true; };
   }, [isAuthHydrated, isAuthenticated]);
 
@@ -145,6 +173,10 @@ export const ProfileClient = () => {
         setForm(toForm(res.data));
         setIsEditing(false);
         setStatusMessage('Lưu hồ sơ thành công.');
+        
+        // Refresh readiness to update store/roles
+        const readRes = await getMyReadiness();
+        if (readRes.success) setReadiness(readRes.data);
       } else {
         setSaveError(res.error.message || 'Không thể lưu hồ sơ.');
         if (res.error.details) setErrors((prev) => ({ ...prev, ...res.error.details }));
@@ -230,92 +262,128 @@ export const ProfileClient = () => {
 
   const initial = (profile.full_name || profile.email || 'U').charAt(0).toUpperCase();
 
+  // Role resolution
+  const isCustomerOnly = !readiness?.isStorefrontAvailable && !readiness?.hasDraftListing && !readiness?.hasActiveListing;
+  const isActiveSeller = readiness?.completionPercentage === 100;
+  const isIncompleteSeller = readiness ? (!isCustomerOnly && !isActiveSeller) : false;
+
+  const ordersProcessingCount = recentOrders ? recentOrders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length : 0;
+  const ordersCompletedCount = recentOrders ? recentOrders.filter(o => o.status === 'completed').length : 0;
+
   return (
     <div className="bg-neutral-50 min-h-screen pb-16">
       <div aria-live="polite" className="sr-only">{statusMessage}</div>
 
-      <section className="border-b border-neutral-200 bg-white pt-10 pb-12 sm:pt-16 sm:pb-16 shadow-sm">
+      {/* Hero Redesign */}
+      <section className="border-b border-neutral-200 bg-white pt-8 pb-10 sm:pt-12 sm:pb-12 shadow-sm">
         <Container>
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
-            <div className="relative shrink-0">
-              {profile.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.avatar_url}
-                  alt={`Ảnh đại diện của ${profile.full_name}`}
-                  className="h-24 w-24 sm:h-28 sm:w-28 border-2 border-neutral-950 object-cover shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            
+            <div className="flex items-center gap-5 min-w-0">
+              {/* Avatar Improvement */}
+              <div className="relative shrink-0 group">
+                {profile.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.avatar_url}
+                    alt={`Ảnh đại diện của ${profile.full_name}`}
+                    className="h-20 w-20 sm:h-24 sm:w-24 rounded-full border border-neutral-200 object-cover"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 sm:h-24 sm:w-24 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-neutral-900 font-display text-3xl font-extrabold text-white">
+                    {initial}
+                  </div>
+                )}
+                <label
+                  htmlFor="avatar-input"
+                  className="absolute bottom-0 right-0 flex h-7 w-7 sm:h-8 sm:w-8 cursor-pointer items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm hover:bg-neutral-50 text-neutral-600 focus-within:ring-2 focus-within:ring-neutral-900 focus-within:ring-offset-2"
+                  aria-label={avatarUploading ? 'Đang tải lên' : 'Đổi ảnh đại diện'}
+                >
+                  {avatarUploading ? (
+                    <span className="h-3 w-3 sm:h-4 sm:w-4 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900" />
+                  ) : (
+                    <svg className="h-3 w-3 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  )}
+                </label>
+                <input
+                  id="avatar-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleAvatarChange}
+                  disabled={avatarUploading}
+                  className="sr-only"
+                  title="Đổi ảnh đại diện"
                 />
-              ) : (
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center border-2 border-neutral-950 bg-neutral-950 font-display text-4xl font-extrabold text-white sm:h-28 sm:w-28 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                  {initial}
+                {avatarError && <p role="alert" className="mt-1 text-[11px] text-red-600 w-[100px] text-center absolute -bottom-6 left-1/2 -translate-x-1/2">{avatarError}</p>}
+              </div>
+
+              {/* Information Hierarchy */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h1 className="text-xl font-bold text-neutral-900 sm:text-2xl truncate leading-none">{profile.full_name}</h1>
                 </div>
-              )}
-              <label
-                htmlFor="avatar-input"
-                className="mt-2 block cursor-pointer text-center font-mono text-[10px] uppercase tracking-wider text-neutral-500 hover:text-neutral-900"
-              >
-                {avatarUploading ? 'Đang tải lên…' : 'Đổi ảnh'}
-              </label>
-              <input
-                id="avatar-input"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleAvatarChange}
-                disabled={avatarUploading}
-                className="sr-only"
-              />
-              {avatarError && <p role="alert" className="mt-1 text-[11px] text-red-600 max-w-[7rem] text-center">{avatarError}</p>}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-xl font-bold text-neutral-900 sm:text-2xl truncate">{profile.full_name}</h1>
-                {profile.username && (
-                  <span className="font-mono text-xs text-neutral-500 bg-neutral-100 px-2 py-0.5">@{profile.username}</span>
-                )}
-              </div>
-              {profile.bio && <p className="mt-3 max-w-2xl text-sm text-neutral-600 leading-relaxed italic">&ldquo;{profile.bio}&rdquo;</p>}
-              <div className="mt-6 flex flex-wrap gap-4 text-xs font-mono text-neutral-500 border-t border-neutral-100 pt-4">
-                {profile.location && (
-                  <span className="flex items-center gap-1.5">📍 <strong className="text-neutral-900 font-semibold">{displayVnLocation(profile.location)}</strong></span>
-                )}
-                <span className="flex items-center gap-1.5 text-neutral-500">
-                  Tham gia từ {new Date(profile.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', timeZone: 'Asia/Ho_Chi_Minh' })}
-                </span>
+                
+                <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-500 mb-2">
+                  {profile.username && (
+                    <span className="font-mono text-xs bg-neutral-100 px-1.5 py-0.5 text-neutral-700">@{profile.username}</span>
+                  )}
+                  {profile.location && (
+                    <span className="flex items-center gap-1">📍 {displayVnLocation(profile.location)}</span>
+                  )}
+                  <span className="flex items-center gap-1">• Tham gia {new Date(profile.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit' })}</span>
+                </div>
+                
+                {profile.bio && <p className="text-sm text-neutral-600 line-clamp-2">&ldquo;{profile.bio}&rdquo;</p>}
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 shrink-0 sm:w-48">
-              <Button data-testid="profile-edit-toggle" onClick={() => setIsEditing((v) => !v)} variant={isEditing ? 'outline' : 'primary'} className="w-full font-mono text-xs uppercase tracking-wider">
-                {isEditing ? 'Hủy chỉnh sửa' : 'Chỉnh sửa hồ sơ'}
+            {/* Compact Primary Actions */}
+            <div className="flex flex-wrap gap-2 shrink-0 sm:w-auto">
+              <Button data-testid="profile-edit-toggle" onClick={() => setIsEditing((v) => !v)} variant={isEditing ? 'outline' : 'primary'} size="sm" className="font-mono text-[11px] uppercase tracking-wider">
+                {isEditing ? 'Hủy' : 'Chỉnh sửa'}
               </Button>
-              {profile.username ? (
+              
+              {isCustomerOnly && (
+                <Link href={ROUTES.SELL}>
+                  <Button variant="outline" size="sm" className="font-mono text-[11px] uppercase tracking-wider">Bắt đầu bán hàng</Button>
+                </Link>
+              )}
+              
+              {isIncompleteSeller && readiness && (
                 <>
-                  <Link href={`/seller/${profile.username}`} className="w-full" data-testid="profile-view-storefront">
-                    <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">Xem gian hàng công khai</Button>
-                  </Link>
-                  <Link href={ROUTES.SELLER_DASHBOARD} className="w-full">
-                    <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider text-neutral-600">Vào kênh người bán</Button>
+                  <Link href={ROUTES.SELLER_DASHBOARD}>
+                    <Button variant="outline" size="sm" className="font-mono text-[11px] uppercase tracking-wider">Vào kênh người bán</Button>
                   </Link>
                 </>
-              ) : (
-                <p className="text-[11px] text-neutral-500 text-center">Đặt tên người dùng để mở gian hàng công khai.</p>
               )}
-              <Link href={ROUTES.SELL} className="w-full">
-                <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">Bắt đầu bán hàng</Button>
-              </Link>
+              
+              {isActiveSeller && profile.username && (
+                <>
+                  <Link href={`/seller/${profile.username}`}>
+                    <Button variant="outline" size="sm" className="font-mono text-[11px] uppercase tracking-wider">Xem gian hàng</Button>
+                  </Link>
+                  <Link href={ROUTES.SELLER_DASHBOARD}>
+                    <Button variant="outline" size="sm" className="font-mono text-[11px] uppercase tracking-wider text-neutral-600">Vào kênh người bán</Button>
+                  </Link>
+                </>
+              )}
             </div>
+
           </div>
         </Container>
       </section>
 
-      <Container className="mt-10 sm:mt-14">
-        {impact ? <PersonalImpactCard impact={impact} /> : null}
-        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12">
+      <Container className="mt-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          {/* Main Content Area */}
           <div className="lg:col-span-8 flex flex-col gap-8">
-            <SellerReadinessWidget />
-            {isEditing ? (
-              <section className="border border-neutral-200 bg-white p-6 sm:p-8">
+            
+            {/* Conditional Profile Editing Form */}
+            {isEditing && (
+              <section className="border border-neutral-200 bg-white p-6 sm:p-8 animate-in fade-in slide-in-from-top-4">
                 <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 border-b border-neutral-100 pb-3 mb-6">
                   Chỉnh sửa hồ sơ
                 </h2>
@@ -374,54 +442,110 @@ export const ProfileClient = () => {
                   </div>
                 </div>
               </section>
-            ) : (
-              <section>
-                <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 mb-4">Tổng quan</h2>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  <div className="border border-neutral-200 bg-white p-4">
-                    <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Sản phẩm yêu thích</p>
-                    <p className="font-display text-2xl font-bold">{isHydrated ? wishlistCount : '-'}</p>
-                  </div>
-                  <div className="border border-neutral-200 bg-white p-4">
-                    <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Sản phẩm trong giỏ</p>
-                    <p className="font-display text-2xl font-bold">{isHydrated ? cartCount : '-'}</p>
-                  </div>
-                  <div className="border border-neutral-200 bg-white p-4">
-                    <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Tin đăng đang bán</p>
-                    <p className="font-display text-2xl font-bold">{impact?.metrics.activeUserListings ?? '-'}</p>
-                  </div>
-                </div>
-              </section>
             )}
-          </div>
 
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <section className="border border-neutral-200 bg-white p-6">
-              <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-900 font-bold mb-4">Hoạt động mua sắm</h2>
-              <ul className="space-y-3 mb-6 font-medium text-sm">
-                <li><Link href={ROUTES.CART} className="text-neutral-600 hover:text-neutral-900">→ Xem giỏ hàng</Link></li>
-                <li><Link href={ROUTES.WISHLIST} className="text-neutral-600 hover:text-neutral-900">→ Xem danh sách yêu thích</Link></li>
-                <li><Link href={ROUTES.SHOP} className="text-neutral-600 hover:text-neutral-900">→ Khám phá sàn mua bán</Link></li>
-              </ul>
-              <div className="bg-neutral-50 p-3 text-xs text-neutral-500 leading-relaxed border border-neutral-100">
-                <p className="mb-2">Xem lịch sử đặt hàng và trạng thái đơn hàng thực tế trong Đơn hàng của tôi.</p>
-                <Link href={ROUTES.ORDERS}>
-                  <Button variant="outline" size="sm" className="font-mono text-[10px] uppercase tracking-wider">Đơn hàng của tôi</Button>
+            {/* 1. Shopping Overview */}
+            <section>
+              <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 mb-4">Tổng quan mua sắm</h2>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <Link href={ROUTES.ORDERS} className="border border-neutral-200 bg-white p-4 hover:border-neutral-900 transition-colors block">
+                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Đơn đang xử lý</p>
+                  <p className="font-display text-2xl font-bold">{recentOrders !== null ? ordersProcessingCount : '-'}</p>
+                </Link>
+                <Link href={ROUTES.ORDERS} className="border border-neutral-200 bg-white p-4 hover:border-neutral-900 transition-colors block">
+                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Đơn đã hoàn tất</p>
+                  <p className="font-display text-2xl font-bold">{recentOrders !== null ? ordersCompletedCount : '-'}</p>
+                </Link>
+                <Link href={ROUTES.WISHLIST} className="border border-neutral-200 bg-white p-4 hover:border-neutral-900 transition-colors block">
+                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Sản phẩm yêu thích</p>
+                  <p className="font-display text-2xl font-bold">{isHydrated ? wishlistCount : '-'}</p>
+                </Link>
+                <Link href={ROUTES.CART} className="border border-neutral-200 bg-white p-4 hover:border-neutral-900 transition-colors block">
+                  <p className="font-mono text-[10px] uppercase text-neutral-500 mb-1">Đang trong giỏ</p>
+                  <p className="font-display text-2xl font-bold">{isHydrated ? cartCount : '-'}</p>
                 </Link>
               </div>
             </section>
 
-            <section className="border border-neutral-950 bg-neutral-950 text-white p-6 shadow-[4px_4px_0px_0px_rgba(200,200,200,1)]">
-              <h2 className="font-mono text-xs uppercase tracking-[0.2em] font-bold mb-2">{EN.sell.hubEyebrow}</h2>
-              <p className="text-sm text-neutral-300 leading-relaxed mb-6">
-                Biến những món đồ thời trang mới hoặc đã qua sử dụng — thuộc mọi thương hiệu, mọi phong cách — thành thu nhập. Chỉ mất vài phút để đăng bán tới cộng đồng.
-              </p>
-              <Link href={ROUTES.SELL} className="block w-full">
-                <button className="w-full bg-white text-neutral-900 px-4 py-2 font-mono text-xs uppercase tracking-wider font-bold hover:bg-neutral-200 transition-colors">
-                  ĐĂNG SẢN PHẨM
-                </button>
-              </Link>
+            {/* 2. Recent Orders */}
+            <section className="border border-neutral-200 bg-white p-6">
+              <div className="flex items-center justify-between mb-4 border-b border-neutral-100 pb-3">
+                <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-900 font-bold">Đơn hàng gần đây</h2>
+                <Link href={ROUTES.ORDERS} className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 hover:text-neutral-900 underline">Xem tất cả</Link>
+              </div>
+              
+              {recentOrders === null ? (
+                <p className="text-sm text-neutral-500 animate-pulse py-4">Đang tải đơn hàng…</p>
+              ) : recentOrders.length === 0 ? (
+                <div className="py-6 text-center text-sm text-neutral-500">
+                  <p className="mb-3">Bạn chưa có đơn hàng nào.</p>
+                  <Link href={ROUTES.SHOP}>
+                    <Button variant="outline" size="sm" className="font-mono text-[11px] uppercase tracking-wider">Bắt đầu mua sắm</Button>
+                  </Link>
+                </div>
+              ) : (
+                <ul className="flex flex-col gap-4">
+                  {recentOrders.map((order) => (
+                    <li key={order.id} className="flex gap-4 p-3 bg-neutral-50 border border-neutral-100">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-neutral-900 text-sm line-clamp-1 mb-1">Đơn hàng {order.order_code}</p>
+                        <p className="text-xs text-neutral-500 mb-2">
+                          {formatVietnamDateTime(order.created_at)} · {formatVND(order.total_amount)}
+                        </p>
+                        <span className="inline-block font-mono text-[10px] uppercase tracking-wider bg-white border border-neutral-200 px-2 py-0.5">
+                          {order.status}
+                        </span>
+                      </div>
+                      <Link href={`${ROUTES.ORDERS}/${order.id}`} className="shrink-0 flex items-center">
+                        <Button variant="outline" size="sm" className="font-mono text-[10px] uppercase tracking-wider">Chi tiết</Button>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
+            
+            {/* 3. Circular Impact */}
+            {impact ? <PersonalImpactCard impact={impact} isCustomerOnly={isCustomerOnly} /> : null}
+
+          </div>
+
+          {/* Sidebar / Secondary Content */}
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            
+            {/* Seller Widget or CTA */}
+            {isIncompleteSeller && (
+              <SellerReadinessWidget />
+            )}
+
+            {isCustomerOnly && (
+              <section className="border border-neutral-950 bg-neutral-950 text-white p-6 shadow-[4px_4px_0px_0px_rgba(200,200,200,1)]">
+                <h2 className="font-mono text-xs uppercase tracking-[0.2em] font-bold mb-2">Bạn có món đồ không còn sử dụng?</h2>
+                <p className="text-sm text-neutral-300 leading-relaxed mb-6">
+                  Đăng bán trên StyleHub để món đồ tìm được chủ mới. Biến những món đồ thời trang thành thu nhập.
+                </p>
+                <Link href={ROUTES.SELL} className="block w-full">
+                  <button className="w-full bg-white text-neutral-900 px-4 py-2 font-mono text-xs uppercase tracking-wider font-bold hover:bg-neutral-200 transition-colors">
+                    Bắt đầu bán hàng
+                  </button>
+                </Link>
+              </section>
+            )}
+
+            {isActiveSeller && (
+              <section className="border border-neutral-950 bg-neutral-950 text-white p-6 shadow-[4px_4px_0px_0px_rgba(200,200,200,1)]">
+                <h2 className="font-mono text-xs uppercase tracking-[0.2em] font-bold mb-2">{EN.sell.hubEyebrow}</h2>
+                <p className="text-sm text-neutral-300 leading-relaxed mb-6">
+                  Tiếp tục kinh doanh các mặt hàng thời trang của bạn trên StyleHub.
+                </p>
+                <Link href={ROUTES.SELL} className="block w-full">
+                  <button className="w-full bg-white text-neutral-900 px-4 py-2 font-mono text-xs uppercase tracking-wider font-bold hover:bg-neutral-200 transition-colors">
+                    Đăng bán sản phẩm
+                  </button>
+                </Link>
+              </section>
+            )}
+
           </div>
         </div>
       </Container>
