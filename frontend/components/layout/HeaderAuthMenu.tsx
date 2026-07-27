@@ -99,9 +99,11 @@ export const HeaderAuthMenu = () => {
           Đơn hàng
         </Link>
 
-        <Link href={ROUTES.SELLER_DASHBOARD} className="text-neutral-600 transition-colors hover:text-neutral-900 hidden sm:inline-block">
-          Kênh người bán
-        </Link>
+        {user.role === 'seller' && (
+          <Link href={ROUTES.SELLER_DASHBOARD} className="text-neutral-600 transition-colors hover:text-neutral-900 hidden sm:inline-block">
+            Kênh người bán
+          </Link>
+        )}
 
         <button
           onClick={() => logout()}

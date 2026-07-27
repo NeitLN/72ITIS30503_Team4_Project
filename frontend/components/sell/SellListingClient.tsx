@@ -87,7 +87,7 @@ type ImageEntry = { file: File; previewUrl: string };
 
 export const SellListingClient = () => {
   const router = useRouter();
-  const { isAuthenticated, isHydrated } = useAuth();
+  const { isAuthenticated, isHydrated, user } = useAuth();
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
@@ -461,6 +461,29 @@ export const SellListingClient = () => {
             <Link href={`${ROUTES.REGISTER}?redirect=${ROUTES.SELL}`}>
               <Button variant="outline" size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
                 Tạo tài khoản
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
+  if (user?.role !== 'seller') {
+    return (
+      <Container className="py-16 sm:py-24 max-w-md">
+        <div className="border border-neutral-200 bg-white p-6 sm:p-10 text-center">
+          <span className="text-4xl mb-4 block" aria-hidden="true">🔒</span>
+          <h1 className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900 mb-2">
+            Không có quyền truy cập
+          </h1>
+          <p className="text-sm text-neutral-500 mb-8">
+            Tính năng đăng bán chỉ dành cho tài khoản người bán.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link href={ROUTES.PROFILE}>
+              <Button size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
+                Về hồ sơ của tôi
               </Button>
             </Link>
           </div>

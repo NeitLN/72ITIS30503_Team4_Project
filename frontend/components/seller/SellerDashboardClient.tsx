@@ -302,6 +302,29 @@ export const SellerDashboardClient = () => {
     );
   }
 
+  if (user?.role !== 'seller') {
+    return (
+      <Container className="py-16 sm:py-24 max-w-md">
+        <div className="border border-neutral-200 bg-white p-6 sm:p-10 text-center">
+          <span className="text-4xl mb-4 block" aria-hidden="true">🔒</span>
+          <h1 className="font-display text-2xl font-black uppercase tracking-tight text-neutral-900 mb-2">
+            Không có quyền truy cập
+          </h1>
+          <p className="text-sm text-neutral-500 mb-8">
+            Bạn cần tài khoản người bán để quản lý sản phẩm và đơn bán trên StyleHub.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link href={ROUTES.PROFILE}>
+              <Button size="lg" className="w-full font-mono text-xs uppercase tracking-wider">
+                Về hồ sơ của tôi
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
   const totalListingPages = Math.max(1, Math.ceil(listingCount / LISTINGS_PER_PAGE));
   const totalOrderPages = Math.max(1, Math.ceil(orderCount / ORDERS_PER_PAGE));
 

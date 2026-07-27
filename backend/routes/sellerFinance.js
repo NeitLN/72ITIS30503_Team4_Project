@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const sellerFinanceService = require('../services/sellerFinanceService');
-const { authenticateUser, requireAuth } = require('../middleware/auth');
+const { authenticateUser, requireSeller } = require('../middleware/auth');
 const { success, error } = require('../utils/apiResponse');
 
 // `handleServiceError` is not exported by utils/apiResponse — every other
@@ -13,11 +13,11 @@ function handleServiceError(err, res, fallback) {
   return error(res, 500, 'Đã xảy ra lỗi hệ thống.');
 }
 
-// authenticateUser must run before requireAuth — requireAuth only checks
-// req.user truthiness, it never decodes the token itself. Without
+// authenticateUser must run before requireSeller — requireSeller only checks
+// req.user truthiness and role, it never decodes the token itself. Without
 // authenticateUser here, every request (valid token or not) was rejected
 // with 401, since req.user was never populated.
-router.use(authenticateUser, requireAuth);
+router.use(authenticateUser, requireSeller);
 
 // GET /api/seller/finance/summary
 router.get('/summary', async (req, res) => {

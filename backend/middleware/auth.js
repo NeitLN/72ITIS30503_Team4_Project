@@ -26,6 +26,18 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
+const requireSeller = (req, res, next) => {
+  if (!req.user) {
+    return error(res, 401, 'Vui lòng đăng nhập để tiếp tục.');
+  }
+  
+  if (req.user.role !== 'seller' && req.user.role !== 'admin') {
+    return error(res, 403, 'Yêu cầu quyền người bán.');
+  }
+  
+  next();
+};
+
 const requireAdmin = (req, res, next) => {
   if (!req.user) {
     return error(res, 401, 'Vui lòng đăng nhập để tiếp tục.');
@@ -67,6 +79,7 @@ const requireDatabaseAdmin = async (req, res, next) => {
 module.exports = {
   authenticateUser,
   requireAuth,
+  requireSeller,
   requireAdmin,
   requireDatabaseAdmin,
 };

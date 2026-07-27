@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const sellerOrderService = require('../services/sellerOrderService');
-const { authenticateUser, requireAuth } = require('../middleware/auth');
+const { authenticateUser, requireSeller } = require('../middleware/auth');
 const { success, error } = require('../utils/apiResponse');
 
 function handleServiceError(err, res, fallback) {
@@ -10,7 +10,7 @@ function handleServiceError(err, res, fallback) {
   return error(res, 500, 'Đã xảy ra lỗi hệ thống.');
 }
 
-router.use(authenticateUser, requireAuth);
+router.use(authenticateUser, requireSeller);
 
 // GET /api/seller/orders
 router.get('/', async (req, res) => {

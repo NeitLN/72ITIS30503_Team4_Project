@@ -17,9 +17,11 @@ export const Header = () => {
 
   const isAdminRoute = pathname === ROUTES.ADMIN_OVERVIEW || pathname?.startsWith(`${ROUTES.ADMIN_OVERVIEW}/`);
   const isAdminUser = user?.role === 'admin';
+  const isCustomerUser = user?.role === 'customer';
 
   const showPublicNavigation = !isAdminRoute;
   const showShoppingActions = !isAdminRoute && isHydrated && !isAdminUser;
+  const showSellButton = showShoppingActions && !isCustomerUser;
 
   const logoHref = isAdminRoute ? ROUTES.ADMIN_OVERVIEW : ROUTES.HOME;
 
@@ -112,13 +114,17 @@ export const Header = () => {
                     <HeaderWishlistButton />
                     <HeaderCartButton />
                   </div>
-                  <span aria-hidden="true" className="h-4 w-px bg-neutral-300 mx-1" />
-                  <Link
-                    href={ROUTES.SELL}
-                    className="bg-neutral-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-neutral-700 rounded-sm"
-                  >
-                    {EN.nav.sell}
-                  </Link>
+                  {showSellButton && (
+                    <>
+                      <span aria-hidden="true" className="h-4 w-px bg-neutral-300 mx-1" />
+                      <Link
+                        href={ROUTES.SELL}
+                        className="bg-neutral-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-neutral-700 rounded-sm"
+                      >
+                        {EN.nav.sell}
+                      </Link>
+                    </>
+                  )}
                 </>
               )}
             </nav>

@@ -3,7 +3,7 @@ import type { ProfileImpact } from '../../lib/impact';
 import { ROUTES } from '../../constants/routes';
 import { Button } from '../ui/Button';
 
-export function PersonalImpactCard({ impact, dashboard = false, isCustomerOnly = false }: { impact: ProfileImpact; dashboard?: boolean; isCustomerOnly?: boolean }) {
+export function PersonalImpactCard({ impact, dashboard = false }: { impact: ProfileImpact; dashboard?: boolean }) {
   const isZero = impact.metrics.activeCircularListings === 0
     && impact.metrics.circularUnitsSold === 0
     && impact.metrics.circularUnitsPurchased === 0;
@@ -16,17 +16,15 @@ export function PersonalImpactCard({ impact, dashboard = false, isCustomerOnly =
             Bắt đầu hành trình thời trang tuần hoàn
           </h2>
           <p className="text-sm text-neutral-600 mb-6 leading-relaxed">
-            Các chỉ số sẽ được cập nhật khi bạn mua hoặc bán những sản phẩm đủ điều kiện và giao dịch đã hoàn tất.
+            Các chỉ số sẽ được cập nhật khi những giao dịch mua sắm đủ điều kiện của bạn được hoàn tất.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
             <Link href={ROUTES.SHOP}>
               <Button className="w-full font-mono text-xs uppercase tracking-wider">Khám phá sản phẩm</Button>
             </Link>
-            {isCustomerOnly && (
-              <Link href={ROUTES.SELL}>
-                <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">Bắt đầu bán hàng</Button>
-              </Link>
-            )}
+            <Link href={ROUTES.ORDERS}>
+              <Button variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">Xem đơn hàng</Button>
+            </Link>
           </div>
         </div>
       </section>
