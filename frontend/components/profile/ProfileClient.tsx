@@ -315,7 +315,7 @@ export const ProfileClient = () => {
                   {profile.location && (
                     <span className="flex items-center gap-1">📍 {displayVnLocation(profile.location)}</span>
                   )}
-                  <span className="flex items-center gap-1">• Tham gia {new Date(profile.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit' })}</span>
+                  <span className="flex items-center gap-1">Tham gia {new Date(profile.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit' })}</span>
                 </div>
                 
                 {profile.bio && <p className="text-sm text-neutral-600 line-clamp-2">&ldquo;{profile.bio}&rdquo;</p>}

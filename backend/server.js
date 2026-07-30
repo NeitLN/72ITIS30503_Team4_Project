@@ -27,6 +27,7 @@ const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notifications');
 const conversationRoutes = require('./routes/conversations');
 const messageRoutes = require('./routes/messages');
+const disputeEvidenceRoutes = require('./routes/disputeEvidence');
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/disputes', disputeEvidenceRoutes);
 
 // 404 Handler
 app.use((req, res) => {
