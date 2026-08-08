@@ -18,6 +18,11 @@ node_modules/
 
 # Local development artifacts
 .claude/
+.gemini/
+.agents/
+.impeccable/
+.vercel
+**/.vercel
 backend/scripts/_catalog_dump.json
 backend/scripts/_introspect.js
 backend/scripts/_introspect2.js
